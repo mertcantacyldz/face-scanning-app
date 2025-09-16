@@ -30,10 +30,10 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-       <Stack>
+       <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="premium" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="premium/subscribe" options={{ presentation: 'modal' }} />
     </Stack>
       <StatusBar style="auto" />
       <PortalHost />

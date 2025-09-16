@@ -65,7 +65,7 @@ export default function LoginScreen() {
             </View>
 
             {/* Login Form */}
-            <Card className="p-6 bg-white">
+            <Card className="p-6 bg-white border-border">
               <View className="space-y-4">
                 <View>
                   <Text className="text-gray-700 font-medium mb-2">
