@@ -175,13 +175,10 @@ const mediaPipeHTML = `
 
                 faceMesh.setOptions({
                     maxNumFaces: 1,
-                    refineLandmarks: false,
-                    minDetectionConfidence: 0.5,
-                    minTrackingConfidence: 0.0,
-                    selfieMode: false,
-                    staticImageMode: true,
-                    modelComplexity: 1
-
+                    refineLandmarks: true,
+                    minDetectionConfidence: 0.7,
+                    minTrackingConfidence: 0.5,
+                    selfieMode: false
                 });
 
                 faceMesh.onResults(onResults);
@@ -248,9 +245,9 @@ const mediaPipeHTML = `
                     type: 'LANDMARKS',
                     data: {
                         landmarks: landmarks.map((point, index) => ({
-                            x: parseFloat((point.x * canvasElement.width).toFixed(4)),  // ✅ 4 ondalık
-                            y: parseFloat((point.y * canvasElement.height).toFixed(4)),
-                            z: parseFloat((point.z || 0).toFixed(6)),  // ✅ 6 ondalık - 3D için
+                            x: point.x * canvasElement.width,
+                            y: point.y * canvasElement.height,
+                            z: point.z || 0,
                             index: index
                         })),
                         totalPoints: landmarks.length,
