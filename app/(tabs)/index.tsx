@@ -175,10 +175,13 @@ const mediaPipeHTML = `
 
                 faceMesh.setOptions({
                     maxNumFaces: 1,
-                    refineLandmarks: true,
-                    minDetectionConfidence: 0.7,
-                    minTrackingConfidence: 0.5,
-                    selfieMode: false
+                    refineLandmarks: false,
+                    minDetectionConfidence: 0.5,
+                    minTrackingConfidence: 0.0,
+                    selfieMode: false,
+                    staticImageMode: true,
+                    modelComplexity: 1
+
                 });
 
                 faceMesh.onResults(onResults);
@@ -245,9 +248,9 @@ const mediaPipeHTML = `
                     type: 'LANDMARKS',
                     data: {
                         landmarks: landmarks.map((point, index) => ({
-                            x: point.x * canvasElement.width,
-                            y: point.y * canvasElement.height,
-                            z: point.z || 0,
+                            x: parseFloat((point.x * canvasElement.width).toFixed(4)),  // ✅ 4 ondalık
+                            y: parseFloat((point.y * canvasElement.height).toFixed(4)),
+                            z: parseFloat((point.z || 0).toFixed(6)),  // ✅ 6 ondalık - 3D için
                             index: index
                         })),
                         totalPoints: landmarks.length,
@@ -651,7 +654,7 @@ const mediaPipeHTML = `
   );
 }
 
- console.log("-------------------1");
+ console.log("-------------------");
  console.log('🎯 YÜZ ANALİZ VERİLERİ:');
  console.log('📍 Toplam Nokta:', faceLandmarks?.landmarks);
 // console.log(faceLandmarks?.faceRegions.faceOval, '🎯 FaceOval');
