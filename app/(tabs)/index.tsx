@@ -1,8 +1,11 @@
 // app/(tabs)/index.tsx - MediaPipe Web Implementation
 import { Camera } from 'expo-camera';
-import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
+
 import * as ImagePicker from 'expo-image-picker';
+import { router } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
+
 import {
   Alert,
   Dimensions,
@@ -73,7 +76,7 @@ export default function HomeScreen() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showImagePicker, setShowImagePicker] = useState(false);
   const [mediaPipeReady, setMediaPipeReady] = useState(false);
-  const [imageToProcess, setImageToProcess] = useState<string | null>(null);
+ 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [fullName, setFullName] = useState('');
@@ -445,7 +448,8 @@ const mediaPipeHTML = `
      }
    };
   // WebView mesajlarını dinle
-  const handleWebViewMessage = (event: any) => {
+
+const handleWebViewMessage = async (event: any) => {
   try {
     const data = JSON.parse(event.nativeEvent.data);
     
@@ -456,35 +460,27 @@ const mediaPipeHTML = `
         break;
         
       case 'LANDMARKS':
-        // console.log('🎯 Face landmarks alındı:', data.data.totalPoints, 'nokta');
-        
-        // Detaylı loglama
-        // console.log('RAW DATA:', JSON.stringify(data, null, 2) ,"raw dataaa");
-        //  console.log('📊 FACE DATA:', JSON.stringify(data.data, null, 2), "face dataaaa");
-         console.log('📊 YÜZ ANALİZ DETAYLARI:');
-         console.log('📍 Toplam Nokta:', data.data.totalPoints);
-         console.log('📏 Yüz Boyutu:', data.data.faceBox);
-         console.log('🎭 Bölge Sayısı:', data.data.regionDetails.totalRegions);
-         console.log('🔢 Bölge Nokta Dağılımı:', data.data.regionDetails.pointCounts);
-        
-        // İlk 5 landmark'ı detaylı göster
-        console.log('📍 İlk 5 Landmark:');
-        data.data.landmarks.slice(0, 5).forEach((point: any, index: number) => {
-          console.log(`  ${index + 1}. x:${point.x.toFixed(1)} y:${point.y.toFixed(1)} z:${point.z.toFixed(3)}`);
-        });
-        
-        // Yüz bölgelerinden örnekler
-        console.log('🎭 Yüz Bölgeleri (Örnekler):');
-        Object.keys(data.data.faceRegions).slice(0, 3).forEach(region => {
-          console.log(`  ${region}: ${data.data.faceRegions[region].length} nokta`);
-        });
+        console.log('🎯 Face landmarks alındı:', data.data.totalPoints, 'nokta');
         
         setFaceLandmarks(data.data);
         setIsAnalyzing(false);
+        
+        // Veritabanına YENİ KAYIT olarak ekle
+        await saveAnalysisToDatabase(data.data);
+        
+        // Başarı mesajı ve direkt yönlendirme
         Alert.alert(
           'Analiz Başarılı! 🎉', 
-          `${data.data.totalPoints} noktalı MediaPipe analizi tamamlandı!`
+          `${data.data.totalPoints} noktalı MediaPipe analizi tamamlandı ve kaydedildi!`,
+          [
+            { 
+              text: 'Tamam', 
+              onPress: () => router.push('/analysis') 
+            }
+          ]
         );
+        
+        // Alert'ten sonra direkt yönlendir (kullanıcı Tamam'a basınca)
         break;
         
       case 'NO_FACE':
@@ -504,6 +500,37 @@ const mediaPipeHTML = `
     }
   } catch (error) {
     console.error('WebView mesaj parse hatası:', error);
+  }
+};
+
+
+const saveAnalysisToDatabase = async (landmarksData: FaceLandmarks) => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error } = await supabase
+      .from('face_analysis')
+      .insert([
+        {
+          user_id: user.id,
+          landmarks: landmarksData.landmarks,
+          analysis_data: {
+            totalPoints: landmarksData.totalPoints,
+            confidence: landmarksData.confidence,
+            faceBox: landmarksData.faceBox,
+            regionDetails: landmarksData.regionDetails,
+            imageSize: landmarksData.imageSize,
+            timestamp: landmarksData.timestamp
+          }
+        }
+      ]);
+
+    if (error) {
+      console.error('Kayıt hatası:', error);
+    }
+  } catch (error) {
+    console.error('Kayıt işlemi hatası:', error);
   }
 };
 
@@ -529,16 +556,15 @@ const mediaPipeHTML = `
 
   // Fotoğraf çekme uyarısı
   const showPhotoGuidelines = () => {
-    Alert.alert(
-      '📸 MediaPipe Face Mesh Rehberi',
-      '• Yüzünüzün tamamı görünecek şekilde çekin\n• İyi ışıklı bir ortam seçin\n• Kameraya düz bakın\n• Saç yüzünüzü kapatmasın\n• 468 nokta için net fotoğraf önemli\n• MediaPipe teknolojisiyle analiz edilecek',
-      [
-        { text: 'İptal', style: 'cancel' },
-        { text: 'MediaPipe ile Analiz Et', onPress: () => setShowImagePicker(true) }
-      ]
-    );
-  };
-
+  Alert.alert(
+    '📸 FaceAnalyzer AI Rehberi',
+    '• Yüzünüzün tamamı görünecek şekilde çekin\n• İyi ışıklı bir ortam seçin\n• Kameraya düz bakın\n• Saç yüzünüzü kapatmasın\n• 468 nokta için net fotoğraf önemli\n• Özgün AI teknolojimizle analiz edilecek',
+    [
+      { text: 'İptal', style: 'cancel' },
+      { text: 'FaceAnalyzer ile Analiz Et', onPress: () => setShowImagePicker(true) }
+    ]
+  );
+};
   // Kameradan fotoğraf çek
   const takePhoto = async () => {
     const hasPermission = await checkCameraPermission();
@@ -599,18 +625,33 @@ const mediaPipeHTML = `
     try {
       console.log('🔄 MediaPipe Face Mesh analizi başlatılıyor...');
 
-      // Resmi optimize et (512x512 - MediaPipe için optimal)
-      const manipulatedImage = await manipulateAsync(
-        imageUri,
-        [
-          { resize: { width: 512, height: 512 } }
-        ],
-        { 
-          compress: 0.9, 
-          format: SaveFormat.JPEG,
-          base64: true
-        }
-      );
+      //Eski kod - manipulateAsync kullanımı kaldırıldı
+      // const manipulatedImage = await manipulateAsync(
+      //   imageUri,
+      //   [
+      //     { resize: { width: 512, height: 512 } }
+      //   ],
+      //   { 
+      //     compress: 0.9, 
+      //     format: SaveFormat.JPEG,
+      //     base64: true
+      //   }
+      // );
+
+
+// Resmi optimize et (512x512 - MediaPipe için optimal)
+      const manipulatedImage = await (async () => {
+  const context = ImageManipulator.manipulate(imageUri);
+  context.resize({ width: 512, height: 512 });
+  const image = await context.renderAsync();
+  const result = await image.saveAsync({
+    format: SaveFormat.JPEG,
+    compress: 0.9,
+    base64: true // Base64 desteği olup olmadığını kontrol edin
+  });
+  
+  return result;
+})();
 
       console.log('📸 Resim MediaPipe için hazırlandı');
 
@@ -676,30 +717,30 @@ const mediaPipeHTML = `
 
 return (
   <SafeAreaView className="flex-1">
-    {/* Hidden WebView for MediaPipe */}
-  <View style={{ 
-    width: 0, 
-    height: 0, 
-    overflow: 'hidden',
-    position: 'absolute',
-  }}>
-    <WebView
-      ref={webViewRef}
-      source={{ html: mediaPipeHTML }}
-      onMessage={handleWebViewMessage}
-      style={{ 
-        width: 1, 
-        height: 1,
-        opacity: 0,
-      }}
-      javaScriptEnabled={true}
-      domStorageEnabled={true}
-      startInLoadingState={true}
-      mixedContentMode="compatibility"
-      allowsInlineMediaPlayback={true}
-      mediaPlaybackRequiresUserAction={false}
-    />
-  </View>
+    {/* Hidden WebView for FaceAnalyzer AI */}
+    <View style={{ 
+      width: 0, 
+      height: 0, 
+      overflow: 'hidden',
+      position: 'absolute',
+    }}>
+      <WebView
+        ref={webViewRef}
+        source={{ html: mediaPipeHTML }}
+        onMessage={handleWebViewMessage}
+        style={{ 
+          width: 1, 
+          height: 1,
+          opacity: 0,
+        }}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        startInLoadingState={true}
+        mixedContentMode="compatibility"
+        allowsInlineMediaPlayback={true}
+        mediaPlaybackRequiresUserAction={false}
+      />
+    </View>
 
     <ScrollView 
       className="flex-1"
@@ -713,22 +754,22 @@ return (
         </Text>
         <Text className="text-muted-foreground">
           {profile.is_premium ? 'Premium üyeliğinizle' : 'Ücretsiz hesabınızla'} 
-          {' '}MediaPipe Face Mesh ile 468 noktalı analiz yapmaya hazır mısınız?
+          {' '}FaceAnalyzer AI ile 468 noktalı yüz analizi yapmaya hazır mısınız?
         </Text>
       </View>
 
-      {/* MediaPipe Model Durumu */}
+      {/* FaceAnalyzer AI Durumu */}
       <Card className="p-4 mb-6">
         <CardHeader className="p-0 mb-2">
           <Text className="text-primary font-semibold">
-            🌐 MediaPipe Web Durumu
+            🤖 FaceAnalyzer AI Durumu
           </Text>
         </CardHeader>
         <CardContent className="p-0">
           <Text className="text-muted-foreground text-sm">
             {mediaPipeReady 
-              ? '✅ MediaPipe Face Mesh hazır - Google teknolojisi ile 468 nokta!' 
-              : '⏳ MediaPipe Web yükleniyor... (~5 MB) İnternet gerekli'
+              ? '✅ FaceAnalyzer AI hazır - 468 noktalı özgün analiz teknolojimiz!' 
+              : '⏳ FaceAnalyzer AI yükleniyor...'
             }
           </Text>
         </CardContent>
@@ -739,16 +780,16 @@ return (
         <Card className="p-6 mb-6">
           <CardContent className="items-center p-0">
             <View className="w-24 h-24 bg-muted rounded-full items-center justify-center mb-4">
-              <Text className="text-4xl">🕸️</Text>
+              <Text className="text-4xl">🤖</Text>
             </View>
             
             <Text className="text-xl font-bold text-foreground mb-3 text-center">
-              MediaPipe Face Mesh
+              FaceAnalyzer AI
             </Text>
             
             <Text className="text-muted-foreground text-center mb-6 leading-6">
-              Google'ın MediaPipe teknolojisi ile yüzünüzün 468 özel noktasını 
-              web tabanlı AI ile tespit ediyoruz
+              Özgün yüz analiz teknolojimiz ile yüzünüzün 468 özel noktasını 
+              gelişmiş AI ile tespit ediyoruz
             </Text>
 
             <Button 
@@ -757,13 +798,13 @@ return (
               className="w-full"
             >
               <Text className="text-primary-foreground font-semibold text-base">
-                {mediaPipeReady ? '🕸️ MediaPipe Analizi Başlat' : '⏳ Web Yükleniyor...'}
+                {mediaPipeReady ? '🤖 FaceAnalyzer ile Analiz Et' : '⏳ AI Yükleniyor...'}
               </Text>
             </Button>
 
             {!mediaPipeReady && (
               <Text className="text-muted-foreground text-xs mt-2 text-center">
-                MediaPipe Web teknolojisi yükleniyor, lütfen bekleyin
+                FaceAnalyzer AI teknolojimiz yükleniyor, lütfen bekleyin
               </Text>
             )}
           </CardContent>
@@ -773,7 +814,7 @@ return (
         <Card className="p-6 mb-6">
           <CardHeader className="p-0 mb-4">
             <Text className="text-lg font-bold text-foreground">
-              🕸️ MediaPipe Face Mesh Analizi
+              🤖 FaceAnalyzer AI Analizi
             </Text>
           </CardHeader>
           
@@ -794,13 +835,13 @@ return (
           {isAnalyzing ? (
             <View className="items-center py-8">
               <View className="w-16 h-16 bg-muted rounded-full items-center justify-center mb-4">
-                <Text className="text-2xl">🕸️</Text>
+                <Text className="text-2xl">🤖</Text>
               </View>
               <Text className="text-primary font-semibold mb-2 text-center">
-                MediaPipe Face Mesh Analizi
+                FaceAnalyzer AI Analizi
               </Text>
               <Text className="text-muted-foreground text-sm text-center">
-                Google AI ile 468 yüz noktası tespit ediliyor...{'\n'}Web tabanlı analiz yapılıyor
+                Özgün AI teknolojimiz ile 468 yüz noktası tespit ediliyor...
               </Text>
             </View>
           ) : faceLandmarks ? (
@@ -809,53 +850,32 @@ return (
               <Card className="bg-primary/10 p-4 rounded-lg mb-4 border-primary/20">
                 <CardHeader className="p-0 mb-3">
                   <Text className="text-primary font-bold text-lg">
-                    ✅ MediaPipe Analizi Tamamlandı!
+                    ✅ FaceAnalyzer AI Analizi Tamamlandı!
                   </Text>
                 </CardHeader>
                 <CardContent className="p-0 space-y-2">
                   <Text className="text-primary text-sm">
-                    🕸️ <Text className="font-semibold">{faceLandmarks.totalPoints}</Text> MediaPipe landmark tespit edildi
+                    🤖 <Text className="font-semibold">{faceLandmarks.totalPoints}</Text> FaceAnalyzer noktası tespit edildi
                   </Text>
                   <Text className="text-primary text-sm">
                     📏 Yüz boyutu: <Text className="font-semibold">{Math.round(faceLandmarks.faceBox.width)}x{Math.round(faceLandmarks.faceBox.height)}</Text> piksel
                   </Text>
                   <Text className="text-primary text-sm">
-                    💯 Google AI güvenilirliği: <Text className="font-semibold">{(faceLandmarks.confidence * 100).toFixed(1)}%</Text>
+                    💯 FaceAnalyzer doğruluk: <Text className="font-semibold">{(faceLandmarks.confidence * 100).toFixed(1)}%</Text>
                   </Text>
                 </CardContent>
               </Card>
 
-              {/* MediaPipe Yüz Bölgeleri */}
-
-              <Card className="p-4 mb-4">
-  <CardHeader className="p-0 mb-3">
-    <Text className="text-foreground font-semibold">
-      🎭 Tüm Yüz Bölgeleri
-    </Text>
-  </CardHeader>
-  <CardContent className="p-0">
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      <View className="flex-row space-x-2">
-        {faceLandmarks && Object.entries(faceLandmarks.regionDetails.pointCounts).map(([region, count]) => (
-          <Badge key={region} variant="secondary" className="mb-2">
-            <Text className="text-xs font-semibold">
-              {region}: {count}
-            </Text>
-          </Badge>
-        ))}
-      </View>
-    </ScrollView>
-  </CardContent>
-</Card>
+              {/* FaceAnalyzer Yüz Bölgeleri */}
               <Card className="p-4 mb-4">
                 <CardHeader className="p-0 mb-4">
                   <Text className="text-foreground font-semibold">
-                    🎭 MediaPipe Yüz Bölgeleri
+                    🎭 FaceAnalyzer Yüz Bölgeleri
                   </Text>
                 </CardHeader>
                 <CardContent className="p-0 space-y-3">
                   <View className="flex-row justify-between items-center">
-                    <Text className="text-foreground">👁️ Sol Göz Bölgesi</Text>
+                    <Text className="text-foreground">👁️ Sol Göz Analizi</Text>
                     <Badge variant="secondary">
                       <Text className="text-xs font-semibold">
                         {faceLandmarks.faceRegions.leftEye.length} nokta
@@ -863,7 +883,7 @@ return (
                     </Badge>
                   </View>
                   <View className="flex-row justify-between items-center">
-                    <Text className="text-foreground">👁️ Sağ Göz Bölgesi</Text>
+                    <Text className="text-foreground">👁️ Sağ Göz Analizi</Text>
                     <Badge variant="secondary">
                       <Text className="text-xs font-semibold">
                         {faceLandmarks.faceRegions.rightEye.length} nokta
@@ -871,7 +891,7 @@ return (
                     </Badge>
                   </View>
                   <View className="flex-row justify-between items-center">
-                    <Text className="text-foreground">👃 Burun Bölgesi</Text>
+                    <Text className="text-foreground">👃 Burun Analizi</Text>
                     <Badge variant="secondary">
                       <Text className="text-xs font-semibold">
                         {faceLandmarks.faceRegions.nose.length} nokta
@@ -879,7 +899,7 @@ return (
                     </Badge>
                   </View>
                   <View className="flex-row justify-between items-center">
-                    <Text className="text-foreground">👄 Dudak Bölgesi</Text>
+                    <Text className="text-foreground">👄 Dudak Analizi</Text>
                     <Badge variant="secondary">
                       <Text className="text-xs font-semibold">
                         {faceLandmarks.faceRegions.lips.length} nokta
@@ -887,7 +907,7 @@ return (
                     </Badge>
                   </View>
                   <View className="flex-row justify-between items-center">
-                    <Text className="text-foreground">⭕ Yüz Çevresi</Text>
+                    <Text className="text-foreground">⭕ Yüz Şekli Analizi</Text>
                     <Badge variant="secondary">
                       <Text className="text-xs font-semibold">
                         {faceLandmarks.faceRegions.faceOval.length} nokta
@@ -897,11 +917,11 @@ return (
                 </CardContent>
               </Card>
 
-              {/* MediaPipe Koordinatları */}
+              {/* FaceAnalyzer Detayları */}
               <Card className="p-4 mb-4">
                 <CardHeader className="p-0 mb-3">
                   <Text className="text-foreground font-semibold">
-                    📍 MediaPipe Koordinat Bilgileri
+                    📍 FaceAnalyzer Koordinat Bilgileri
                   </Text>
                 </CardHeader>
                 <CardContent className="p-0 space-y-2">
@@ -920,17 +940,17 @@ return (
                   <View className="flex-row justify-between">
                     <Text className="text-muted-foreground text-sm">Toplam Nokta</Text>
                     <Text className="text-foreground font-mono text-sm">
-                      {faceLandmarks.totalPoints} landmark
+                      {faceLandmarks.totalPoints} FaceAnalyzer noktası
                     </Text>
                   </View>
                 </CardContent>
               </Card>
 
-              {/* MediaPipe Örnek Noktalar */}
+              {/* FaceAnalyzer Örnek Noktalar */}
               <Card className="p-4">
                 <CardHeader className="p-0 mb-3">
                   <Text className="text-foreground font-semibold text-sm">
-                    🔢 MediaPipe Landmark Verileri (İlk 5 nokta)
+                    🔢 FaceAnalyzer AI Verileri (İlk 5 nokta)
                   </Text>
                 </CardHeader>
                 <CardContent className="p-0 space-y-2">
@@ -943,7 +963,7 @@ return (
                     </View>
                   ))}
                   <Text className="text-muted-foreground text-xs mt-2 italic text-center">
-                    ... ve {faceLandmarks.totalPoints - 5} MediaPipe noktası daha
+                    ... ve {faceLandmarks.totalPoints - 5} FaceAnalyzer noktası daha
                   </Text>
                 </CardContent>
               </Card>
@@ -957,7 +977,7 @@ return (
             className="mt-6"
           >
             <Text className="text-primary font-semibold">
-              🔄 Yeni MediaPipe Analizi
+              🔄 Yeni FaceAnalyzer Analizi
             </Text>
           </Button>
         </Card>
@@ -971,11 +991,11 @@ return (
               ⭐ Premium ile Çok Daha Fazlası
             </Text>
             <Text className="text-muted-foreground mb-4 text-center leading-6">
-              • Sınırsız MediaPipe analiz{'\n'}
+              • Sınırsız FaceAnalyzer analiz{'\n'}
               • Detaylı yüz şekli raporları{'\n'}
               • Kişiselleştirilmiş öneriler{'\n'}
               • Analiz geçmişi ve ilerleme takibi{'\n'}
-              • Öncelikli analiz hızı
+              • Öncelikli AI analiz hızı
             </Text>
             <Button 
               onPress={() => {/* Navigate to premium */}}
@@ -1008,10 +1028,10 @@ return (
               <View className="w-12 h-1 bg-muted rounded-full self-center mb-6" />
               
               <Text className="text-xl font-bold text-foreground mb-2 text-center">
-                MediaPipe ile Analiz
+                FaceAnalyzer AI ile Analiz
               </Text>
               <Text className="text-muted-foreground text-sm text-center mb-6">
-                468 noktalı Google AI analizi için fotoğraf seçin
+                468 noktalı özgün AI analizi için fotoğraf seçin
               </Text>
               
               <View className="space-y-4">

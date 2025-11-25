@@ -40,7 +40,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 ">
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
@@ -56,19 +56,19 @@ export default function LoginScreen() {
               <View className="w-20 h-20 bg-blue-100 rounded-full items-center justify-center mb-4">
                 <Text className="text-3xl">👤</Text>
               </View>
-              <Text className="text-2xl font-bold text-gray-900">
+              <Text className="text-2xl font-bold ">
                 Hoş Geldin
               </Text>
-              <Text className="text-gray-600 mt-2 text-center">
+              <Text className=" mt-2 text-center">
                 Yüz analizi için giriş yapın
               </Text>
             </View>
 
             {/* Login Form */}
-            <Card className="p-6 bg-white border-border">
+            <Card className="p-6  border-border">
               <View className="space-y-4">
                 <View>
-                  <Text className="text-gray-700 font-medium mb-2">
+                  <Text className=" font-medium mb-2">
                     E-posta
                   </Text>
                   <Input
@@ -82,7 +82,7 @@ export default function LoginScreen() {
                 </View>
 
                 <View>
-                  <Text className="text-gray-700 font-medium mb-2">
+                  <Text className=" font-medium mb-2">
                     Şifre
                   </Text>
                   <Input
@@ -95,7 +95,7 @@ export default function LoginScreen() {
                 </View>
 
                 <Link href="/(auth)/forgot-password" className="self-end">
-                  <Text className="text-blue-600 text-sm">
+                  <Text className=" text-sm">
                     Şifrenizi mi unuttunuz?
                   </Text>
                 </Link>
@@ -103,9 +103,9 @@ export default function LoginScreen() {
                 <Button 
                   onPress={handleLogin}
                   disabled={loading}
-                  className="bg-blue-600 mt-6"
+                  className=" mt-6"
                 >
-                  <Text className="text-white font-semibold">
+                  <Text className=" font-semibold">
                     {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
                   </Text>
                 </Button>
@@ -113,12 +113,12 @@ export default function LoginScreen() {
             </Card>
 
             {/* Register Link */}
-            <View className="flex-row justify-center items-center mt-6">
+            <View className="flex-row justify-center items-center mt-6 gap-5 ">
               <Text className="text-gray-600">
                 Hesabınız yok mu? 
               </Text>
               <Link href="/(auth)/register">
-                <Text className="text-blue-600 font-semibold ml-1">
+                <Text className=" font-semibold ml-1">
                   Kayıt Olun
                 </Text>
               </Link>
