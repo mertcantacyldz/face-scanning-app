@@ -15,7 +15,6 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
 import { supabase } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -686,12 +686,12 @@ const saveAnalysisToDatabase = async (landmarksData: FaceLandmarks) => {
 
  if (!profile) {
   return (
-    <SafeAreaView className="flex-1 bg-background justify-center items-center">
+    <View className="flex-1 bg-background justify-center items-center">
       <View className="items-center">
         <Text className="text-lg text-muted-foreground mb-2">Yükleniyor...</Text>
         <Text className="text-sm text-muted-foreground">Profil bilgileri alınıyor</Text>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -716,7 +716,7 @@ const saveAnalysisToDatabase = async (landmarksData: FaceLandmarks) => {
   console.log("-------------------");
 
 return (
-  <SafeAreaView className="flex-1">
+  <View className="flex-1 bg-background">
     {/* Hidden WebView for FaceAnalyzer AI */}
     <View style={{ 
       width: 0, 
@@ -749,11 +749,14 @@ return (
     >
       {/* Hoşgeldin Mesajı */}
       <View className="mb-8">
-        <Text className="text-2xl font-bold text-foreground mb-2">
-          Merhaba {profile.full_name}! 👋
-        </Text>
+        <View className="flex-row items-center gap-2 mb-2">
+          <Text className="text-2xl font-bold text-foreground">
+            Merhaba {profile.full_name}!
+          </Text>
+          <Ionicons name="hand-right-outline" size={28} color="#8B5CF6" />
+        </View>
         <Text className="text-muted-foreground">
-          {profile.is_premium ? 'Premium üyeliğinizle' : 'Ücretsiz hesabınızla'} 
+          {profile.is_premium ? 'Premium üyeliğinizle' : 'Ücretsiz hesabınızla'}
           {' '}FaceAnalyzer AI ile 468 noktalı yüz analizi yapmaya hazır mısınız?
         </Text>
       </View>
@@ -761,17 +764,27 @@ return (
       {/* FaceAnalyzer AI Durumu */}
       <Card className="p-4 mb-6">
         <CardHeader className="p-0 mb-2">
-          <Text className="text-primary font-semibold">
-            🤖 FaceAnalyzer AI Durumu
-          </Text>
+          <View className="flex-row items-center gap-2">
+            <Ionicons name="hardware-chip-outline" size={18} color="#8B5CF6" />
+            <Text className="text-primary font-semibold">
+              FaceAnalyzer AI Durumu
+            </Text>
+          </View>
         </CardHeader>
         <CardContent className="p-0">
-          <Text className="text-muted-foreground text-sm">
-            {mediaPipeReady 
-              ? '✅ FaceAnalyzer AI hazır - 468 noktalı özgün analiz teknolojimiz!' 
-              : '⏳ FaceAnalyzer AI yükleniyor...'
-            }
-          </Text>
+          <View className="flex-row items-center gap-2">
+            <Ionicons
+              name={mediaPipeReady ? 'checkmark-circle' : 'time-outline'}
+              size={16}
+              color={mediaPipeReady ? '#10B981' : '#F59E0B'}
+            />
+            <Text className="text-muted-foreground text-sm">
+              {mediaPipeReady
+                ? 'FaceAnalyzer AI hazır - 468 noktalı özgün analiz teknolojimiz!'
+                : 'FaceAnalyzer AI yükleniyor...'
+              }
+            </Text>
+          </View>
         </CardContent>
       </Card>
 
@@ -780,9 +793,9 @@ return (
         <Card className="p-6 mb-6">
           <CardContent className="items-center p-0">
             <View className="w-24 h-24 bg-muted rounded-full items-center justify-center mb-4">
-              <Text className="text-4xl">🤖</Text>
+              <Ionicons name="hardware-chip-outline" size={56} color="#8B5CF6" />
             </View>
-            
+
             <Text className="text-xl font-bold text-foreground mb-3 text-center">
               FaceAnalyzer AI
             </Text>
@@ -792,14 +805,21 @@ return (
               gelişmiş AI ile tespit ediyoruz
             </Text>
 
-            <Button 
+            <Button
               onPress={showPhotoGuidelines}
               disabled={!mediaPipeReady}
               className="w-full"
             >
-              <Text className="text-primary-foreground font-semibold text-base">
-                {mediaPipeReady ? '🤖 FaceAnalyzer ile Analiz Et' : '⏳ AI Yükleniyor...'}
-              </Text>
+              <View className="flex-row items-center gap-2">
+                <Ionicons
+                  name={mediaPipeReady ? 'hardware-chip-outline' : 'time-outline'}
+                  size={20}
+                  color="#FFFFFF"
+                />
+                <Text className="text-primary-foreground font-semibold text-base">
+                  {mediaPipeReady ? 'FaceAnalyzer ile Analiz Et' : 'AI Yükleniyor...'}
+                </Text>
+              </View>
             </Button>
 
             {!mediaPipeReady && (
@@ -813,9 +833,12 @@ return (
         // Analiz Sonuçları
         <Card className="p-6 mb-6">
           <CardHeader className="p-0 mb-4">
-            <Text className="text-lg font-bold text-foreground">
-              🤖 FaceAnalyzer AI Analizi
-            </Text>
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="hardware-chip-outline" size={20} color="#8B5CF6" />
+              <Text className="text-lg font-bold text-foreground">
+                FaceAnalyzer AI Analizi
+              </Text>
+            </View>
           </CardHeader>
           
           {/* Seçilen Resim */}
@@ -835,7 +858,7 @@ return (
           {isAnalyzing ? (
             <View className="items-center py-8">
               <View className="w-16 h-16 bg-muted rounded-full items-center justify-center mb-4">
-                <Text className="text-2xl">🤖</Text>
+                <Ionicons name="hardware-chip-outline" size={32} color="#8B5CF6" />
               </View>
               <Text className="text-primary font-semibold mb-2 text-center">
                 FaceAnalyzer AI Analizi
@@ -849,20 +872,32 @@ return (
               {/* Ana Sonuç Kartı */}
               <Card className="bg-primary/10 p-4 rounded-lg mb-4 border-primary/20">
                 <CardHeader className="p-0 mb-3">
-                  <Text className="text-primary font-bold text-lg">
-                    ✅ FaceAnalyzer AI Analizi Tamamlandı!
-                  </Text>
+                  <View className="flex-row items-center gap-2">
+                    <Ionicons name="checkmark-circle" size={22} color="#8B5CF6" />
+                    <Text className="text-primary font-bold text-lg">
+                      FaceAnalyzer AI Analizi Tamamlandı!
+                    </Text>
+                  </View>
                 </CardHeader>
                 <CardContent className="p-0 space-y-2">
-                  <Text className="text-primary text-sm">
-                    🤖 <Text className="font-semibold">{faceLandmarks.totalPoints}</Text> FaceAnalyzer noktası tespit edildi
-                  </Text>
-                  <Text className="text-primary text-sm">
-                    📏 Yüz boyutu: <Text className="font-semibold">{Math.round(faceLandmarks.faceBox.width)}x{Math.round(faceLandmarks.faceBox.height)}</Text> piksel
-                  </Text>
-                  <Text className="text-primary text-sm">
-                    💯 FaceAnalyzer doğruluk: <Text className="font-semibold">{(faceLandmarks.confidence * 100).toFixed(1)}%</Text>
-                  </Text>
+                  <View className="flex-row items-center gap-2">
+                    <Ionicons name="hardware-chip-outline" size={16} color="#8B5CF6" />
+                    <Text className="text-primary text-sm">
+                      <Text className="font-semibold">{faceLandmarks.totalPoints}</Text> FaceAnalyzer noktası tespit edildi
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center gap-2">
+                    <Ionicons name="resize-outline" size={16} color="#8B5CF6" />
+                    <Text className="text-primary text-sm">
+                      Yüz boyutu: <Text className="font-semibold">{Math.round(faceLandmarks.faceBox.width)}x{Math.round(faceLandmarks.faceBox.height)}</Text> piksel
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center gap-2">
+                    <Ionicons name="analytics-outline" size={16} color="#8B5CF6" />
+                    <Text className="text-primary text-sm">
+                      FaceAnalyzer doğruluk: <Text className="font-semibold">{(faceLandmarks.confidence * 100).toFixed(1)}%</Text>
+                    </Text>
+                  </View>
                 </CardContent>
               </Card>
 
@@ -971,14 +1006,17 @@ return (
           ) : null}
 
           {/* Yeni Analiz Butonu */}
-          <Button 
+          <Button
             onPress={startNewAnalysis}
             variant="outline"
             className="mt-6"
           >
-            <Text className="text-primary font-semibold">
-              🔄 Yeni FaceAnalyzer Analizi
-            </Text>
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="refresh-outline" size={18} color="#8B5CF6" />
+              <Text className="text-primary font-semibold">
+                Yeni FaceAnalyzer Analizi
+              </Text>
+            </View>
           </Button>
         </Card>
       )}
@@ -1069,6 +1107,6 @@ return (
         </View>
       </TouchableOpacity>
     </Modal>
-  </SafeAreaView>
+  </View>
 );
 }

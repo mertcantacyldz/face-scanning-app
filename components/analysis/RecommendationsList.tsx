@@ -2,6 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
+import { Ionicons } from '@expo/vector-icons';
 
 interface RecommendationsListProps {
   data: Record<string, string | string[]>;
@@ -18,20 +19,20 @@ function formatKeyName(key: string): string {
 // Helper: Get icon for recommendation type
 function getRecommendationIcon(key: string): string {
   const ICONS: Record<string, string> = {
-    makeup_suggestions: '🎨',
-    medical_advice: '💊',
-    aesthetic_advice: '✨',
-    hairstyle_suggestions: '💇',
-    accessory_suggestions: '👓',
-    attention_points: '⚠️',
-    symmetry_suggestions: '⚖️',
-    priority_intervention: '🚨',
-    filler_suggestions: '💉',
-    attractiveness_tips: '💫',
-    aesthetic_intervention_need: '🔧',
+    makeup_suggestions: 'brush-outline',
+    medical_advice: 'medical-outline',
+    aesthetic_advice: 'sparkles-outline',
+    hairstyle_suggestions: 'cut-outline',
+    accessory_suggestions: 'glasses-outline',
+    attention_points: 'warning-outline',
+    symmetry_suggestions: 'analytics-outline',
+    priority_intervention: 'alert-circle-outline',
+    filler_suggestions: 'medkit-outline',
+    attractiveness_tips: 'star-outline',
+    aesthetic_intervention_need: 'construct-outline',
   };
 
-  return ICONS[key] || '📌';
+  return ICONS[key] || 'pin-outline';
 }
 
 export function RecommendationsList({ data }: RecommendationsListProps) {
@@ -45,7 +46,7 @@ export function RecommendationsList({ data }: RecommendationsListProps) {
     <Card className="p-5 mb-6 bg-blue-50/50 border-2 border-blue-200/50">
       {/* Header */}
       <View className="flex-row items-center gap-2 mb-4">
-        <Text className="text-2xl">💡</Text>
+        <Ionicons name="bulb-outline" size={24} color="#3B82F6" />
         <Text className="text-xl font-bold text-foreground">
           Recommendations
         </Text>
@@ -57,7 +58,7 @@ export function RecommendationsList({ data }: RecommendationsListProps) {
           <View key={key}>
             {/* Section title with icon */}
             <View className="flex-row items-center gap-2 mb-2">
-              <Text className="text-lg">{getRecommendationIcon(key)}</Text>
+              <Ionicons name={getRecommendationIcon(key) as any} size={20} color="#3B82F6" />
               <Text className="font-bold text-base text-foreground">
                 {formatKeyName(key)}
               </Text>

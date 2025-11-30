@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
 import type { RegionId } from '@/lib/exercises';
-import { getRegionIcon, getRegionTitle } from '@/lib/exercises';
+import { getRegionIcon, getRegionIconLibrary, getRegionTitle } from '@/lib/exercises';
 import React, { useCallback, useState } from 'react';
 import { Dimensions, Pressable, View } from 'react-native';
 import Animated, {
@@ -16,6 +16,7 @@ import Animated, {
   withTiming
 } from 'react-native-reanimated';
 import Svg, { G, Path } from 'react-native-svg';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 interface SpinWheelProps {
   onSpinComplete: (regionId: RegionId) => void;
@@ -130,7 +131,10 @@ export function SpinWheel({ onSpinComplete, disabled = false }: SpinWheelProps) 
     <View className="items-center">
       {/* Title */}
       <View className="mb-8 items-center">
-        <Text className="text-2xl font-bold text-center">🎡 Şansını Dene!</Text>
+        <View className="flex-row items-center gap-2">
+          <Ionicons name="disc-outline" size={28} className="text-primary" />
+          <Text className="text-2xl font-bold text-center">Şansını Dene!</Text>
+        </View>
         <Text className="text-muted-foreground text-center mt-1">
           Ücretsiz 1 bölge analizi kazan
         </Text>
@@ -199,6 +203,8 @@ export function SpinWheel({ onSpinComplete, disabled = false }: SpinWheelProps) 
           {/* İkonlar - SVG dışında absolute pozisyonlu */}
           {REGIONS.map((region, index) => {
             const { x, y } = getTextCoordinates(index, REGIONS.length, radius);
+            const iconLibrary = getRegionIconLibrary(region);
+            const iconName = getRegionIcon(region);
 
             return (
               <View
@@ -213,16 +219,36 @@ export function SpinWheel({ onSpinComplete, disabled = false }: SpinWheelProps) 
                   justifyContent: 'center',
                 }}
               >
-                <Text style={{ fontSize: 32 }}>
-                  {getRegionIcon(region)}
-                </Text>
+                {iconLibrary === 'material-community' ? (
+                  <MaterialCommunityIcons
+                    name={iconName as any}
+                    size={32}
+                    color="white"
+                    style={{
+                      textShadowColor: 'rgba(0,0,0,0.3)',
+                      textShadowOffset: { width: 1, height: 1 },
+                      textShadowRadius: 2,
+                    }}
+                  />
+                ) : (
+                  <Ionicons
+                    name={iconName as any}
+                    size={32}
+                    color="white"
+                    style={{
+                      textShadowColor: 'rgba(0,0,0,0.3)',
+                      textShadowOffset: { width: 1, height: 1 },
+                      textShadowRadius: 2,
+                    }}
+                  />
+                )}
               </View>
             );
           })}
         </Animated.View>
 
         {/* Orta Göbek (Hareketsiz veya çarkla dönebilir, burada çarkla dönüyor) */}
-        <View 
+        <View
             className="absolute bg-white items-center justify-center rounded-full shadow-lg border-4 border-gray-100"
             style={{
                 width: wheelSize * 0.18,
@@ -230,7 +256,7 @@ export function SpinWheel({ onSpinComplete, disabled = false }: SpinWheelProps) 
                 // Tam ortalamak için (position absolute, center center)
             }}
         >
-             <Text className="text-xl">🎯</Text>
+             <Ionicons name="radio-button-on" size={24} color="#8B5CF6" />
         </View>
       </View>
 
@@ -242,24 +268,45 @@ export function SpinWheel({ onSpinComplete, disabled = false }: SpinWheelProps) 
           isSpinning || disabled ? 'bg-gray-300' : 'bg-primary'
         }`}
       >
-        <Text
-          className={`font-bold text-lg ${
-            isSpinning || disabled ? 'text-gray-500' : 'text-primary-foreground'
-          }`}
-        >
-          {isSpinning ? '🎡 Çark Dönüyor...' : '🎰 ÇARKI ÇEVİR'}
-        </Text>
+        <View className="flex-row items-center gap-2">
+          <Ionicons
+            name={isSpinning ? 'disc-outline' : 'dice-outline'}
+            size={20}
+            color={isSpinning || disabled ? '#6B7280' : '#FFFFFF'}
+          />
+          <Text
+            className={`font-bold text-lg ${
+              isSpinning || disabled ? 'text-gray-500' : 'text-primary-foreground'
+            }`}
+          >
+            {isSpinning ? 'Çark Dönüyor...' : 'ÇARKI ÇEVİR'}
+          </Text>
+        </View>
       </Pressable>
 
       {/* Result Card */}
       {result && (
-        <Animated.View 
+        <Animated.View
           entering={FadeInDown.duration(600).springify()}
             className="w-full"
         >
             <Card className="mt-8 p-4 bg-green-50 border-2 border-green-200 w-full shadow-sm">
             <View className="flex-row items-center justify-center">
-                <Text className="text-4xl mr-4">{getRegionIcon(result)}</Text>
+                <View className="mr-4">
+                  {getRegionIconLibrary(result) === 'material-community' ? (
+                    <MaterialCommunityIcons
+                      name={getRegionIcon(result) as any}
+                      size={40}
+                      color="#10B981"
+                    />
+                  ) : (
+                    <Ionicons
+                      name={getRegionIcon(result) as any}
+                      size={40}
+                      color="#10B981"
+                    />
+                  )}
+                </View>
                 <View>
                 <Text className="text-green-800 font-bold text-xl mb-1">
                     {getRegionTitle(result)} Kazandınız!
@@ -276,10 +323,13 @@ export function SpinWheel({ onSpinComplete, disabled = false }: SpinWheelProps) 
       {/* Premium CTA */}
       {!result && (
          <Card className="mt-8 p-4 bg-primary/5 border border-primary/20 w-full">
-            <Text className="text-center text-sm text-muted-foreground">
-            💎 <Text className="font-semibold">Tüm 6 bölgeyi</Text> analiz etmek için{' '}
-            <Text className="text-primary font-semibold">Premium'a geç</Text>
-            </Text>
+            <View className="flex-row items-center justify-center gap-2">
+              <Ionicons name="diamond-outline" size={16} className="text-primary" />
+              <Text className="text-center text-sm text-muted-foreground">
+                <Text className="font-semibold">Tüm 6 bölgeyi</Text> analiz etmek için{' '}
+                <Text className="text-primary font-semibold">Premium'a geç</Text>
+              </Text>
+            </View>
         </Card>
       )}
     </View>

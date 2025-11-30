@@ -39,7 +39,7 @@
 
   .dark:root {
     /* Dark Mode - Modern Purple/Blue Theme */
-    --background: 224 71% 4%;
+    --background: 224 50% 8%;
     --foreground: 210 20% 98%;
     --card: 224 71% 7%;
     --card-foreground: 210 20% 98%;

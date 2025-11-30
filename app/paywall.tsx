@@ -9,16 +9,17 @@ import {
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
+import { Ionicons } from '@expo/vector-icons';
 import { usePremium } from '@/hooks/use-premium';
 import { calculateSavings } from '@/lib/revenuecat';
 
 const FEATURES = [
-  { icon: '🔍', text: '6 bölge tam AI analizi' },
-  { icon: '📊', text: 'Detaylı çekicilik skoru' },
-  { icon: '🏋️', text: 'Tüm egzersiz adımları' },
-  { icon: '📈', text: 'İlerleme takibi & grafikler' },
-  { icon: '📅', text: 'Sınırsız analiz geçmişi' },
-  { icon: '🎯', text: 'Kişiselleştirilmiş öneriler' },
+  { iconName: 'search-outline', text: '6 bölge tam AI analizi' },
+  { iconName: 'stats-chart-outline', text: 'Detaylı çekicilik skoru' },
+  { iconName: 'barbell-outline', text: 'Tüm egzersiz adımları' },
+  { iconName: 'trending-up-outline', text: 'İlerleme takibi & grafikler' },
+  { iconName: 'calendar-outline', text: 'Sınırsız analiz geçmişi' },
+  { iconName: 'target-outline', text: 'Kişiselleştirilmiş öneriler' },
 ];
 
 const PaywallScreen = () => {
@@ -95,7 +96,7 @@ const PaywallScreen = () => {
           </Pressable>
 
           <View className="items-center">
-            <Text className="text-6xl mb-4">👑</Text>
+            <Ionicons name="diamond-outline" size={64} color="#8B5CF6" style={{ marginBottom: 16 }} />
             <Text className="text-3xl font-bold text-center mb-2">
               Premium'a Geç
             </Text>
@@ -112,9 +113,9 @@ const PaywallScreen = () => {
             <View className="gap-3">
               {FEATURES.map((feature, index) => (
                 <View key={index} className="flex-row items-center">
-                  <Text className="text-2xl mr-3">{feature.icon}</Text>
-                  <Text className="text-foreground flex-1">{feature.text}</Text>
-                  <Text className="text-green-500 text-xl">✓</Text>
+                  <Ionicons name={feature.iconName as any} size={24} color="#8B5CF6" />
+                  <Text className="text-foreground flex-1 ml-3">{feature.text}</Text>
+                  <Ionicons name="checkmark-circle" size={20} color="#10B981" />
                 </View>
               ))}
             </View>
@@ -144,7 +145,7 @@ const PaywallScreen = () => {
                 </Text>
               </View>
 
-              <View className="flex-row items-center justify-between mt-2">
+              <View className="flex-row items-center justify-between mt-2 pr-10">
                 <View>
                   <Text className="text-lg font-bold text-foreground">
                     Yıllık Plan
@@ -174,7 +175,7 @@ const PaywallScreen = () => {
                 }`}
               >
                 {selectedPackage === 'yearly' && (
-                  <Text className="text-primary-foreground text-sm">✓</Text>
+                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
                 )}
               </View>
             </Card>
@@ -191,7 +192,7 @@ const PaywallScreen = () => {
                   : 'border-border bg-card'
               }`}
             >
-              <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center justify-between pr-10">
                 <View>
                   <Text className="text-lg font-bold text-foreground">
                     Aylık Plan
@@ -214,7 +215,7 @@ const PaywallScreen = () => {
                 }`}
               >
                 {selectedPackage === 'monthly' && (
-                  <Text className="text-primary-foreground text-sm">✓</Text>
+                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
                 )}
               </View>
             </Card>

@@ -11,7 +11,7 @@ export interface ComparisonResult {
   isFirstAnalysis: boolean;
   message: string;
   messageTr: string; // Turkish message
-  emoji: string;
+  iconName: string; // Ionicons icon name
 }
 
 export interface AnalysisRecord {
@@ -36,7 +36,7 @@ export function compareAnalysis(
       isFirstAnalysis: true,
       message: 'This is your first analysis. Complete exercises to see improvement!',
       messageTr: 'Bu ilk analiziniz. Gelişimi görmek için egzersizleri tamamlayın!',
-      emoji: '🎯',
+      iconName: 'radio-button-on',
     };
   }
 
@@ -70,7 +70,7 @@ function getEncouragingResult(
         isFirstAnalysis: false,
         message: `Amazing progress! Your score improved by ${scoreChange} points!`,
         messageTr: `Harika ilerleme! Skorunuz ${scoreChange} puan arttı!`,
-        emoji: '🚀',
+        iconName: 'rocket-outline',
       };
     }
     return {
@@ -80,7 +80,7 @@ function getEncouragingResult(
       isFirstAnalysis: false,
       message: `Great job! You're improving. Keep up with your exercises!`,
       messageTr: `Harika iş! Gelişiyorsunuz. Egzersizlere devam edin!`,
-      emoji: '💪',
+      iconName: 'barbell-outline',
     };
   }
 
@@ -92,7 +92,7 @@ function getEncouragingResult(
       isFirstAnalysis: false,
       message: `Your score is stable. Consistency is key - keep going!`,
       messageTr: `Skorunuz stabil. Tutarlılık önemli - devam edin!`,
-      emoji: '⭐',
+      iconName: 'star-outline',
     };
   }
 
@@ -104,7 +104,7 @@ function getEncouragingResult(
     isFirstAnalysis: false,
     message: `Small setback, but you're on the right track. Keep practicing!`,
     messageTr: `Küçük bir geri adım, ama doğru yoldasınız. Pratik yapmaya devam edin!`,
-    emoji: '💫',
+    iconName: 'star-half-outline',
   };
 }
 
@@ -122,7 +122,7 @@ function getNeutralResult(
       isFirstAnalysis: false,
       message: `Your score improved by ${scoreChange} points.`,
       messageTr: `Skorunuz ${scoreChange} puan arttı.`,
-      emoji: '📈',
+      iconName: 'trending-up-outline',
     };
   }
 
@@ -134,7 +134,7 @@ function getNeutralResult(
       isFirstAnalysis: false,
       message: `No change in score. Try the recommended exercises.`,
       messageTr: `Skorda değişiklik yok. Önerilen egzersizleri deneyin.`,
-      emoji: '➡️',
+      iconName: 'arrow-forward-outline',
     };
   }
 
@@ -145,7 +145,7 @@ function getNeutralResult(
     isFirstAnalysis: false,
     message: `Score decreased by ${Math.abs(scoreChange)} points. Exercises can help!`,
     messageTr: `Skor ${Math.abs(scoreChange)} puan düştü. Egzersizler yardımcı olabilir!`,
-    emoji: '📉',
+    iconName: 'trending-down-outline',
   };
 }
 
@@ -248,38 +248,38 @@ export function calculateOverallProgress(
 }
 
 // Get motivational message based on streak
-export function getStreakMessage(daysActive: number): { message: string; messageTr: string; emoji: string } {
+export function getStreakMessage(daysActive: number): { message: string; messageTr: string; iconName: string } {
   if (daysActive >= 30) {
     return {
       message: `${daysActive} days streak! You're a face fitness champion!`,
       messageTr: `${daysActive} gün seri! Yüz fitness şampiyonusunuz!`,
-      emoji: '🏆',
+      iconName: 'trophy-outline',
     };
   }
   if (daysActive >= 14) {
     return {
       message: `${daysActive} days streak! Incredible dedication!`,
       messageTr: `${daysActive} gün seri! İnanılmaz kararlılık!`,
-      emoji: '🔥',
+      iconName: 'flame-outline',
     };
   }
   if (daysActive >= 7) {
     return {
       message: `${daysActive} days streak! One week strong!`,
       messageTr: `${daysActive} gün seri! Bir hafta güçlü!`,
-      emoji: '💪',
+      iconName: 'barbell-outline',
     };
   }
   if (daysActive >= 3) {
     return {
       message: `${daysActive} days streak! Building momentum!`,
       messageTr: `${daysActive} gün seri! İvme kazanıyorsunuz!`,
-      emoji: '⚡',
+      iconName: 'flash-outline',
     };
   }
   return {
     message: `Day ${daysActive}! Every day counts!`,
     messageTr: `${daysActive}. gün! Her gün önemli!`,
-    emoji: '🌟',
+    iconName: 'star-outline',
   };
 }

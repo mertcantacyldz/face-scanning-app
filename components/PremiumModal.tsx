@@ -3,12 +3,13 @@ import { View, Modal, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
+import { Ionicons } from '@expo/vector-icons';
 
 interface PremiumModalProps {
   visible: boolean;
   onClose: () => void;
   feature?: string; // e.g., "Burun Analizi", "İlerleme Takibi"
-  featureIcon?: string;
+  featureIconName?: string; // Ionicons name
 }
 
 const PREMIUM_BENEFITS = [
@@ -22,7 +23,7 @@ export function PremiumModal({
   visible,
   onClose,
   feature = 'Bu özellik',
-  featureIcon = '🔒',
+  featureIconName = 'lock-closed-outline',
 }: PremiumModalProps) {
   const handleGoPremium = () => {
     onClose();
@@ -41,13 +42,13 @@ export function PremiumModal({
           {/* Header */}
           <View className="bg-primary/10 pt-8 pb-4 px-6 items-center">
             <View className="w-20 h-20 bg-primary/10 rounded-full items-center justify-center mb-4">
-              <Text className="text-5xl">{featureIcon}</Text>
+              <Ionicons name={featureIconName as any} size={48} color="#8B5CF6" />
             </View>
             <Text className="text-xl font-bold text-center text-foreground">
               Premium Özellik
             </Text>
             <Text className="text-muted-foreground text-center mt-1">
-              "{feature}" için Premium üyelik gerekli
+              &quot;{feature}&quot; için Premium üyelik gerekli
             </Text>
           </View>
 
@@ -59,8 +60,8 @@ export function PremiumModal({
             <View className="gap-2">
               {PREMIUM_BENEFITS.map((benefit, index) => (
                 <View key={index} className="flex-row items-center">
-                  <Text className="text-green-500 mr-2">✓</Text>
-                  <Text className="text-sm text-foreground">{benefit}</Text>
+                  <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                  <Text className="text-sm text-foreground ml-2">{benefit}</Text>
                 </View>
               ))}
             </View>
@@ -93,9 +94,12 @@ export function PremiumModal({
               onPress={handleGoPremium}
               className="bg-primary py-4 rounded-xl items-center active:opacity-80"
             >
-              <Text className="text-primary-foreground font-bold text-base">
-                👑 Premium'a Geç
-              </Text>
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="crown-outline" size={20} color="#FFFFFF" />
+                <Text className="text-primary-foreground font-bold text-base">
+                  Premium&apos;a Geç
+                </Text>
+              </View>
             </Pressable>
 
             <Pressable

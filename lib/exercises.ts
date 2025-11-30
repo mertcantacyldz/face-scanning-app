@@ -567,12 +567,17 @@ export function getRegionTitle(regionId: RegionId): string {
 
 export function getRegionIcon(regionId: RegionId): string {
   const icons: Record<RegionId, string> = {
-    eyebrows: '🤨',
-    eyes: '👁️',
-    nose: '👃',
-    lips: '👄',
-    jawline: '🦴',
-    face_shape: '🧑',
+    eyebrows: 'git-branch-outline',
+    eyes: 'eye-outline',
+    nose: 'nose', // MaterialCommunityIcons
+    lips: 'ellipse',
+    jawline: 'grid-outline',
+    face_shape: 'person-circle-outline',
   };
   return icons[regionId];
+}
+
+// Icon kütüphanesi belirleme (burun için özel)
+export function getRegionIconLibrary(regionId: RegionId): 'ionicons' | 'material-community' {
+  return regionId === 'nose' ? 'material-community' : 'ionicons';
 }

@@ -3,6 +3,7 @@ import { View, ScrollView, Pressable } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
+import { Ionicons } from '@expo/vector-icons';
 import { ExerciseCard } from '@/components/progress/ExerciseCard';
 import {
   getRegionTitle,
@@ -103,7 +104,7 @@ const ExercisesScreen = () => {
         {!hasAccess && !isPremium && (
           <Card className="p-5 mb-6 bg-red-50 border-2 border-red-200">
             <View className="items-center">
-              <Text className="text-4xl mb-3">🔒</Text>
+              <Ionicons name="lock-closed-outline" size={48} color="#991B1B" style={{ marginBottom: 12 }} />
               <Text className="text-lg font-bold text-red-800 text-center mb-2">
                 Bu Bölge Kilitli
               </Text>
@@ -114,9 +115,12 @@ const ExercisesScreen = () => {
                 onPress={() => setShowPremiumModal(true)}
                 className="bg-primary px-6 py-3 rounded-lg active:opacity-80"
               >
-                <Text className="text-primary-foreground font-semibold">
-                  👑 Premium'a Geç
-                </Text>
+                <View className="flex-row items-center">
+                  <Ionicons name="diamond-outline" size={18} color="#FFFFFF" />
+                  <Text className="text-primary-foreground font-semibold ml-2">
+                    Premium'a Geç
+                  </Text>
+                </View>
               </Pressable>
             </View>
           </Card>
@@ -155,7 +159,7 @@ const ExercisesScreen = () => {
         {hasAccess && (
           <Card className="p-5 mb-6 bg-purple-50 border-2 border-purple-200">
             <View className="flex-row items-start">
-              <Text className="text-3xl mr-3">🎯</Text>
+              <Ionicons name="target-outline" size={32} color="#6B21A8" style={{ marginRight: 12 }} />
               <View className="flex-1">
                 <Text className="text-lg font-bold text-purple-900 mb-2">
                   Neden Düzenli Egzersiz Önemli?
@@ -171,9 +175,12 @@ const ExercisesScreen = () => {
                 </Text>
                 {!isPremium && (
                   <View className="mt-3 p-3 bg-purple-100 rounded-lg">
-                    <Text className="text-xs text-purple-900 font-semibold">
-                      💎 Premium'da: Tüm {exercises.length} egzersizi açın, ilerlemenizi grafiklerle takip edin
-                    </Text>
+                    <View className="flex-row items-start">
+                      <Ionicons name="diamond-outline" size={12} color="#581C87" style={{ marginTop: 2 }} />
+                      <Text className="text-xs text-purple-900 font-semibold ml-1 flex-1">
+                        Premium'da: Tüm {exercises.length} egzersizi açın, ilerlemenizi grafiklerle takip edin
+                      </Text>
+                    </View>
                   </View>
                 )}
               </View>
@@ -184,10 +191,13 @@ const ExercisesScreen = () => {
         {/* Info Card */}
         {hasAccess && (
           <Card className="p-4 mb-6 bg-blue-50 border border-blue-200">
-            <Text className="text-sm text-blue-800">
-              💡 <Text className="font-semibold">İpucu:</Text> Egzersizleri
-              sabah ve akşam olmak üzere günde 2 kez yapmanız önerilir. Her seans sadece 5-10 dakika sürer.
-            </Text>
+            <View className="flex-row items-start">
+              <Ionicons name="bulb-outline" size={16} color="#1E3A8A" style={{ marginTop: 2 }} />
+              <Text className="text-sm text-blue-800 ml-2 flex-1">
+                <Text className="font-semibold">İpucu:</Text> Egzersizleri
+                sabah ve akşam olmak üzere günde 2 kez yapmanız önerilir. Her seans sadece 5-10 dakika sürer.
+              </Text>
+            </View>
           </Card>
         )}
 
@@ -227,7 +237,7 @@ const ExercisesScreen = () => {
                         {/* Blur overlay */}
                         <View className="absolute inset-0 bg-background/60 z-10 items-center justify-center">
                           <View className="items-center">
-                            <Text className="text-4xl mb-2">🔒</Text>
+                            <Ionicons name="lock-closed-outline" size={40} color="#6B7280" style={{ marginBottom: 8 }} />
                             <Text className="text-sm font-bold text-foreground">Premium</Text>
                           </View>
                         </View>
@@ -279,8 +289,11 @@ const ExercisesScreen = () => {
                             : 'text-white'
                         }`}
                       >
+                        {completedExercises.has(exercise.id) && (
+                          <Ionicons name="checkmark-circle" size={16} color="#4B5563" style={{ marginRight: 6 }} />
+                        )}
                         {completedExercises.has(exercise.id)
-                          ? '✓ Tamamlandı'
+                          ? 'Tamamlandı'
                           : 'Tamamla'}
                       </Text>
                     </Pressable>
@@ -294,7 +307,7 @@ const ExercisesScreen = () => {
         {/* All Complete Card */}
         {hasAccess && completedCount === totalCount && totalCount > 0 && (
           <Card className="p-6 bg-green-50 border-2 border-green-200 items-center">
-            <Text className="text-5xl mb-3">🎉</Text>
+            <Ionicons name="trophy-outline" size={56} color="#15803D" style={{ marginBottom: 12 }} />
             <Text className="text-xl font-bold text-green-800 text-center mb-2">
               Tebrikler!
             </Text>
@@ -308,9 +321,12 @@ const ExercisesScreen = () => {
                 onPress={() => setShowPremiumModal(true)}
                 className="mt-4 bg-primary px-6 py-3 rounded-lg active:opacity-80"
               >
-                <Text className="text-primary-foreground font-semibold">
-                  👑 Premium'a Geç
-                </Text>
+                <View className="flex-row items-center">
+                  <Ionicons name="diamond-outline" size={18} color="#FFFFFF" />
+                  <Text className="text-primary-foreground font-semibold ml-2">
+                    Premium'a Geç
+                  </Text>
+                </View>
               </Pressable>
             )}
           </Card>
@@ -366,8 +382,11 @@ const ExercisesScreen = () => {
                     : 'text-white'
                 }`}
               >
+                {completedExercises.has(selectedExercise.id) && (
+                  <Ionicons name="checkmark-circle" size={18} color="#4B5563" style={{ marginRight: 8 }} />
+                )}
                 {completedExercises.has(selectedExercise.id)
-                  ? '✓ Tamamlandı Olarak İşaretlendi'
+                  ? 'Tamamlandı Olarak İşaretlendi'
                   : 'Egzersizi Tamamla'}
               </Text>
             </Pressable>
@@ -382,7 +401,7 @@ const ExercisesScreen = () => {
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
         feature="Tüm Egzersizler"
-        featureIcon="💪"
+        featureIconName="barbell-outline"
       />
     </View>
   );

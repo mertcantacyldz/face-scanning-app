@@ -16,7 +16,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface Profile {
   id: string;
@@ -110,20 +109,20 @@ export default function ProfileScreen() {
 
   if (loading && !refreshing) {
     return (
-      <SafeAreaView className="flex-1 bg-background justify-center items-center">
+      <View className="flex-1 bg-background justify-center items-center">
         <View className="items-center">
           <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">
             <Ionicons name="person-circle" size={48} className="text-primary" />
           </View>
           <Text className="text-muted-foreground mt-2">Yükleniyor...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (!profile) {
     return (
-      <SafeAreaView className="flex-1 bg-background justify-center items-center">
+      <View className="flex-1 bg-background justify-center items-center">
         <View className="items-center px-6">
           <View className="w-16 h-16 bg-destructive/10 rounded-full items-center justify-center mb-4">
             <Ionicons name="alert-circle" size={48} className="text-destructive" />
@@ -133,12 +132,12 @@ export default function ProfileScreen() {
             <Text className="text-primary-foreground font-semibold">Tekrar Dene</Text>
           </Button>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <View className="flex-1 bg-background">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 16 }}
@@ -248,9 +247,12 @@ export default function ProfileScreen() {
 
         {/* Stats Section */}
         <Card className="p-6 mb-6">
-          <Text className="text-lg font-bold text-foreground mb-5">
-            📊 Hesap İstatistikleri
-          </Text>
+          <View className="flex-row items-center gap-2 mb-5">
+            <Ionicons name="bar-chart-outline" size={20} color="#8B5CF6" />
+            <Text className="text-lg font-bold text-foreground">
+              Hesap İstatistikleri
+            </Text>
+          </View>
 
           <View className="space-y-4">
             <View className="flex-row justify-between items-center py-3 border-b border-border">
@@ -294,9 +296,12 @@ export default function ProfileScreen() {
         </Card>
 
         {/* Quick Actions */}
-        <Text className="text-lg font-bold text-foreground mb-4">
-          ⚡ Hızlı İşlemler
-        </Text>
+        <View className="flex-row items-center gap-2 mb-4">
+          <Ionicons name="flash-outline" size={20} color="#8B5CF6" />
+          <Text className="text-lg font-bold text-foreground">
+            Hızlı İşlemler
+          </Text>
+        </View>
 
         <View className="flex flex-col gap-4 mb-6">
           {!profile.is_premium && (
@@ -324,9 +329,12 @@ export default function ProfileScreen() {
         </View>
 
         {/* Account Actions */}
-        <Text className="text-lg font-bold text-foreground mb-4">
-          🔐 Hesap Ayarları
-        </Text>
+        <View className="flex-row items-center gap-2 mb-4">
+          <Ionicons name="key-outline" size={20} color="#8B5CF6" />
+          <Text className="text-lg font-bold text-foreground">
+            Hesap Ayarları
+          </Text>
+        </View>
 
         <Card className="p-4 mb-6">
           <TouchableOpacity className="flex-row items-center justify-between py-3">
@@ -380,6 +388,6 @@ export default function ProfileScreen() {
           </Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { supabase } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('');
@@ -75,7 +76,7 @@ export default function RegisterScreen() {
             {/* Header */}
             <View className="items-center mb-8">
               <View className="w-20 h-20 bg-green-100 rounded-full items-center justify-center mb-4">
-                <Text className="text-3xl">✨</Text>
+                <Ionicons name="sparkles-outline" size={48} color="#10B981" />
               </View>
               <Text className="text-2xl font-bold text-gray-900">
                 Hesap Oluştur

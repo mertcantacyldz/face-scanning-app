@@ -9,6 +9,7 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { ProgressChart } from '@/components/progress/ProgressChart';
 import { ComparisonBadge } from '@/components/progress/ComparisonBadge';
@@ -244,8 +245,8 @@ const RegionDetailScreen = () => {
               <Text className="text-xl font-bold">Analiz Geçmişi</Text>
               {!isPremium && (
                 <View className="flex-row items-center">
-                  <Text className="text-sm text-muted-foreground mr-1">🔒</Text>
-                  <Text className="text-sm text-muted-foreground">Premium</Text>
+                  <Ionicons name="lock-closed-outline" size={16} color="#6B7280" />
+                  <Text className="text-sm text-muted-foreground ml-1">Premium</Text>
                 </View>
               )}
             </View>
@@ -299,9 +300,11 @@ const RegionDetailScreen = () => {
                     </View>
 
                     {/* Arrow or Lock */}
-                    <Text className="text-xl text-muted-foreground">
-                      {isPremium ? '›' : '🔒'}
-                    </Text>
+                    {isPremium ? (
+                      <Ionicons name="chevron-forward" size={24} color="#9CA3AF" />
+                    ) : (
+                      <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" />
+                    )}
                   </Card>
                 </Pressable>
               ))}
@@ -313,9 +316,12 @@ const RegionDetailScreen = () => {
                   className="active:opacity-70"
                 >
                   <Card className="p-4 border-2 border-dashed border-primary/30 bg-primary/5 items-center">
-                    <Text className="text-primary font-semibold">
-                      👑 +{analyses.length - 1} analiz daha görmek için Premium&apos;a geç
-                    </Text>
+                    <View className="flex-row items-center">
+                      <Ionicons name="diamond-outline" size={18} color="#8B5CF6" />
+                      <Text className="text-primary font-semibold ml-2">
+                        +{analyses.length - 1} analiz daha görmek için Premium&apos;a geç
+                      </Text>
+                    </View>
                   </Card>
                 </Pressable>
               )}
@@ -417,7 +423,7 @@ const RegionDetailScreen = () => {
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
         feature="Analiz Geçmişi"
-        featureIcon="📊"
+        featureIconName="stats-chart-outline"
       />
     </View>
   );

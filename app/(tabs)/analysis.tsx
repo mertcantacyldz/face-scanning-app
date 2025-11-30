@@ -6,6 +6,7 @@ import { PremiumModal } from '@/components/PremiumModal';
 import { SpinWheel } from '@/components/SpinWheel';
 import { Card } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
+import { Ionicons } from '@expo/vector-icons';
 import { usePremium } from '@/hooks/use-premium';
 import { calculateAttractivenessScore, getScoreLabelTr } from '@/lib/attractiveness';
 import type { RegionId } from '@/lib/exercises';
@@ -23,7 +24,6 @@ import {
   ScrollView,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface FaceAnalysisData {
   id: string;
@@ -300,7 +300,7 @@ const AnalysisScreen = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
+    <View className="flex-1 bg-background">
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
         {/* Header */}
         <View className="mb-6">
@@ -336,13 +336,16 @@ const AnalysisScreen = () => {
                 </Text>
               </View>
               <View className="w-20 h-20 bg-primary/20 rounded-full items-center justify-center">
-                <Text className="text-4xl">✨</Text>
+                <Ionicons name="sparkles-outline" size={40} color="#8B5CF6" />
               </View>
             </View>
             {!isPremium && (
-              <Text className="text-xs text-muted-foreground mt-3">
-                💎 Detaylı puan dökümü için Premium'a geçin
-              </Text>
+              <View className="flex-row items-center mt-3">
+                <Ionicons name="diamond-outline" size={12} color="#6B7280" />
+                <Text className="text-xs text-muted-foreground ml-1">
+                  Detaylı puan dökümü için Premium'a geçin
+                </Text>
+              </View>
             )}
           </Card>
         )}
@@ -352,8 +355,8 @@ const AnalysisScreen = () => {
           <Card className="mb-6 p-4 bg-yellow-50 border-2 border-yellow-200">
             <Pressable onPress={() => setShowSpinWheel(true)} className="active:opacity-70">
               <View className="flex-row items-center">
-                <Text className="text-4xl mr-3">🎡</Text>
-                <View className="flex-1">
+                <Ionicons name="disc-outline" size={40} color="#CA8A04" />
+                <View className="flex-1 ml-3">
                   <Text className="font-bold text-yellow-800">
                     Ücretsiz Analiz Hakkın Var!
                   </Text>
@@ -361,7 +364,7 @@ const AnalysisScreen = () => {
                     Çarkı çevir, 1 bölge analizi kazan
                   </Text>
                 </View>
-                <Text className="text-2xl text-yellow-600">›</Text>
+                <Ionicons name="chevron-forward" size={24} color="#CA8A04" />
               </View>
             </Pressable>
           </Card>
@@ -371,8 +374,8 @@ const AnalysisScreen = () => {
         {!isPremium && freeAnalysisUsed && freeAnalysisRegion && (
           <Card className="mb-6 p-3 bg-green-50 border border-green-200">
             <View className="flex-row items-center">
-              <Text className="text-green-600 mr-2">✓</Text>
-              <Text className="text-sm text-green-700">
+              <Ionicons name="checkmark-circle" size={16} color="#16A34A" />
+              <Text className="text-sm text-green-700 ml-2">
                 <Text className="font-semibold">
                   {FACE_REGIONS.find(r => r.id === freeAnalysisRegion)?.title}
                 </Text>
@@ -407,7 +410,7 @@ const AnalysisScreen = () => {
                     <View className="flex-row items-center">
                       <Text className="text-lg font-bold mb-1">{region.title}</Text>
                       {isLocked && (
-                        <Text className="text-sm ml-2 mb-1">🔒</Text>
+                        <Ionicons name="lock-closed" size={14} color="#9CA3AF" style={{ marginLeft: 8, marginBottom: 4 }} />
                       )}
                       {isUnlocked && !isPremium && (
                         <View className="ml-2 mb-1 bg-green-100 px-2 py-0.5 rounded-full">
@@ -425,9 +428,9 @@ const AnalysisScreen = () => {
                     {analyzingRegion === region.id ? (
                       <ActivityIndicator size="small" color="#007AFF" />
                     ) : isLocked ? (
-                      <Text className="text-2xl text-muted-foreground">👑</Text>
+                      <Ionicons name="diamond-outline" size={24} color="#9CA3AF" />
                     ) : (
-                      <Text className="text-2xl text-muted-foreground">›</Text>
+                      <Ionicons name="chevron-forward" size={24} color="#9CA3AF" />
                     )}
                   </View>
                 </Card>
@@ -438,12 +441,15 @@ const AnalysisScreen = () => {
 
         {/* Info Card */}
         <Card className="mt-6 p-4 bg-primary/5 border border-primary/20">
-          <Text className="text-sm text-muted-foreground">
-            💡 <Text className="font-semibold">İpucu:</Text> Her bölge için
-            yapay zeka destekli detaylı analiz alacaksınız. Analiz sonuçları
-            MediaPipe tarafından tespit edilen 468 yüz noktası verisi üzerinden
-            hazırlanmaktadır.
-          </Text>
+          <View className="flex-row items-start">
+            <Ionicons name="bulb-outline" size={16} color="#8B5CF6" style={{ marginTop: 2 }} />
+            <Text className="text-sm text-muted-foreground ml-2 flex-1">
+              <Text className="font-semibold">İpucu:</Text> Her bölge için
+              yapay zeka destekli detaylı analiz alacaksınız. Analiz sonuçları
+              MediaPipe tarafından tespit edilen 468 yüz noktası verisi üzerinden
+              hazırlanmaktadır.
+            </Text>
+          </View>
         </Card>
 
         {/* Bottom Spacing */}
@@ -484,7 +490,7 @@ const AnalysisScreen = () => {
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
         feature={selectedRegion?.title || 'Bu özellik'}
-        featureIcon={selectedRegion?.icon || '🔒'}
+        featureIconName="lock-closed-outline"
       />
 
       {/* Analysis Result Modal */}
@@ -615,7 +621,7 @@ const AnalysisScreen = () => {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 

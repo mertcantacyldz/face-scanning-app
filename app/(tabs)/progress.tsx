@@ -10,6 +10,7 @@ import {
 import { router, useFocusEffect } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
+import { Ionicons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { RegionProgressCard } from '@/components/progress/RegionProgressCard';
 import { ProgressChart } from '@/components/progress/ProgressChart';
@@ -195,7 +196,7 @@ const ProgressScreen = () => {
           {/* Premium Lock Card */}
           <Card className="p-8 bg-primary/10 border-2 border-primary/20 items-center">
             <View className="w-24 h-24 bg-primary/20 rounded-full items-center justify-center mb-6">
-              <Text className="text-5xl">📊</Text>
+              <Ionicons name="stats-chart-outline" size={56} color="#8B5CF6" />
             </View>
             <Text className="text-2xl font-bold text-center mb-2">
               Premium Özellik
@@ -213,8 +214,8 @@ const ProgressScreen = () => {
                 'Kişiselleştirilmiş öneriler',
               ].map((benefit, index) => (
                 <View key={index} className="flex-row items-center">
-                  <Text className="text-green-500 mr-2">✓</Text>
-                  <Text className="text-foreground">{benefit}</Text>
+                  <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                  <Text className="text-foreground ml-2">{benefit}</Text>
                 </View>
               ))}
             </View>
@@ -223,9 +224,12 @@ const ProgressScreen = () => {
               onPress={() => router.push('/paywall')}
               className="w-full bg-primary py-4 rounded-xl items-center active:opacity-80"
             >
-              <Text className="text-primary-foreground font-bold text-base">
-                👑 Premium&apos;a Geç
-              </Text>
+              <View className="flex-row items-center">
+                <Ionicons name="diamond-outline" size={20} color="#FFFFFF" />
+                <Text className="text-primary-foreground font-bold text-base ml-2">
+                  Premium&apos;a Geç
+                </Text>
+              </View>
             </Pressable>
           </Card>
 
@@ -337,7 +341,7 @@ const ProgressScreen = () => {
         {/* Empty State */}
         {totalAnalyses === 0 && (
           <Card className="p-6 bg-muted/50 border-0 items-center">
-            <Text className="text-5xl mb-4">📊</Text>
+            <Ionicons name="stats-chart-outline" size={56} color="#8B5CF6" style={{ marginBottom: 16 }} />
             <Text className="text-lg font-bold text-center mb-2">
               Henüz Analiz Yok
             </Text>
@@ -350,12 +354,15 @@ const ProgressScreen = () => {
 
         {/* Tips Card */}
         <Card className="mt-4 p-4 bg-blue-50 border border-blue-200">
-          <Text className="text-sm text-blue-800">
-            💡 <Text className="font-semibold">İpucu:</Text> Düzenli egzersiz
-            yaparak yüz kaslarınızı güçlendirebilir ve simetrinizi
-            iyileştirebilirsiniz. Her bölgeye tıklayarak önerilen egzersizleri
-            görüntüleyin.
-          </Text>
+          <View className="flex-row items-start">
+            <Ionicons name="bulb-outline" size={16} color="#1E3A8A" style={{ marginTop: 2 }} />
+            <Text className="text-sm text-blue-800 ml-2 flex-1">
+              <Text className="font-semibold">İpucu:</Text> Düzenli egzersiz
+              yaparak yüz kaslarınızı güçlendirebilir ve simetrinizi
+              iyileştirebilirsiniz. Her bölgeye tıklayarak önerilen egzersizleri
+              görüntüleyin.
+            </Text>
+          </View>
         </Card>
 
         {/* Bottom spacing */}

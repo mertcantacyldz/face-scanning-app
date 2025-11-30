@@ -2,6 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import type { ComparisonResult } from '@/lib/comparison';
+import { Ionicons } from '@expo/vector-icons';
 
 interface ComparisonBadgeProps {
   comparison: ComparisonResult;
@@ -12,25 +13,25 @@ export function ComparisonBadge({
   comparison,
   size = 'medium',
 }: ComparisonBadgeProps) {
-  const { hasImproved, scoreChange, isFirstAnalysis, emoji, messageTr } = comparison;
+  const { hasImproved, scoreChange, isFirstAnalysis, iconName, messageTr } = comparison;
 
   // Size variants
   const sizeClasses = {
     small: {
       container: 'px-3 py-1.5',
-      emoji: 'text-lg',
+      iconSize: 18,
       text: 'text-xs',
       change: 'text-sm',
     },
     medium: {
       container: 'px-4 py-2',
-      emoji: 'text-2xl',
+      iconSize: 24,
       text: 'text-sm',
       change: 'text-base',
     },
     large: {
       container: 'px-5 py-3',
-      emoji: 'text-3xl',
+      iconSize: 32,
       text: 'text-base',
       change: 'text-xl',
     },
@@ -56,11 +57,20 @@ export function ComparisonBadge({
         ? 'text-yellow-800'
         : 'text-orange-800';
 
+  // Icon color
+  const iconColor = isFirstAnalysis
+    ? '#1E40AF'
+    : hasImproved
+      ? '#15803D'
+      : scoreChange === 0
+        ? '#A16207'
+        : '#C2410C';
+
   return (
     <View className={`${bgColor} border rounded-xl ${classes.container}`}>
       <View className="flex-row items-center">
-        {/* Emoji */}
-        <Text className={classes.emoji}>{emoji}</Text>
+        {/* Icon */}
+        <Ionicons name={iconName as any} size={classes.iconSize} color={iconColor} />
 
         {/* Content */}
         <View className="ml-3 flex-1">
@@ -92,12 +102,12 @@ export function InlineComparisonBadge({
 }: {
   comparison: ComparisonResult;
 }) {
-  const { hasImproved, scoreChange, isFirstAnalysis, emoji } = comparison;
+  const { hasImproved, scoreChange, isFirstAnalysis, iconName } = comparison;
 
   if (isFirstAnalysis) {
     return (
       <View className="flex-row items-center bg-blue-100 px-2 py-1 rounded-full">
-        <Text className="text-sm">{emoji}</Text>
+        <Ionicons name={iconName as any} size={14} color="#1E40AF" />
         <Text className="text-xs text-blue-800 ml-1">İlk Analiz</Text>
       </View>
     );
@@ -106,7 +116,7 @@ export function InlineComparisonBadge({
   if (scoreChange === 0) {
     return (
       <View className="flex-row items-center bg-gray-100 px-2 py-1 rounded-full">
-        <Text className="text-sm">➡️</Text>
+        <Ionicons name="arrow-forward-outline" size={14} color="#1F2937" />
         <Text className="text-xs text-gray-800 ml-1">Stabil</Text>
       </View>
     );
@@ -118,7 +128,11 @@ export function InlineComparisonBadge({
         hasImproved ? 'bg-green-100' : 'bg-red-100'
       }`}
     >
-      <Text className="text-sm">{hasImproved ? '↑' : '↓'}</Text>
+      <Ionicons
+        name={hasImproved ? 'arrow-up-outline' : 'arrow-down-outline'}
+        size={14}
+        color={hasImproved ? '#15803D' : '#991B1B'}
+      />
       <Text
         className={`text-xs font-semibold ml-1 ${
           hasImproved ? 'text-green-800' : 'text-red-800'

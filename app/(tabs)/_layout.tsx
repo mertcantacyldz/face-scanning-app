@@ -4,17 +4,39 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
+    <SafeAreaView className="flex-1 bg-background" edges={['top', ]}>
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+          headerShown: false,
+          tabBarButton: HapticTab,
+          tabBarStyle: {
+            position: 'absolute',
+            backgroundColor: Colors[colorScheme ?? 'light'].background,
+            borderTopWidth: 0,
+            elevation: 8,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            borderRadius: 24,
+            marginHorizontal: 16,
+            marginBottom:  insets.bottom,
+            paddingBottom: 8,
+            height: 70,
+          },
+          sceneStyle: {
+            backgroundColor: 'red',
+            paddingBottom: 0,
+          },
+        }}>
       <Tabs.Screen 
         name="index" 
         options={{ 
@@ -52,5 +74,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </SafeAreaView>
   );
 }
