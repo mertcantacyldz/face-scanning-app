@@ -1,26 +1,21 @@
-// app/(tabs)/index.tsx - MediaPipe Web Implementation
-import { Camera } from 'expo-camera';
-import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
-
-import * as ImagePicker from 'expo-image-picker';
-import { router } from 'expo-router';
-import React, { useEffect, useRef, useState } from 'react';
-
+// app/(tabs)/index.tsx - Home Screen
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Dimensions,
   Image,
   Modal,
+  Pressable,
   ScrollView,
   TouchableOpacity,
   View
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
+import { useFaceMesh } from '@/hooks/use-face-mesh';
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -32,657 +27,57 @@ interface Profile {
   is_premium: boolean;
 }
 
-interface FaceLandmarks {
-  landmarks: {x: number, y: number, z: number, index: number}[];
-  totalPoints: number;
-  confidence: number;
-  faceBox: {x: number, y: number, width: number, height: number};
-  faceRegions: {
-    faceOval: {x: number, y: number, z: number, index: number}[];
-    forehead: {x: number, y: number, z: number, index: number}[];
-    leftEyebrow: {x: number, y: number, z: number, index: number}[];
-    rightEyebrow: {x: number, y: number, z: number, index: number}[];
-    leftEye: {x: number, y: number, z: number, index: number}[];
-    rightEye: {x: number, y: number, z: number, index: number}[];
-    nose: {x: number, y: number, z: number, index: number}[];
-    noseBridge: {x: number, y: number, z: number, index: number}[];
-    noseTip: {x: number, y: number, z: number, index: number}[];
-    noseWings: {x: number, y: number, z: number, index: number}[];
-    lips: {x: number, y: number, z: number, index: number}[];
-    upperLip: {x: number, y: number, z: number, index: number}[];
-    lowerLip: {x: number, y: number, z: number, index: number}[];
-    mouthOutline: {x: number, y: number, z: number, index: number}[];
-    jawline: {x: number, y: number, z: number, index: number}[];
-    // Yanaklar ve diğer bölgeler de eklenebilir
-  };
-  regionDetails: {
-    totalRegions: number;
-    regionNames: string[];
-    pointCounts: {
-      [key: string]: number;
-    };
-  };
-  imageSize: {
-    width: number;
-    height: number;
-  };
-  timestamp: number;
-}
-
 export default function HomeScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [faceLandmarks, setFaceLandmarks] = useState<FaceLandmarks | null>(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [showImagePicker, setShowImagePicker] = useState(false);
-  const [mediaPipeReady, setMediaPipeReady] = useState(false);
- 
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [fullName, setFullName] = useState('');
-  
-  const webViewRef = useRef<WebView>(null);
 
-  // console.log(faceLandmarks, '🎯 Face Landmarks State');
-  // MediaPipe Web HTML Template
-const mediaPipeHTML = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>MediaPipe Face Mesh - Tüm Yüz Bölgeleri</title>
-    <style>
-        body { margin: 0; padding: 20px; background: #f0f0f0; }
-        #output_canvas { 
-            width: 100%; 
-            max-width: 500px; 
-            height: auto; 
-            border: 2px solid #4CAF50;
-            border-radius: 10px;
-            display: block;
-            margin: 20px auto;
-        }
-        #status { 
-            text-align: center; 
-            padding: 10px; 
-            font-family: Arial, sans-serif;
-            background: white;
-            border-radius: 8px;
-            margin: 10px 0;
-        }
-        .loading { color: #2196F3; }
-        .ready { color: #4CAF50; }
-        .error { color: #f44336; }
-    </style>
-</head>
-<body>
-    <div id="status" class="loading">📥 MediaPipe Face Mesh yükleniyor...</div>
-    <canvas id="output_canvas" width="512" height="512"></canvas>
-
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
-
-    <script>
-        const statusDiv = document.getElementById('status');
-        const canvasElement = document.getElementById('output_canvas');
-        const canvasCtx = canvasElement.getContext('2d');
-
-        let faceMesh;
-        let isReady = false;
-
-        // TÜM YÜZ BÖLGELERİ - MediaPipe 468 nokta indeksleri
-        const faceRegions = {
-            // Yüz ovali (dış kontur)
-            faceOval: [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21, 54, 103, 67, 109],
-            
-            // Alın bölgesi
-            forehead: [10, 338, 297, 332, 284, 251, 301, 298, 333, 299, 337, 151, 108, 69, 104, 68, 71, 21, 54, 103, 67, 109, 9, 8, 168, 193, 122, 196, 3, 51, 197],
-            
-            // Kaşlar
-            leftEyebrow: [70, 63, 105, 66, 107, 55, 65, 52, 53, 46, 124, 35, 226, 113, 225, 224, 223, 222, 221, 189],
-            rightEyebrow: [336, 296, 334, 293, 300, 276, 283, 282, 295, 285, 413, 441, 442, 443, 444, 445, 446, 447, 448, 449],
-            
-            // Gözler - tam kontur
-            leftEye: [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246, 247, 30, 29, 27, 28, 56, 190, 243, 244, 245, 122, 6, 351, 465, 464, 463, 362, 398, 384],
-            rightEye: [362, 398, 384, 385, 386, 387, 388, 466, 263, 249, 390, 373, 374, 380, 381, 382, 398, 384, 385, 386, 387, 388, 466, 253, 254, 255, 256, 257, 258, 259, 260, 467, 446, 255, 339, 448, 449],
-            
-            // Burun
-            nose: [19, 20, 94, 125, 141, 235, 236, 3, 51, 48, 115, 131, 134, 102, 49, 220, 305, 290, 328, 326, 2, 97, 99, 1, 164, 129, 49, 131, 134, 102, 64, 49, 131, 134, 102],
-            noseBridge: [168, 193, 122, 196, 3, 51, 197, 419, 248, 281, 275, 4, 5, 195, 6, 419, 248, 197, 131, 134, 51],
-            noseTip: [1, 2, 98, 327, 326, 197, 419, 248, 281, 275, 4, 5, 195, 6, 168, 193, 122, 196],
-            noseWings: [129, 98, 97, 2, 326, 327, 358, 343, 277, 355, 371, 266, 425, 436, 432, 434, 430, 431, 262, 428, 199, 208, 32, 211, 210, 214, 192],
-            
-            // Ağız ve dudaklar
-            lips: [61, 84, 17, 314, 405, 320, 307, 375, 321, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318],
-            upperLip: [61, 84, 17, 314, 405, 320, 307, 375, 321, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185],
-            lowerLip: [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78, 179, 178, 177, 176, 175, 152, 148, 149, 150, 136, 172, 58, 132, 93, 234],
-            mouthOutline: [61, 84, 17, 314, 405, 320, 307, 375, 321, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95, 78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 291, 409, 270, 269, 267, 0, 37, 39, 40, 185, 78, 95, 88, 178, 87, 14, 317, 402, 318, 324],
-            
-            // Çene hattı
-            jawline: [58, 172, 136, 150, 149, 176, 148, 152, 377, 400, 378, 379, 365, 397, 288, 361, 323, 454, 356, 389, 251, 284, 332, 297, 338, 10, 109, 67, 103, 54, 21, 162, 127, 234, 93, 132, 58]
-        };
-
-        // MediaPipe Face Mesh başlatma
-        async function initMediaPipe() {
-            try {
-                statusDiv.innerHTML = '🔄 MediaPipe Face Mesh başlatılıyor...';
-                
-                faceMesh = new FaceMesh({
-                    locateFile: (file) => {
-                        return \`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/\${file}\`;
-                    }
-                });
-
-                faceMesh.setOptions({
-                    maxNumFaces: 1,
-                    refineLandmarks: false,
-                    minDetectionConfidence: 0.5,
-                    minTrackingConfidence: 0.0,
-                    selfieMode: false,
-                    staticImageMode: true,
-                    modelComplexity: 1
-
-                });
-
-                faceMesh.onResults(onResults);
-                
-                isReady = true;
-                statusDiv.innerHTML = '✅ MediaPipe Face Mesh hazır - Tüm yüz bölgeleri analizi!';
-                statusDiv.className = 'ready';
-                
-                window.ReactNativeWebView.postMessage(JSON.stringify({
-                    type: 'READY',
-                    ready: true
-                }));
-                
-            } catch (error) {
-                console.error('MediaPipe init error:', error);
-                statusDiv.innerHTML = '❌ MediaPipe yükleme hatası: ' + error.message;
-                statusDiv.className = 'error';
-                
-                window.ReactNativeWebView.postMessage(JSON.stringify({
-                    type: 'ERROR',
-                    error: error.message
-                }));
-            }
-        }
-
-        // Face Mesh sonuçlarını işle
-        function onResults(results) {
-            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-            
-            if (results.image) {
-                canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-            }
-
-            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
-                const landmarks = results.multiFaceLandmarks[0];
-                
-                // Manuel olarak bağlantı noktalarını çiz - MediaPipe sabitleri yerine
-                drawFaceConnections(canvasCtx, landmarks);
-                
-                // Yüz bounding box hesapla
-                let minX = 1, minY = 1, maxX = 0, maxY = 0;
-                landmarks.forEach(point => {
-                    minX = Math.min(minX, point.x);
-                    minY = Math.min(minY, point.y);
-                    maxX = Math.max(maxX, point.x);
-                    maxY = Math.max(maxY, point.y);
-                });
-
-                // Tüm yüz bölgelerini hazırla
-                const processedRegions = {};
-                Object.keys(faceRegions).forEach(regionName => {
-                    processedRegions[regionName] = faceRegions[regionName]
-                        .filter(idx => idx < landmarks.length)
-                        .map(idx => ({
-                            x: landmarks[idx]?.x * canvasElement.width || 0,
-                            y: landmarks[idx]?.y * canvasElement.height || 0,
-                            z: landmarks[idx]?.z || 0,
-                            index: idx
-                        }));
-                });
-
-                // React Native'e TÜM VERİYİ gönder
-                const result = {
-                    type: 'LANDMARKS',
-                    data: {
-                        landmarks: landmarks.map((point, index) => ({
-                            x: parseFloat((point.x * canvasElement.width).toFixed(4)),  // ✅ 4 ondalık
-                            y: parseFloat((point.y * canvasElement.height).toFixed(4)),
-                            z: parseFloat((point.z || 0).toFixed(6)),  // ✅ 6 ondalık - 3D için
-                            index: index
-                        })),
-                        totalPoints: landmarks.length,
-                        confidence: 0.95,
-                        faceBox: {
-                            x: minX * canvasElement.width,
-                            y: minY * canvasElement.height,
-                            width: (maxX - minX) * canvasElement.width,
-                            height: (maxY - minY) * canvasElement.height
-                        },
-                        faceRegions: processedRegions,
-                        regionDetails: {
-                            totalRegions: Object.keys(faceRegions).length,
-                            regionNames: Object.keys(faceRegions),
-                            pointCounts: Object.keys(faceRegions).reduce((acc, region) => {
-                                acc[region] = faceRegions[region].length;
-                                return acc;
-                            }, {})
-                        },
-                        timestamp: Date.now(),
-                        imageSize: {
-                            width: canvasElement.width,
-                            height: canvasElement.height
-                        }
-                    }
-                };
-                
-                window.ReactNativeWebView.postMessage(JSON.stringify(result));
-                
-            } else {
-                window.ReactNativeWebView.postMessage(JSON.stringify({
-                    type: 'NO_FACE',
-                    message: 'Fotoğrafta yüz tespit edilemedi'
-                }));
-            }
-        }
-
-        // Manuel yüz bağlantılarını çiz
-        function drawFaceConnections(ctx, landmarks) {
-            if (!landmarks || landmarks.length < 468) return;
-
-            // Yüz ovali
-            drawRegion(ctx, landmarks, faceRegions.faceOval, '#E0E0E0', 2);
-            
-            // Gözler
-            drawRegion(ctx, landmarks, faceRegions.leftEye, '#30FF30', 1.5);
-            drawRegion(ctx, landmarks, faceRegions.rightEye, '#FF3030', 1.5);
-            
-            // Kaşlar
-            drawRegion(ctx, landmarks, faceRegions.leftEyebrow, '#FFA500', 1.5);
-            drawRegion(ctx, landmarks, faceRegions.rightEyebrow, '#FFA500', 1.5);
-            
-            // Burun
-            drawRegion(ctx, landmarks, faceRegions.nose, '#800080', 1.5);
-            
-            // Ağız
-            drawRegion(ctx, landmarks, faceRegions.lips, '#E0E0E0', 1.5);
-            
-            // Tüm noktaları çiz (isteğe bağlı)
-            landmarks.forEach((point, i) => {
-                if (i % 10 === 0) { // Her 10 noktadan birini çiz
-                    drawPoint(ctx, point, '#FF0000', 2);
-                }
-            });
-        }
-
-        // Bölge çizimi
-        function drawRegion(ctx, landmarks, indices, color, lineWidth) {
-            ctx.strokeStyle = color;
-            ctx.lineWidth = lineWidth;
-            ctx.beginPath();
-            
-            for (let i = 0; i < indices.length; i++) {
-                const idx = indices[i];
-                if (idx < landmarks.length) {
-                    const point = landmarks[idx];
-                    const x = point.x * canvasElement.width;
-                    const y = point.y * canvasElement.height;
-                    
-                    if (i === 0) {
-                        ctx.moveTo(x, y);
-                    } else {
-                        ctx.lineTo(x, y);
-                    }
-                }
-            }
-            
-            // İlk noktaya geri dön
-            const firstIdx = indices[0];
-            if (firstIdx < landmarks.length) {
-                const firstPoint = landmarks[firstIdx];
-                ctx.lineTo(firstPoint.x * canvasElement.width, firstPoint.y * canvasElement.height);
-            }
-            
-            ctx.stroke();
-        }
-
-        // Nokta çizimi
-        function drawPoint(ctx, point, color, radius) {
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(
-                point.x * canvasElement.width,
-                point.y * canvasElement.height,
-                radius,
-                0,
-                2 * Math.PI
-            );
-            ctx.fill();
-        }
-
-        // Base64 image'ı işle
-        window.processImage = function(base64Image) {
-            if (!isReady) {
-                window.ReactNativeWebView.postMessage(JSON.stringify({
-                    type: 'ERROR',
-                    error: 'MediaPipe henüz hazır değil'
-                }));
-                return;
-            }
-
-            try {
-                statusDiv.innerHTML = '🔄 Tüm yüz bölgeleri analiz ediliyor...';
-                statusDiv.className = 'loading';
-                
-                const img = new Image();
-                img.onload = async function() {
-                    try {
-                        await faceMesh.send({image: img});
-                    } catch (error) {
-                        console.error('Process error:', error);
-                        window.ReactNativeWebView.postMessage(JSON.stringify({
-                            type: 'ERROR',
-                            error: 'Analiz sırasında hata: ' + error.message
-                        }));
-                    }
-                };
-                
-                img.onerror = function(error) {
-                    console.error('Image load error:', error);
-                    window.ReactNativeWebView.postMessage(JSON.stringify({
-                        type: 'ERROR',
-                        error: 'Resim yüklenemedi'
-                    }));
-                };
-                
-                img.src = 'data:image/jpeg;base64,' + base64Image;
-                
-            } catch (error) {
-                console.error('processImage error:', error);
-                window.ReactNativeWebView.postMessage(JSON.stringify({
-                    type: 'ERROR',
-                    error: error.message
-                }));
-            }
-        };
-
-        // MediaPipe'ı başlat
-        initMediaPipe();
-    </script>
-</body>
-</html>
-`;
+  // Face mesh analiz hook'u
+  const {
+    mediaPipeReady,
+    selectedImage,
+    faceLandmarks,
+    meshImageUri,
+    meshValidation,
+    isAnalyzing,
+    showImagePicker,
+    webViewRef,
+    handleWebViewMessage,
+    handleConfirmMesh,
+    handleRetake,
+    startNewAnalysis,
+    takePhoto,
+    pickImage,
+    showPhotoGuidelines,
+    setShowImagePicker,
+    mediaPipeHTML,
+  } = useFaceMesh();
 
   // Kullanıcı profilini al
   useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+ 
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+ 
+        if (profileData) {
+          setProfile(profileData);
+        } else {
+          Alert.alert('Hata', 'Profil bulunamadı');
+        }
+      } catch (error) {
+        if (__DEV__) {
+          console.error('Profil yükleme hatası:', error);
+        }
+      }
+    };
+
     fetchProfile();
   }, []);
-
-   const fetchProfile = async () => {
-     try {
-       const { data: { user } } = await supabase.auth.getUser();
-       if (!user) return;
- 
-       const { data: profileData } = await supabase
-         .from('profiles')
-         .select('*')
-         .eq('user_id', user.id)
-         .single();
- 
-       if (profileData) {
-         setProfile(profileData);
-         setFullName(profileData.full_name || '');
-       } else {
-         Alert.alert('Hata', 'Profil bulunamadı');
-       }
-     } catch (error) {
-       console.error('Hata:', error);
-     } finally {
-       setLoading(false);
-       setRefreshing(false);
-     }
-   };
-  // WebView mesajlarını dinle
-
-const handleWebViewMessage = async (event: any) => {
-  try {
-    const data = JSON.parse(event.nativeEvent.data);
-    
-    switch (data.type) {
-      case 'READY':
-        console.log('✅ MediaPipe Web hazır!');
-        setMediaPipeReady(true);
-        break;
-        
-      case 'LANDMARKS':
-        console.log('🎯 Face landmarks alındı:', data.data.totalPoints, 'nokta');
-        
-        setFaceLandmarks(data.data);
-        setIsAnalyzing(false);
-        
-        // Veritabanına YENİ KAYIT olarak ekle
-        await saveAnalysisToDatabase(data.data);
-        
-        // Başarı mesajı ve direkt yönlendirme
-        Alert.alert(
-          'Analiz Başarılı! 🎉', 
-          `${data.data.totalPoints} noktalı MediaPipe analizi tamamlandı ve kaydedildi!`,
-          [
-            { 
-              text: 'Tamam', 
-              onPress: () => router.push('/analysis') 
-            }
-          ]
-        );
-        
-        // Alert'ten sonra direkt yönlendir (kullanıcı Tamam'a basınca)
-        break;
-        
-      case 'NO_FACE':
-        console.log('❌ Yüz bulunamadı');
-        setIsAnalyzing(false);
-        Alert.alert(
-          'Yüz Bulunamadı', 
-          'Fotoğrafta yüz tespit edilemedi. Lütfen:\n• Yüzünüz net görünsün\n• İyi ışıkta çekin\n• Kameraya düz bakın'
-        );
-        break;
-        
-      case 'ERROR':
-        console.error('❌ MediaPipe hatası:', data.error);
-        setIsAnalyzing(false);
-        Alert.alert('Analiz Hatası', data.error);
-        break;
-    }
-  } catch (error) {
-    console.error('WebView mesaj parse hatası:', error);
-  }
-};
-
-
-const saveAnalysisToDatabase = async (landmarksData: FaceLandmarks) => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error } = await supabase
-      .from('face_analysis')
-      .insert([
-        {
-          user_id: user.id,
-          landmarks: landmarksData.landmarks,
-          analysis_data: {
-            totalPoints: landmarksData.totalPoints,
-            confidence: landmarksData.confidence,
-            faceBox: landmarksData.faceBox,
-            regionDetails: landmarksData.regionDetails,
-            imageSize: landmarksData.imageSize,
-            timestamp: landmarksData.timestamp
-          }
-        }
-      ]);
-
-    if (error) {
-      console.error('Kayıt hatası:', error);
-    }
-  } catch (error) {
-    console.error('Kayıt işlemi hatası:', error);
-  }
-};
-
-  // Kamera iznini kontrol et
-  const checkCameraPermission = async () => {
-    const { status } = await Camera.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('İzin Gerekli', 'Kamera kullanmak için izin vermeniz gerekiyor');
-      return false;
-    }
-    return true;
-  };
-
-  // Galeri iznini kontrol et
-  const checkGalleryPermission = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('İzin Gerekli', 'Fotoğraflara erişmek için izin vermeniz gerekiyor');
-      return false;
-    }
-    return true;
-  };
-
-  // Fotoğraf çekme uyarısı
-  const showPhotoGuidelines = () => {
-  Alert.alert(
-    '📸 FaceAnalyzer AI Rehberi',
-    '• Yüzünüzün tamamı görünecek şekilde çekin\n• İyi ışıklı bir ortam seçin\n• Kameraya düz bakın\n• Saç yüzünüzü kapatmasın\n• 468 nokta için net fotoğraf önemli\n• Özgün AI teknolojimizle analiz edilecek',
-    [
-      { text: 'İptal', style: 'cancel' },
-      { text: 'FaceAnalyzer ile Analiz Et', onPress: () => setShowImagePicker(true) }
-    ]
-  );
-};
-  // Kameradan fotoğraf çek
-  const takePhoto = async () => {
-    const hasPermission = await checkCameraPermission();
-    if (!hasPermission) return;
-
-    try {
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1], // Kare format (MediaPipe için optimal)
-        quality: 0.9,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        setShowImagePicker(false);
-        await processImageWithMediaPipe(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Kamera hatası:', error);
-      Alert.alert('Hata', 'Fotoğraf çekilemedi. Lütfen tekrar deneyin.');
-    }
-  };
-
-  // Galeriden fotoğraf seç
-  const pickImage = async () => {
-    const hasPermission = await checkGalleryPermission();
-    if (!hasPermission) return;
-
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1], // Kare format
-        quality: 0.9,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        setShowImagePicker(false);
-        await processImageWithMediaPipe(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Galeri hatası:', error);
-      Alert.alert('Hata', 'Fotoğraf seçilemedi. Lütfen tekrar deneyin.');
-    }
-  };
-
-  // MediaPipe ile resmi işle
-  const processImageWithMediaPipe = async (imageUri: string) => {
-    if (!mediaPipeReady) {
-      Alert.alert('MediaPipe Hazır Değil', 'Web teknolojisi henüz yüklenmedi. Lütfen bekleyin.');
-      return;
-    }
-
-    setSelectedImage(imageUri);
-    setIsAnalyzing(true);
-    setFaceLandmarks(null);
-
-    try {
-      console.log('🔄 MediaPipe Face Mesh analizi başlatılıyor...');
-
-      //Eski kod - manipulateAsync kullanımı kaldırıldı
-      // const manipulatedImage = await manipulateAsync(
-      //   imageUri,
-      //   [
-      //     { resize: { width: 512, height: 512 } }
-      //   ],
-      //   { 
-      //     compress: 0.9, 
-      //     format: SaveFormat.JPEG,
-      //     base64: true
-      //   }
-      // );
-
-
-// Resmi optimize et (512x512 - MediaPipe için optimal)
-      const manipulatedImage = await (async () => {
-  const context = ImageManipulator.manipulate(imageUri);
-  context.resize({ width: 512, height: 512 });
-  const image = await context.renderAsync();
-  const result = await image.saveAsync({
-    format: SaveFormat.JPEG,
-    compress: 0.9,
-    base64: true // Base64 desteği olup olmadığını kontrol edin
-  });
-  
-  return result;
-})();
-
-      console.log('📸 Resim MediaPipe için hazırlandı');
-
-      // WebView'e base64 image gönder
-      const injectedJS = `
-        if (window.processImage && typeof window.processImage === 'function') {
-          window.processImage('${manipulatedImage.base64}');
-        } else {
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'ERROR',
-            error: 'MediaPipe fonksiyonu bulunamadı'
-          }));
-        }
-        true;
-      `;
-
-      webViewRef.current?.injectJavaScript(injectedJS);
-
-    } catch (error) {
-      console.error('❌ MediaPipe process hatası:', error);
-      setIsAnalyzing(false);
-      Alert.alert('İşlem Hatası', 'Resim MediaPipe ile işlenemedi. Lütfen tekrar deneyin.');
-    }
-  };
-
-  // Yeni analiz başlat
-  const startNewAnalysis = () => {
-    setSelectedImage(null);
-    setFaceLandmarks(null);
-    showPhotoGuidelines();
-  };
 
  if (!profile) {
   return (
@@ -695,25 +90,6 @@ const saveAnalysisToDatabase = async (landmarksData: FaceLandmarks) => {
   );
 }
 
- console.log("-------------------");
- console.log('🎯 YÜZ ANALİZ VERİLERİ:');
- console.log('📍 Toplam Nokta:', faceLandmarks?.landmarks);
-// console.log(faceLandmarks?.faceRegions.faceOval, '🎯 FaceOval');
-// console.log(faceLandmarks?.faceRegions.forehead, '🎯 Forehead');
-// console.log(faceLandmarks?.faceRegions.jawline, '🎯 Jawline');
-// console.log(faceLandmarks?.faceRegions.leftEye, '🎯 LeftEye');
-// console.log(faceLandmarks?.faceRegions.leftEyebrow, '🎯 LeftEyebrow');
-// console.log(faceLandmarks?.faceRegions.lips, '🎯 Lips');
-// console.log(faceLandmarks?.faceRegions.lowerLip, '🎯 LowerLip');
-// console.log(faceLandmarks?.faceRegions.mouthOutline, '🎯 MouthOutline');
-// console.log(faceLandmarks?.faceRegions.nose, '🎯 Nose');
-// console.log(faceLandmarks?.faceRegions.noseBridge, '🎯 NoseBridge');
-// console.log(faceLandmarks?.faceRegions.noseTip, '🎯 NoseTip');
-// console.log(faceLandmarks?.faceRegions.noseWings, '🎯 NoseWings');
-// console.log(faceLandmarks?.faceRegions.rightEye, '🎯 RightEye');
-// console.log(faceLandmarks?.faceRegions.rightEyebrow, '🎯 RightEyebrow');
-// console.log(faceLandmarks?.faceRegions.upperLip, '🎯 UpperLip');
-  console.log("-------------------");
 
 return (
   <View className="flex-1 bg-background">
@@ -841,18 +217,27 @@ return (
             </View>
           </CardHeader>
           
-          {/* Seçilen Resim */}
-          <View className="items-center mb-6">
-            <Image 
-              source={{ uri: selectedImage }}
-              style={{ 
-                width: screenWidth - 80, 
-                height: screenWidth - 80,
-                borderRadius: 12
-              }}
-              resizeMode="cover"
-            />
-          </View>
+          {/* Seçilen Resim - Koşullu Gösterim */}
+          {selectedImage && meshImageUri ? (
+            // Mesh varsa küçük thumbnail
+            <View className="items-center mb-4">
+              <Image
+                source={{ uri: selectedImage }}
+                style={{ width: 120, height: 120, borderRadius: 12 }}
+                resizeMode="cover"
+              />
+              <Text className="text-xs text-muted-foreground mt-1">Orijinal</Text>
+            </View>
+          ) : selectedImage ? (
+            // Mesh yoksa normal boyutta
+            <View className="items-center mb-6">
+              <Image
+                source={{ uri: selectedImage }}
+                style={{ width: screenWidth - 80, height: screenWidth - 80, borderRadius: 12 }}
+                resizeMode="cover"
+              />
+            </View>
+          ) : null}
 
           {/* Loading veya Sonuç */}
           {isAnalyzing ? (
@@ -901,107 +286,103 @@ return (
                 </CardContent>
               </Card>
 
-              {/* FaceAnalyzer Yüz Bölgeleri */}
-              <Card className="p-4 mb-4">
-                <CardHeader className="p-0 mb-4">
-                  <Text className="text-foreground font-semibold">
-                    🎭 FaceAnalyzer Yüz Bölgeleri
-                  </Text>
-                </CardHeader>
-                <CardContent className="p-0 space-y-3">
-                  <View className="flex-row justify-between items-center">
-                    <Text className="text-foreground">👁️ Sol Göz Analizi</Text>
-                    <Badge variant="secondary">
-                      <Text className="text-xs font-semibold">
-                        {faceLandmarks.faceRegions.leftEye.length} nokta
-                      </Text>
-                    </Badge>
-                  </View>
-                  <View className="flex-row justify-between items-center">
-                    <Text className="text-foreground">👁️ Sağ Göz Analizi</Text>
-                    <Badge variant="secondary">
-                      <Text className="text-xs font-semibold">
-                        {faceLandmarks.faceRegions.rightEye.length} nokta
-                      </Text>
-                    </Badge>
-                  </View>
-                  <View className="flex-row justify-between items-center">
-                    <Text className="text-foreground">👃 Burun Analizi</Text>
-                    <Badge variant="secondary">
-                      <Text className="text-xs font-semibold">
-                        {faceLandmarks.faceRegions.nose.length} nokta
-                      </Text>
-                    </Badge>
-                  </View>
-                  <View className="flex-row justify-between items-center">
-                    <Text className="text-foreground">👄 Dudak Analizi</Text>
-                    <Badge variant="secondary">
-                      <Text className="text-xs font-semibold">
-                        {faceLandmarks.faceRegions.lips.length} nokta
-                      </Text>
-                    </Badge>
-                  </View>
-                  <View className="flex-row justify-between items-center">
-                    <Text className="text-foreground">⭕ Yüz Şekli Analizi</Text>
-                    <Badge variant="secondary">
-                      <Text className="text-xs font-semibold">
-                        {faceLandmarks.faceRegions.faceOval.length} nokta
-                      </Text>
-                    </Badge>
-                  </View>
-                </CardContent>
-              </Card>
+            
 
-              {/* FaceAnalyzer Detayları */}
-              <Card className="p-4 mb-4">
-                <CardHeader className="p-0 mb-3">
-                  <Text className="text-foreground font-semibold">
-                    📍 FaceAnalyzer Koordinat Bilgileri
-                  </Text>
-                </CardHeader>
-                <CardContent className="p-0 space-y-2">
-                  <View className="flex-row justify-between">
-                    <Text className="text-muted-foreground text-sm">Yüz Konumu</Text>
-                    <Text className="text-foreground font-mono text-sm">
-                      ({Math.round(faceLandmarks.faceBox.x)}, {Math.round(faceLandmarks.faceBox.y)})
-                    </Text>
-                  </View>
-                  <View className="flex-row justify-between">
-                    <Text className="text-muted-foreground text-sm">Yüz Alanı</Text>
-                    <Text className="text-foreground font-mono text-sm">
-                      {Math.round(faceLandmarks.faceBox.width * faceLandmarks.faceBox.height)} px²
-                    </Text>
-                  </View>
-                  <View className="flex-row justify-between">
-                    <Text className="text-muted-foreground text-sm">Toplam Nokta</Text>
-                    <Text className="text-foreground font-mono text-sm">
-                      {faceLandmarks.totalPoints} FaceAnalyzer noktası
-                    </Text>
-                  </View>
-                </CardContent>
-              </Card>
+             
 
-              {/* FaceAnalyzer Örnek Noktalar */}
-              <Card className="p-4">
-                <CardHeader className="p-0 mb-3">
-                  <Text className="text-foreground font-semibold text-sm">
-                    🔢 FaceAnalyzer AI Verileri (İlk 5 nokta)
-                  </Text>
-                </CardHeader>
-                <CardContent className="p-0 space-y-2">
-                  {faceLandmarks.landmarks.slice(0, 5).map((point, index) => (
-                    <View key={index} className="flex-row justify-between">
-                      <Text className="text-muted-foreground text-xs">#{index + 1}</Text>
-                      <Text className="text-muted-foreground font-mono text-xs">
-                        x: {point.x.toFixed(1)}, y: {point.y.toFixed(1)}, z: {point.z.toFixed(3)}
-                      </Text>
-                    </View>
-                  ))}
-                  <Text className="text-muted-foreground text-xs mt-2 italic text-center">
-                    ... ve {faceLandmarks.totalPoints - 5} FaceAnalyzer noktası daha
-                  </Text>
-                </CardContent>
-              </Card>
+             
+             
+
+              {/* Mesh Önizleme (Modal yerine inline) */}
+              {meshImageUri && (
+                <View className="mt-6">
+                 
+                  
+
+                  {/* Mesh'li Görüntü - Ana Görsel */}
+                  <View className="items-center mb-4">
+                    <Image
+                      source={{ uri: meshImageUri }}
+                      style={{ width: screenWidth - 80, height: screenWidth - 80, borderRadius: 16 }}
+                      resizeMode="contain"
+                    />
+                  </View>
+
+                  {/* Otomatik Validation Sonucu */}
+                  {meshValidation.isValid ? (
+                    <Card className="bg-green-500/10 border-green-500/40 p-4 mb-4">
+                      <View className="flex-row items-center">
+                        <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                        <View className="ml-3 flex-1">
+                          <Text className="text-foreground font-semibold">
+                            Tarama Başarılı!
+                          </Text>
+                          <Text className="text-muted-foreground text-xs mt-1">
+                            • Tüm yüz bölgeleri tespit edildi{'\n'}
+                            • Noktalar doğru konumlanmış{'\n'}
+                            • Analiz için hazır
+                          </Text>
+                        </View>
+                      </View>
+                    </Card>
+                  ) : (
+                    <Card className="bg-yellow-500/10 border-yellow-500/40 p-4 mb-4">
+                      <View className="flex-row items-center">
+                        <Ionicons name="warning" size={24} color="#F59E0B" />
+                        <View className="ml-3 flex-1">
+                          <Text className="text-foreground font-semibold">
+                            Dikkat Gerekli
+                          </Text>
+                          <Text className="text-muted-foreground text-xs mt-1">
+                            {meshValidation.message}
+                            {'\n\n'}Devam edebilirsiniz ama daha iyi sonuç için yeniden deneyebilirsiniz.
+                          </Text>
+                        </View>
+                      </View>
+                    </Card>
+                  )}
+
+                  {/* İpuçları */}
+                  <Card className="bg-muted p-4 mb-4">
+                    <Text className="text-foreground font-semibold mb-2">
+                      💡 İyi Bir Tarama İçin:
+                    </Text>
+                    <Text className="text-muted-foreground text-xs">
+                      • Yüzünüz tamamen görünür olmalı{'\n'}
+                      • Gözler, burun ve ağız net olmalı{'\n'}
+                      • Saç veya el yüzü kapatmamalı{'\n'}
+                      • Işıklandırma yeterli olmalı
+                    </Text>
+                  </Card>
+
+                  {/* Butonlar */}
+                  <View className="flex-row gap-3">
+                    {/* Tekrar Çek */}
+                    <Pressable
+                      onPress={handleRetake}
+                      className="flex-1"
+                    >
+                      <Card className="p-4 items-center bg-muted">
+                        <Ionicons name="camera-reverse" size={24} color="#111827" />
+                        <Text className="text-foreground mt-2 font-medium">Tekrar Çek</Text>
+                      </Card>
+                    </Pressable>
+
+                    {/* Onayla */}
+                    <Pressable
+                      onPress={handleConfirmMesh}
+                      className="flex-1"
+                    >
+                      <Card className="p-4 items-center bg-primary">
+                        <Ionicons name="checkmark-circle" size={24} color="white" />
+                        <Text className="text-primary-foreground mt-2 font-medium">
+                          Devam Et
+                        </Text>
+                      </Card>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
             </View>
           ) : null}
 
@@ -1040,7 +421,7 @@ return (
               className="w-full"
             >
               <Text className="text-primary-foreground font-bold">
-                🚀 Premium'a Geç
+                🚀 Premium&apos;a Geç
               </Text>
             </Button>
           </CardContent>
@@ -1107,6 +488,7 @@ return (
         </View>
       </TouchableOpacity>
     </Modal>
+
   </View>
 );
 }

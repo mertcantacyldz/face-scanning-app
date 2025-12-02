@@ -1,72 +1,122 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
-    /* Light Mode - Modern Purple/Blue Theme */
-    --background: 0 0% 100%;
-    --foreground: 224 71% 4%;
+    /* Light Mode - Unisex Indigo Tech Theme */
+    /* Balanced, scientific, professional - appeals to all genders */
+
+    /* Backgrounds - Soft blue-gray (not sterile) */
+    --background: 215 25% 97%;
+    --foreground: 222 47% 11%;
+
+    /* Cards & Surfaces */
     --card: 0 0% 100%;
-    --card-foreground: 224 71% 4%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71% 4%;
-    --primary: 262 83% 58%;
+    --popover-foreground: 222 47% 11%;
+
+    /* PRIMARY - Deep Indigo (Tech & Trust) */
+    --primary: 243 75% 59%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 9% 46%;
-    --muted: 220 14% 96%;
+
+    /* SECONDARY - Neutral gray */
+    --secondary: 214 20% 93%;
+    --secondary-foreground: 222 47% 30%;
+
+    /* MUTED - Subtle backgrounds */
+    --muted: 214 20% 93%;
     --muted-foreground: 220 9% 46%;
-    --accent: 262 83% 95%;
-    --accent-foreground: 262 83% 58%;
+
+    /* ACCENT - Teal (AI/Data visualization) */
+    --accent: 175 70% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    /* PREMIUM - Soft Gold (CTA buttons) */
+    --premium: 45 90% 60%;
+    --premium-foreground: 222 47% 11%;
+
+    /* Status Colors */
     --destructive: 0 84% 60%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 262 83% 58%;
-    --radius: 0.75rem;
-    --chart-1: 262 83% 58%;
-    --chart-2: 200 98% 39%;
-    --chart-3: 340 75% 55%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 142 76% 36%;
-    --success: 142 76% 36%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 76% 45%;
     --success-foreground: 0 0% 100%;
     --warning: 43 96% 56%;
     --warning-foreground: 0 0% 100%;
-    --info: 200 98% 39%;
+    --info: 200 98% 45%;
     --info-foreground: 0 0% 100%;
+
+    /* UI Elements */
+    --border: 214 25% 88%;
+    --input: 214 25% 88%;
+    --ring: 243 75% 59%;
+
+    /* Border Radius - Sharper, more professional */
+    --radius: 0.625rem;
+
+    /* Chart Colors (for heatmap visualization) */
+    --chart-1: 243 75% 59%;  /* Indigo */
+    --chart-2: 175 70% 50%;  /* Teal */
+    --chart-3: 142 76% 45%;  /* Green */
+    --chart-4: 43 96% 56%;   /* Yellow */
+    --chart-5: 0 84% 60%;    /* Red */
   }
 
   .dark:root {
-    /* Dark Mode - Modern Purple/Blue Theme */
-    --background: 224 50% 8%;
-    --foreground: 210 20% 98%;
-    --card: 224 71% 7%;
-    --card-foreground: 210 20% 98%;
-    --popover: 224 71% 7%;
-    --popover-foreground: 210 20% 98%;
-    --primary: 263 70% 50%;
+    /* Dark Mode - Cyber/Futuristic Theme */
+    /* Deep space blue, neon accents */
+
+    /* Backgrounds - Deep space navy */
+    --background: 222 47% 8%;
+    --foreground: 210 40% 98%;
+
+    /* Cards & Surfaces */
+    --card: 217 33% 12%;
+    --card-foreground: 210 40% 98%;
+    --popover: 217 33% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    /* PRIMARY - Brighter Indigo (pops in dark) */
+    --primary: 243 75% 65%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 215 28% 17%;
-    --secondary-foreground: 210 20% 98%;
-    --muted: 215 28% 17%;
+
+    /* SECONDARY */
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* MUTED */
+    --muted: 217 33% 17%;
     --muted-foreground: 217 11% 65%;
-    --accent: 262 83% 20%;
-    --accent-foreground: 262 83% 70%;
-    --destructive: 0 63% 31%;
-    --border: 215 28% 17%;
-    --input: 215 28% 17%;
-    --ring: 263 70% 50%;
-    --chart-1: 263 70% 50%;
-    --chart-2: 200 98% 39%;
-    --chart-3: 340 75% 55%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 142 76% 36%;
-    --success: 142 70% 45%;
+
+    /* ACCENT - Neon Teal */
+    --accent: 175 70% 55%;
+    --accent-foreground: 222 47% 11%;
+
+    /* PREMIUM - Golden glow */
+    --premium: 45 95% 65%;
+    --premium-foreground: 222 47% 11%;
+
+    /* Status Colors */
+    --destructive: 0 63% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 70% 50%;
     --success-foreground: 0 0% 100%;
     --warning: 43 96% 56%;
-    --warning-foreground: 224 71% 4%;
-    --info: 200 98% 39%;
+    --warning-foreground: 222 47% 11%;
+    --info: 200 98% 45%;
     --info-foreground: 0 0% 100%;
+
+    /* UI Elements */
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
+    --ring: 243 75% 65%;
+
+    /* Chart Colors (brighter for dark mode) */
+    --chart-1: 243 75% 65%;  /* Bright Indigo */
+    --chart-2: 175 70% 55%;  /* Bright Teal */
+    --chart-3: 142 70% 50%;  /* Bright Green */
+    --chart-4: 43 96% 56%;   /* Yellow */
+    --chart-5: 0 84% 60%;    /* Red */
   }
 }

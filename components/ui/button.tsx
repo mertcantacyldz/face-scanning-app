@@ -17,6 +17,10 @@ const buttonVariants = cva(
           'bg-primary active:bg-primary/90 shadow-sm shadow-black/5',
           Platform.select({ web: 'hover:bg-primary/90' })
         ),
+        premium: cn(
+          'bg-premium active:bg-premium/90 shadow-md shadow-premium/20',
+          Platform.select({ web: 'hover:bg-premium/90' })
+        ),
         destructive: cn(
           'bg-destructive active:bg-destructive/90 dark:bg-destructive/60 shadow-sm shadow-black/5',
           Platform.select({
@@ -62,6 +66,7 @@ const buttonTextVariants = cva(
     variants: {
       variant: {
         default: 'text-primary-foreground',
+        premium: 'text-premium-foreground font-semibold',
         destructive: 'text-white',
         outline: cn(
           'group-active:text-accent-foreground',

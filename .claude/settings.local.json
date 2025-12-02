@@ -4,7 +4,8 @@
       "Bash(tree:*)",
       "Bash(npm install:*)",
       "Bash(npx tsc:*)",
-      "Bash(npx expo start:*)"
+      "Bash(npx expo start:*)",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": []
