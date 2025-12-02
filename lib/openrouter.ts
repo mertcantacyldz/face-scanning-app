@@ -3,7 +3,11 @@
  * Handles communication with OpenRouter API for AI-powered face analysis
  */
 
+// Güncellendi: Daha hızlı TTFT ve daha yüksek kalite sunan Gemini 2.0 Flash Experimental modeline geçildi.
+const OPENROUTER_MODEL = 'google/gemini-2.0-flash-exp:free'; 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const MAX_RETRIES = 3; // Maksimum deneme sayısı
+const INITIAL_BACKOFF_MS = 1000; // İlk gecikme süresi (1 saniye)
 
 interface OpenRouterMessage {
   role: 'system' | 'user' | 'assistant';
@@ -34,7 +38,7 @@ interface OpenRouterResponse {
 }
 
 export interface FaceAnalysisRequest {
-  landmarks: Array<{ x: number; y: number; z: number; index: number }>;
+  landmarks: { x: number; y: number; z: number; index: number }[];
   region: 'eyebrows' | 'eyes' | 'nose' | 'lips' | 'jawline' | 'face_shape';
   customPrompt: string;
 }
@@ -47,7 +51,57 @@ export interface FaceAnalysisResponse {
 }
 
 /**
- * Analyzes facial features using OpenRouter API with Gemini 2.0 Flash model
+ * Exponential Backoff (Üstel Gecikmeli Yeniden Deneme) ile fetch isteği gönderir.
+ * 429 veya 5xx hatası aldığında otomatik olarak bekleyip tekrar dener.
+ * Bu, 429 hatalarını yönetmek için kritik bir yöntemdir.
+ */
+async function fetchWithBackoff(
+  url: string,
+  options: RequestInit,
+  retries = MAX_RETRIES
+): Promise<Response> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+
+      // Başarılı veya kalıcı (4xx) hata ise döngüyü sonlandır
+      if (response.ok || (response.status >= 400 && response.status < 500 && response.status !== 429)) {
+        return response;
+      }
+
+      // Hız Limiti (429) veya Sunucu Hatası (5xx) varsa bekle
+      if (response.status === 429 || response.status >= 500) {
+        if (i === retries - 1) {
+          // Son deneme ise hata fırlat
+          throw new Error(`OpenRouter API kalıcı hata: ${response.status} ${response.statusText}`);
+        }
+
+        const delay = INITIAL_BACKOFF_MS * Math.pow(2, i) + Math.random() * 1000;
+        console.warn(
+          `Hız limiti veya sunucu hatası (${response.status}). ${delay.toFixed(
+            0
+          )}ms bekleniyor (Deneme ${i + 1}/${MAX_RETRIES}).`
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      } else {
+        // Diğer hatalar için (401, 403, vs.) direkt geri dön
+        return response;
+      }
+    } catch (error) {
+      if (i === retries - 1) {
+        throw error;
+      }
+      const delay = INITIAL_BACKOFF_MS * Math.pow(2, i) + Math.random() * 1000;
+      console.error(`Ağ hatası, ${delay.toFixed(0)}ms bekleniyor (Deneme ${i + 1}/${MAX_RETRIES}).`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+  // Bu satıra asla ulaşılmamalı
+  throw new Error('Tüm yeniden deneme girişimleri başarısız oldu.');
+}
+
+/**
+ * Analyzes facial features using OpenRouter API with a stable and high-context Gemini model
  * @param request - Face analysis request with landmarks and region
  * @returns Analysis result from AI
  */
@@ -77,8 +131,16 @@ ${request.customPrompt}
 
 Lütfen detaylı ve kullanıcı dostu bir analiz yap. Sonucu düzenli paragraflar halinde sun.`;
 
+    // Kullanıcının isteği üzerine prompt içeriğini konsola yazdırıyoruz.
+    console.log('--- Gönderilen System Prompt ---');
+    console.log(systemPrompt);
+    console.log('--- Gönderilen User Prompt ---');
+    console.log(userPrompt);
+    console.log('------------------------------');
+
     const requestBody: OpenRouterRequest = {
-      model: 'google/gemini-2.0-flash-exp:free',
+      // Daha stabil ve yüksek kapasiteli model kullanılıyor
+      model: OPENROUTER_MODEL, 
       messages: [
         {
           role: 'system',
@@ -90,10 +152,11 @@ Lütfen detaylı ve kullanıcı dostu bir analiz yap. Sonucu düzenli paragrafla
         },
       ],
       temperature: 0.7,
-      max_tokens: 1000,
+      // Çıktının kesilmesini önlemek ve yeterli uzunluk sağlamak için 4096 (4K) olarak ayarlandı
+      max_tokens: 4096, 
     };
 
-    const response = await fetch(OPENROUTER_API_URL, {
+    const response = await fetchWithBackoff(OPENROUTER_API_URL, { // Yeni, geri çekilmeli fetch fonksiyonu kullanılıyor
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -106,17 +169,19 @@ Lütfen detaylı ve kullanıcı dostu bir analiz yap. Sonucu düzenli paragrafla
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      // Hata mesajını daha anlaşılır hale getirelim
       throw new Error(
-        `OpenRouter API error: ${response.status} - ${
+        `OpenRouter API Hatası: ${response.status} - ${
           errorData.error?.message || response.statusText
-        }`
+        }. (Not: Uzun promptlarda 429 alırsanız, lütfen 30 saniye bekleyip tekrar deneyin.)`
       );
     }
 
     const data: OpenRouterResponse = await response.json();
+    console.log('OpenRouter API Yanıtı:', data);
 
     if (!data.choices || data.choices.length === 0) {
-      throw new Error('No response from AI model');
+      throw new Error('AI modelinden yanıt alınamadı.');
     }
 
     return {
@@ -132,7 +197,7 @@ Lütfen detaylı ve kullanıcı dostu bir analiz yap. Sonucu düzenli paragrafla
       error:
         error instanceof Error
           ? error.message
-          : 'Analiz sırasında bir hata oluştu. Lütfen tekrar deneyin.',
+          : 'Analiz sırasında beklenmedik bir hata oluştu. Lütfen tekrar deneyin.',
     };
   }
 }

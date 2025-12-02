@@ -5,7 +5,10 @@
       "Bash(npm install:*)",
       "Bash(npx tsc:*)",
       "Bash(npx expo start:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(taskkill:*)",
+      "Bash(awk:*)"
     ],
     "deny": [],
     "ask": []

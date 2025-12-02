@@ -1,5 +1,5 @@
 // app/(tabs)/index.tsx - Home Screen
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Alert,
   Dimensions,
@@ -10,6 +10,14 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
+import Carousel from 'react-native-reanimated-carousel';
 import { WebView } from 'react-native-webview';
 
 import { Button } from '@/components/ui/button';
@@ -51,6 +59,13 @@ export default function HomeScreen() {
     mediaPipeHTML,
   } = useFaceMesh();
 
+  // Carousel state
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [hasInteracted, setHasInteracted] = useState<boolean>(false);
+  const [showedOnboarding, setShowedOnboarding] = useState<boolean>(false);
+  const carouselRef = useRef<any>(null);
+  const arrowScale = useSharedValue(1);
+
   // Kullanıcı profilini al
   useEffect(() => {
     const fetchProfile = async () => {
@@ -78,6 +93,71 @@ export default function HomeScreen() {
 
     fetchProfile();
   }, []);
+
+  // Arrow pulse animation
+  useEffect(() => {
+    if (!hasInteracted) {
+      arrowScale.value = withRepeat(
+        withSequence(
+          withTiming(1.2, { duration: 600 }),
+          withTiming(1, { duration: 600 })
+        ),
+        -1,
+        false
+      );
+    } else {
+      arrowScale.value = 1;
+    }
+
+    return () => {
+      arrowScale.value = 1;
+    };
+  }, [hasInteracted]);
+
+  // Onboarding hint: auto-swipe on first load
+  useEffect(() => {
+    if (meshImageUri && !showedOnboarding && carouselRef.current) {
+      const timer = setTimeout(() => {
+        // Animate carousel slightly to the right then back
+        carouselRef.current?.scrollTo({ index: 0.3, animated: true });
+
+        setTimeout(() => {
+          carouselRef.current?.scrollTo({ index: 0, animated: true });
+          setShowedOnboarding(true);
+        }, 500);
+      }, 800);
+
+      return () => clearTimeout(timer);
+    }
+  }, [meshImageUri, showedOnboarding]);
+
+  // Animated arrow style
+  const animatedArrowStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: arrowScale.value }]
+  }));
+
+  // Carousel render function
+  const renderCarouselItem = ({ item }: { item: string }) => (
+    <View className="flex-1 justify-center items-center">
+      <Image
+        source={{ uri: item }}
+        style={{
+          width: screenWidth - 80,
+          height: screenWidth - 80,
+          borderRadius: 16
+        }}
+        resizeMode="contain"
+      />
+    </View>
+  );
+
+  // Handle carousel index change
+  const handleIndexChange = (index: number) => {
+    setCurrentIndex(index);
+    if (!hasInteracted) {
+      setHasInteracted(true);
+    }
+  };
 
  if (!profile) {
   return (
@@ -123,46 +203,50 @@ return (
       contentContainerStyle={{ padding: 20 }}
       showsVerticalScrollIndicator={false}
     >
-      {/* Hoşgeldin Mesajı */}
-      <View className="mb-8">
-        <View className="flex-row items-center gap-2 mb-2">
-          <Text className="text-2xl font-bold text-foreground">
-            Merhaba {profile.full_name}!
-          </Text>
-          <Ionicons name="hand-right-outline" size={28} color="#8B5CF6" />
-        </View>
-        <Text className="text-muted-foreground">
-          {profile.is_premium ? 'Premium üyeliğinizle' : 'Ücretsiz hesabınızla'}
-          {' '}FaceAnalyzer AI ile 468 noktalı yüz analizi yapmaya hazır mısınız?
-        </Text>
-      </View>
+      {/* Hoşgeldin Mesajı - Sadece mesh yokken görünür */}
+      {!meshImageUri && (
+        <>
+          <View className="mb-8">
+            <View className="flex-row items-center gap-2 mb-2">
+              <Text className="text-2xl font-bold text-foreground">
+                Merhaba {profile.full_name}!
+              </Text>
+              <Ionicons name="hand-right-outline" size={28} color="#8B5CF6" />
+            </View>
+            <Text className="text-muted-foreground">
+              {profile.is_premium ? 'Premium üyeliğinizle' : 'Ücretsiz hesabınızla'}
+              {' '}FaceAnalyzer AI ile 468 noktalı yüz analizi yapmaya hazır mısınız?
+            </Text>
+          </View>
 
-      {/* FaceAnalyzer AI Durumu */}
-      <Card className="p-4 mb-6">
-        <CardHeader className="p-0 mb-2">
-          <View className="flex-row items-center gap-2">
-            <Ionicons name="hardware-chip-outline" size={18} color="#8B5CF6" />
-            <Text className="text-primary font-semibold">
-              FaceAnalyzer AI Durumu
-            </Text>
-          </View>
-        </CardHeader>
-        <CardContent className="p-0">
-          <View className="flex-row items-center gap-2">
-            <Ionicons
-              name={mediaPipeReady ? 'checkmark-circle' : 'time-outline'}
-              size={16}
-              color={mediaPipeReady ? '#10B981' : '#F59E0B'}
-            />
-            <Text className="text-muted-foreground text-sm">
-              {mediaPipeReady
-                ? 'FaceAnalyzer AI hazır - 468 noktalı özgün analiz teknolojimiz!'
-                : 'FaceAnalyzer AI yükleniyor...'
-              }
-            </Text>
-          </View>
-        </CardContent>
-      </Card>
+          {/* FaceAnalyzer AI Durumu */}
+          <Card className="p-4 mb-6">
+            <CardHeader className="p-0 mb-2">
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="hardware-chip-outline" size={18} color="#8B5CF6" />
+                <Text className="text-primary font-semibold">
+                  FaceAnalyzer AI Durumu
+                </Text>
+              </View>
+            </CardHeader>
+            <CardContent className="p-0">
+              <View className="flex-row items-center gap-2">
+                <Ionicons
+                  name={mediaPipeReady ? 'checkmark-circle' : 'time-outline'}
+                  size={16}
+                  color={mediaPipeReady ? '#10B981' : '#F59E0B'}
+                />
+                <Text className="text-muted-foreground text-sm">
+                  {mediaPipeReady
+                    ? 'FaceAnalyzer AI hazır - 468 noktalı özgün analiz teknolojimiz!'
+                    : 'FaceAnalyzer AI yükleniyor...'
+                  }
+                </Text>
+              </View>
+            </CardContent>
+          </Card>
+        </>
+      )}
 
       {/* Ana Analiz Kartı */}
       {!selectedImage ? (
@@ -217,27 +301,7 @@ return (
             </View>
           </CardHeader>
           
-          {/* Seçilen Resim - Koşullu Gösterim */}
-          {selectedImage && meshImageUri ? (
-            // Mesh varsa küçük thumbnail
-            <View className="items-center mb-4">
-              <Image
-                source={{ uri: selectedImage }}
-                style={{ width: 120, height: 120, borderRadius: 12 }}
-                resizeMode="cover"
-              />
-              <Text className="text-xs text-muted-foreground mt-1">Orijinal</Text>
-            </View>
-          ) : selectedImage ? (
-            // Mesh yoksa normal boyutta
-            <View className="items-center mb-6">
-              <Image
-                source={{ uri: selectedImage }}
-                style={{ width: screenWidth - 80, height: screenWidth - 80, borderRadius: 12 }}
-                resizeMode="cover"
-              />
-            </View>
-          ) : null}
+        
 
           {/* Loading veya Sonuç */}
           {isAnalyzing ? (
@@ -286,105 +350,168 @@ return (
                 </CardContent>
               </Card>
 
-            
-
-             
-
-             
-             
-
-              {/* Mesh Önizleme (Modal yerine inline) */}
-              {meshImageUri && (
-                <View className="mt-6">
-                 
-                  
-
-                  {/* Mesh'li Görüntü - Ana Görsel */}
-                  <View className="items-center mb-4">
-                    <Image
-                      source={{ uri: meshImageUri }}
-                      style={{ width: screenWidth - 80, height: screenWidth - 80, borderRadius: 16 }}
-                      resizeMode="contain"
-                    />
-                  </View>
-
-                  {/* Otomatik Validation Sonucu */}
-                  {meshValidation.isValid ? (
-                    <Card className="bg-green-500/10 border-green-500/40 p-4 mb-4">
-                      <View className="flex-row items-center">
-                        <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-                        <View className="ml-3 flex-1">
-                          <Text className="text-foreground font-semibold">
-                            Tarama Başarılı!
-                          </Text>
-                          <Text className="text-muted-foreground text-xs mt-1">
-                            • Tüm yüz bölgeleri tespit edildi{'\n'}
-                            • Noktalar doğru konumlanmış{'\n'}
-                            • Analiz için hazır
-                          </Text>
-                        </View>
-                      </View>
-                    </Card>
-                  ) : (
-                    <Card className="bg-yellow-500/10 border-yellow-500/40 p-4 mb-4">
-                      <View className="flex-row items-center">
-                        <Ionicons name="warning" size={24} color="#F59E0B" />
-                        <View className="ml-3 flex-1">
-                          <Text className="text-foreground font-semibold">
-                            Dikkat Gerekli
-                          </Text>
-                          <Text className="text-muted-foreground text-xs mt-1">
-                            {meshValidation.message}
-                            {'\n\n'}Devam edebilirsiniz ama daha iyi sonuç için yeniden deneyebilirsiniz.
-                          </Text>
-                        </View>
-                      </View>
-                    </Card>
-                  )}
-
-                  {/* İpuçları */}
-                  <Card className="bg-muted p-4 mb-4">
-                    <Text className="text-foreground font-semibold mb-2">
-                      💡 İyi Bir Tarama İçin:
-                    </Text>
-                    <Text className="text-muted-foreground text-xs">
-                      • Yüzünüz tamamen görünür olmalı{'\n'}
-                      • Gözler, burun ve ağız net olmalı{'\n'}
-                      • Saç veya el yüzü kapatmamalı{'\n'}
-                      • Işıklandırma yeterli olmalı
-                    </Text>
-                  </Card>
-
-                  {/* Butonlar */}
-                  <View className="flex-row gap-3">
-                    {/* Tekrar Çek */}
-                    <Pressable
-                      onPress={handleRetake}
-                      className="flex-1"
-                    >
-                      <Card className="p-4 items-center bg-muted">
-                        <Ionicons name="camera-reverse" size={24} color="#111827" />
-                        <Text className="text-foreground mt-2 font-medium">Tekrar Çek</Text>
-                      </Card>
-                    </Pressable>
-
-                    {/* Onayla */}
-                    <Pressable
-                      onPress={handleConfirmMesh}
-                      className="flex-1"
-                    >
-                      <Card className="p-4 items-center bg-primary">
-                        <Ionicons name="checkmark-circle" size={24} color="white" />
-                        <Text className="text-primary-foreground mt-2 font-medium">
-                          Devam Et
-                        </Text>
-                      </Card>
-                    </Pressable>
-                  </View>
-                </View>
-              )}
             </View>
           ) : null}
+
+          {/* Mesh Önizleme */}
+          {meshImageUri && (
+            <View className="mt-6">
+              {/* Carousel Container */}
+              <View className="items-center mb-4">
+                <View
+                  className="relative"
+                  style={{
+                    width: screenWidth - 80,
+                    height: screenWidth - 80,
+                    borderRadius: 16,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Carousel
+                    ref={carouselRef}
+                    data={[meshImageUri, selectedImage || meshImageUri]}
+                    renderItem={renderCarouselItem}
+                    width={screenWidth - 80}
+                    height={screenWidth - 80}
+                    mode="parallax"
+                    modeConfig={{
+                      parallaxScrollingScale: 0.95,
+                      parallaxScrollingOffset: 50,
+                    }}
+                    defaultIndex={0}
+                    loop={false}
+                    enabled={true}
+                    onSnapToItem={handleIndexChange}
+                  />
+
+                  {/* Right Arrow (show on mesh image - index 0) */}
+                  {currentIndex === 0 && (
+                    <Animated.View
+                      style={[
+                        {
+                          position: 'absolute',
+                          right: 16,
+                          top: '50%',
+                          marginTop: -20,
+                          zIndex: 10,
+                        },
+                        animatedArrowStyle
+                      ]}
+                    >
+                      <Pressable
+                        onPress={() => carouselRef.current?.next({ animated: true })}
+                        className="bg-black/40 dark:bg-white/20 rounded-full w-10 h-10 items-center justify-center"
+                      >
+                        <Ionicons name="chevron-forward-outline" size={24} color="#FFFFFF" />
+                      </Pressable>
+                    </Animated.View>
+                  )}
+
+                  {/* Left Arrow (show on original image - index 1) */}
+                  {currentIndex === 1 && (
+                    <Animated.View
+                      style={[
+                        {
+                          position: 'absolute',
+                          left: 16,
+                          top: '50%',
+                          marginTop: -20,
+                          zIndex: 10,
+                        },
+                        animatedArrowStyle
+                      ]}
+                    >
+                      <Pressable
+                        onPress={() => carouselRef.current?.prev({ animated: true })}
+                        className="bg-black/40 dark:bg-white/20 rounded-full w-10 h-10 items-center justify-center"
+                      >
+                        <Ionicons name="chevron-back-outline" size={24} color="#FFFFFF" />
+                      </Pressable>
+                    </Animated.View>
+                  )}
+                </View>
+
+                {/* Label */}
+                <Text className="text-muted-foreground text-xs mt-2">
+                  {currentIndex === 0 ? 'Mesh Görünümü' : 'Orijinal Fotoğraf'}
+                </Text>
+              </View>
+
+              {/* Validation Sonucu */}
+              {meshValidation.isValid ? (
+                <Card className="bg-green-500/10 border-green-500/40 p-4 mb-4">
+                  <View className="flex-row items-center">
+                    <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                    <View className="ml-3 flex-1">
+                      <Text className="text-foreground font-semibold">
+                        Tarama Başarılı!
+                      </Text>
+                      <Text className="text-muted-foreground text-xs mt-1">
+                        • Tüm yüz bölgeleri tespit edildi{'\n'}
+                        • Noktalar doğru konumlanmış{'\n'}
+                        • Analiz için hazır
+                      </Text>
+                    </View>
+                  </View>
+                </Card>
+              ) : (
+                <Card className="bg-yellow-500/10 border-yellow-500/40 p-4 mb-4">
+                  <View className="flex-row items-center">
+                    <Ionicons name="warning" size={24} color="#F59E0B" />
+                    <View className="ml-3 flex-1">
+                      <Text className="text-foreground font-semibold">
+                        Dikkat Gerekli
+                      </Text>
+                      <Text className="text-muted-foreground text-xs mt-1">
+                        {meshValidation.message}
+                        {'\n\n'}Devam edebilirsiniz ama daha iyi sonuç için yeniden deneyebilirsiniz.
+                      </Text>
+                    </View>
+                  </View>
+                </Card>
+              )}
+
+              {/* İpuçları */}
+              <Card className="bg-muted p-4 mb-4">
+                <Text className="text-foreground font-semibold mb-2">
+                  💡 İyi Bir Tarama İçin:
+                </Text>
+                <Text className="text-muted-foreground text-xs">
+                  • Yüzünüz tamamen görünür olmalı{'\n'}
+                  • Gözler, burun ve ağız net olmalı{'\n'}
+                  • Saç veya el yüzü kapatmamalı{'\n'}
+                  • Işıklandırma yeterli olmalı
+                </Text>
+              </Card>
+
+              {/* Butonlar */}
+              <View className="flex-row gap-3">
+                {/* Tekrar Çek */}
+                <Pressable
+                  onPress={handleRetake}
+                  className="flex-1"
+                >
+                  <Card className="p-4 items-center bg-muted">
+                    <Ionicons name="camera-reverse" size={24} color="#111827" />
+                    <Text className="text-foreground mt-2 font-medium">Tekrar Çek</Text>
+                  </Card>
+                </Pressable>
+
+                {/* Devam Et */}
+                <Pressable
+                  onPress={handleConfirmMesh}
+                  className="flex-1"
+                >
+                  <Card className="p-4 items-center bg-primary">
+                    <Ionicons name="checkmark-circle" size={24} color="white" />
+                    <Text className="text-primary-foreground mt-2 font-medium">
+                      Devam Et
+                    </Text>
+                  </Card>
+                </Pressable>
+              </View>
+            </View>
+          )}
 
           {/* Yeni Analiz Butonu */}
           <Button
