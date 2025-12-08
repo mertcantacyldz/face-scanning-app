@@ -21,6 +21,8 @@ export default function LoginScreen() {
       return;
     }
 
+
+    // Login with email and password these part is only for supabase login 
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -33,8 +35,8 @@ export default function LoginScreen() {
       } else {
         router.replace('/(tabs)');
       }
-    } catch (error:any) {
-        console.log(error.message);
+    } catch (error: any) {
+      console.log(error.message);
       Alert.alert('Hata', 'Bir şeyler yanlış gitti');
     }
     setLoading(false);
@@ -42,11 +44,11 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView className="flex-1 ">
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={{ flexGrow: 1 }}
           className="flex-1 px-6"
           keyboardShouldPersistTaps="handled"
@@ -101,7 +103,7 @@ export default function LoginScreen() {
                   </Text>
                 </Link>
 
-                <Button 
+                <Button
                   onPress={handleLogin}
                   disabled={loading}
                   className=" mt-6"
@@ -116,7 +118,7 @@ export default function LoginScreen() {
             {/* Register Link */}
             <View className="flex-row justify-center items-center mt-6 gap-5 ">
               <Text className="text-gray-600">
-                Hesabınız yok mu? 
+                Hesabınız yok mu?
               </Text>
               <Link href="/(auth)/register">
                 <Text className=" font-semibold ml-1">
