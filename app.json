@@ -9,9 +9,25 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.facescanningapp.mobile",
+      "buildNumber": "1",
+      "minimumOsVersion": "13.0",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Yüz analizi için kamera erişimi gereklidir.",
+        "NSPhotoLibraryUsageDescription": "Galeriden fotoğraf seçmek için erişim gereklidir.",
+        "NSPhotoLibraryAddUsageDescription": "Analiz edilen fotoğrafları kaydetmek için erişim gereklidir."
+      }
     },
     "android": {
+      "package": "com.facescanningapp.mobile",
+      "versionCode": 1,
+      "minSdkVersion": 21,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

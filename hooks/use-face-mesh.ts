@@ -1,6 +1,6 @@
 import { mediaPipeHTML } from '@/lib/mediapipe-html';
 import { supabase } from '@/lib/supabase';
-import { Camera } from 'expo-camera';
+
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
@@ -9,26 +9,26 @@ import { Alert } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 export interface FaceLandmarks {
-  landmarks: {x: number, y: number, z: number, index: number}[];
+  landmarks: { x: number, y: number, z: number, index: number }[];
   totalPoints: number;
   confidence: number;
-  faceBox: {x: number, y: number, width: number, height: number};
+  faceBox: { x: number, y: number, width: number, height: number };
   faceRegions: {
-    faceOval: {x: number, y: number, z: number, index: number}[];
-    forehead: {x: number, y: number, z: number, index: number}[];
-    leftEyebrow: {x: number, y: number, z: number, index: number}[];
-    rightEyebrow: {x: number, y: number, z: number, index: number}[];
-    leftEye: {x: number, y: number, z: number, index: number}[];
-    rightEye: {x: number, y: number, z: number, index: number}[];
-    nose: {x: number, y: number, z: number, index: number}[];
-    noseBridge: {x: number, y: number, z: number, index: number}[];
-    noseTip: {x: number, y: number, z: number, index: number}[];
-    noseWings: {x: number, y: number, z: number, index: number}[];
-    lips: {x: number, y: number, z: number, index: number}[];
-    upperLip: {x: number, y: number, z: number, index: number}[];
-    lowerLip: {x: number, y: number, z: number, index: number}[];
-    mouthOutline: {x: number, y: number, z: number, index: number}[];
-    jawline: {x: number, y: number, z: number, index: number}[];
+    faceOval: { x: number, y: number, z: number, index: number }[];
+    forehead: { x: number, y: number, z: number, index: number }[];
+    leftEyebrow: { x: number, y: number, z: number, index: number }[];
+    rightEyebrow: { x: number, y: number, z: number, index: number }[];
+    leftEye: { x: number, y: number, z: number, index: number }[];
+    rightEye: { x: number, y: number, z: number, index: number }[];
+    nose: { x: number, y: number, z: number, index: number }[];
+    noseBridge: { x: number, y: number, z: number, index: number }[];
+    noseTip: { x: number, y: number, z: number, index: number }[];
+    noseWings: { x: number, y: number, z: number, index: number }[];
+    lips: { x: number, y: number, z: number, index: number }[];
+    upperLip: { x: number, y: number, z: number, index: number }[];
+    lowerLip: { x: number, y: number, z: number, index: number }[];
+    mouthOutline: { x: number, y: number, z: number, index: number }[];
+    jawline: { x: number, y: number, z: number, index: number }[];
   };
   regionDetails: {
     totalRegions: number;
@@ -96,7 +96,7 @@ export function useFaceMesh() {
   const [mediaPipeReady, setMediaPipeReady] = useState(false);
   const [meshImageUri, setMeshImageUri] = useState<string | null>(null);
   const [showMeshPreview, setShowMeshPreview] = useState(false);
-  const [meshValidation, setMeshValidation] = useState<{isValid: boolean; message: string}>({
+  const [meshValidation, setMeshValidation] = useState<{ isValid: boolean; message: string }>({
     isValid: true,
     message: ''
   });
@@ -107,7 +107,7 @@ export function useFaceMesh() {
   const handleWebViewMessage = async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      
+
       switch (data.type) {
         case 'READY':
           if (__DEV__) {
@@ -115,7 +115,7 @@ export function useFaceMesh() {
           }
           setMediaPipeReady(true);
           break;
-          
+
         case 'LANDMARKS':
           if (__DEV__) {
             console.log('[WebView] LANDMARKS mesajı alındı:', {
@@ -146,18 +146,18 @@ export function useFaceMesh() {
           setMeshImageUri(data.data.meshImage);
           setShowMeshPreview(true);
           break;
-          
+
         case 'NO_FACE':
           if (__DEV__) {
             console.log('[WebView] NO_FACE mesajı alındı, analiz iptal ediliyor');
           }
           setIsAnalyzing(false);
           Alert.alert(
-            'Yüz Bulunamadı', 
+            'Yüz Bulunamadı',
             'Fotoğrafta yüz tespit edilemedi. Lütfen:\n• Yüzünüz net görünsün\n• İyi ışıkta çekin\n• Kameraya düz bakın'
           );
           break;
-          
+
         case 'ERROR':
           if (__DEV__) {
             console.error('[WebView] ERROR mesajı alındı:', {
@@ -253,11 +253,13 @@ export function useFaceMesh() {
     setMeshImageUri(null);
     setFaceLandmarks(null);
     setSelectedImage(null);
+    // Modal'ı aç
+    setShowImagePicker(true);
   };
 
   // Kamera iznini kontrol et
   const checkCameraPermission = async () => {
-    const { status } = await Camera.requestCameraPermissionsAsync();
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('İzin Gerekli', 'Kamera kullanmak için izin vermeniz gerekiyor');
       return false;

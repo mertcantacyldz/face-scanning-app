@@ -1,14 +1,11 @@
-// app/(tabs)/profile.tsx
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-
 import {
   Alert,
   RefreshControl,
@@ -30,12 +27,12 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [fullName, setFullName] = useState('');
 
   const fetchProfile = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data: profileData } = await supabase
@@ -46,7 +43,6 @@ export default function ProfileScreen() {
 
       if (profileData) {
         setProfile(profileData);
-        setFullName(profileData.full_name || '');
       } else {
         Alert.alert('Hata', 'Profil bulunamadı');
       }
@@ -58,44 +54,18 @@ export default function ProfileScreen() {
     }
   };
 
-  const updateProfile = async () => {
-    if (!profile || !fullName.trim()) return;
-
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          full_name: fullName.trim(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', profile.id);
-
-      if (error) throw error;
-
-      setProfile({ ...profile, full_name: fullName.trim() });
-      setEditMode(false);
-      Alert.alert('Başarılı', 'Profil güncellendi');
-    } catch (error) {
-      Alert.alert('Hata', 'Profil güncellenemedi');
-    }
-  };
-
   const handleSignOut = async () => {
-    Alert.alert(
-      'Çıkış Yap',
-      'Hesabınızdan çıkmak istediğinize emin misiniz?',
-      [
-        { text: 'İptal', style: 'cancel' },
-        {
-          text: 'Çıkış Yap',
-          style: 'destructive',
-          onPress: async () => {
-            await supabase.auth.signOut();
-            router.replace('/(auth)/login');
-          },
+    Alert.alert('Çıkış Yap', 'Hesabınızdan çıkmak istediğinize emin misiniz?', [
+      { text: 'İptal', style: 'cancel' },
+      {
+        text: 'Çıkış Yap',
+        style: 'destructive',
+        onPress: async () => {
+          await supabase.auth.signOut();
+          router.replace('/(auth)/login');
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const onRefresh = () => {
@@ -112,7 +82,7 @@ export default function ProfileScreen() {
       <View className="flex-1 bg-background justify-center items-center">
         <View className="items-center">
           <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">
-            <Ionicons name="person-circle" size={48} className="text-primary" />
+            <Ionicons name="person-circle" size={48} color="#8B5CF6" />
           </View>
           <Text className="text-muted-foreground mt-2">Yükleniyor...</Text>
         </View>
@@ -125,9 +95,11 @@ export default function ProfileScreen() {
       <View className="flex-1 bg-background justify-center items-center">
         <View className="items-center px-6">
           <View className="w-16 h-16 bg-destructive/10 rounded-full items-center justify-center mb-4">
-            <Ionicons name="alert-circle" size={48} className="text-destructive" />
+            <Ionicons name="alert-circle" size={48} color="#EF4444" />
           </View>
-          <Text className="text-muted-foreground mt-2 text-center">Profil bilgileri bulunamadı</Text>
+          <Text className="text-muted-foreground mt-2 text-center">
+            Profil bilgileri bulunamadı
+          </Text>
           <Button onPress={fetchProfile} className="mt-6">
             <Text className="text-primary-foreground font-semibold">Tekrar Dene</Text>
           </Button>
@@ -140,252 +112,218 @@ export default function ProfileScreen() {
     <View className="flex-1 bg-background">
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 16 }}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["hsl(262, 83%, 58%)"]}
-            tintColor="hsl(262, 83%, 58%)"
+            colors={['#8B5CF6']}
+            tintColor="#8B5CF6"
           />
         }
-        showsVerticalScrollIndicator={false}
       >
-        {/* Header Section */}
-        <View className="items-center mb-8">
-          <View className="relative mb-4">
-            <View className="w-24 h-24 bg-primary rounded-full justify-center items-center shadow-lg">
-              <Ionicons name="person" size={48} color="white" />
-            </View>
-            <TouchableOpacity
-              onPress={() => setEditMode(!editMode)}
-              className="absolute bottom-0 right-0 bg-card rounded-full p-2 shadow-md border-2 border-border"
-            >
-              <Ionicons
-                name={editMode ? "close" : "create"}
-                size={20}
-                className="text-primary"
-              />
-            </TouchableOpacity>
-          </View>
-
-          {editMode ? (
-            <View className="w-full max-w-xs space-y-4">
-              <Input
-                value={fullName}
-                onChangeText={setFullName}
-                placeholder="Ad Soyad"
-                className="text-center text-lg text-foreground"
-                placeholderTextColor="hsl(220, 9%, 46%)"
-                autoFocus
-              />
-              <View className="flex-row gap-3">
-                <Button
-                  onPress={updateProfile}
-                  className="flex-1 bg-success"
-                >
-                  <Ionicons name="checkmark" size={20} color="white" />
-                  <Text className="text-success-foreground font-semibold ml-2">Kaydet</Text>
-                </Button>
-                <Button
-                  onPress={() => {
-                    setEditMode(false);
-                    setFullName(profile.full_name);
-                  }}
-                  variant="outline"
-                  className="flex-1"
-                >
-                  <Text className="text-muted-foreground">İptal</Text>
-                </Button>
-              </View>
-            </View>
-          ) : (
-            <>
-              <Text className="text-2xl font-bold text-foreground mb-1">
-                {profile.full_name}
+        {/* Header with Gradient */}
+        <LinearGradient
+          colors={['#8B5CF6', '#6366F1', '#3B82F6']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          className="pt-12 "
+        >
+          <View className="items-center mt-2 ">
+            {/* Avatar */}
+            <View className="w-20 h-20 rounded-full bg-white/20 items-center justify-center mb-3 border-3 border-white/30">
+              <Text className="text-4xl">
+                {profile.full_name?.charAt(0).toUpperCase() || '👤'}
               </Text>
-              <Text className="text-muted-foreground mb-3">{profile.email}</Text>
-              <Badge
-                variant={profile.is_premium ? "default" : "secondary"}
-                className={profile.is_premium ?
-                  "bg-warning" :
-                  "bg-secondary"
-                }
-              >
-                <Ionicons
-                  name={profile.is_premium ? "star" : "person"}
-                  size={14}
-                  color="white"
-                  className="mr-1"
-                />
-                <Text className="text-white font-semibold">
-                  {profile.is_premium ? 'Premium Üye' : 'Standart Üye'}
-                </Text>
-              </Badge>
-            </>
-          )}
-        </View>
-
-        {/* Premium Status Card */}
-        {profile.is_premium && profile.premium_expires_at && (
-          <Card className="p-5 mb-6 bg-warning/10 border-2 border-warning/30">
-            <View className="flex-row items-center">
-              <View className="w-12 h-12 bg-warning rounded-full items-center justify-center mr-3">
-                <Ionicons name="star" size={24} color="white" />
-              </View>
-              <View className="flex-1">
-                <Text className="font-bold text-lg text-foreground">
-                  Premium Üyelik
-                </Text>
-                <Text className="text-muted-foreground text-sm">
-                  Bitiş: {new Date(profile.premium_expires_at).toLocaleDateString('tr-TR')}
-                </Text>
-              </View>
             </View>
-          </Card>
-        )}
 
-        {/* Stats Section */}
-        <Card className="p-6 mb-6">
-          <View className="flex-row items-center gap-2 mb-5">
-            <Ionicons name="bar-chart-outline" size={20} color="#8B5CF6" />
-            <Text className="text-lg font-bold text-foreground">
-              Hesap İstatistikleri
+            {/* Name & Email */}
+            <Text className="text-xl font-bold text-white mb-1">
+              {profile.full_name || 'Kullanıcı'}
             </Text>
-          </View>
+            <Text className="text-sm text-white/80 mb-3">{profile.email}</Text>
 
-          <View className="space-y-4">
-            <View className="flex-row justify-between items-center py-3 border-b border-border">
-              <View className="flex-row items-center">
-                <View className="w-8 h-8 bg-primary/10 rounded-full items-center justify-center mr-3">
-                  <Ionicons name="analytics" size={16} className="text-primary" />
-                </View>
-                <Text className="text-muted-foreground">Toplam Analiz</Text>
+            {/* Premium Badge */}
+            {profile.is_premium ? (
+              <View className="flex-row items-center bg-amber-400 px-4 py-2 rounded-full mb-8">
+                <Ionicons name="star" size={18} color="white" />
+                <Text className="text-white font-bold ml-2">Premium Üye</Text>
               </View>
-              <Text className="text-lg font-bold text-primary">
-                12
-              </Text>
-            </View>
-
-            <View className="flex-row justify-between items-center py-3 border-b border-border">
-              <View className="flex-row items-center">
-                <View className="w-8 h-8 bg-success/10 rounded-full items-center justify-center mr-3">
-                  <Ionicons name="calendar" size={16} className="text-success" />
-                </View>
-                <Text className="text-muted-foreground">Bu Ay</Text>
-              </View>
-              <Text className="text-lg font-bold text-success">
-                3
-              </Text>
-            </View>
-
-            {!profile.is_premium && (
-              <View className="flex-row justify-between items-center py-3">
-                <View className="flex-row items-center">
-                  <View className="w-8 h-8 bg-warning/10 rounded-full items-center justify-center mr-3">
-                    <Ionicons name="alert-circle" size={16} className="text-warning" />
-                  </View>
-                  <Text className="text-muted-foreground">Kalan Limit</Text>
-                </View>
-                <Text className="text-lg font-bold text-warning">
-                  2/5
-                </Text>
+            ) : (
+              <View className="flex-row items-center bg-white/20 px-4 py-2 rounded-full mb-8">
+                <Ionicons name="person" size={18} color="white" />
+                <Text className="text-white font-semibold ml-2">Ücretsiz Üye</Text>
               </View>
             )}
           </View>
-        </Card>
+        </LinearGradient>
 
-        {/* Quick Actions */}
-        <View className="flex-row items-center gap-2 mb-4">
-          <Ionicons name="flash-outline" size={20} color="#8B5CF6" />
-          <Text className="text-lg font-bold text-foreground">
-            Hızlı İşlemler
-          </Text>
-        </View>
+        <View className="px-4 -mt-4">
+          {/* Stats Cards */}
+          <View className="flex-row gap-3 mb-6 shadow-2xl" style={{ elevation: 8 }}>
+            <Card className="flex-1 bg-card border-border">
+              <View className="py-3 px-2 items-center">
+                <View className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center mb-1">
+                  <Ionicons name="analytics" size={20} color="#8B5CF6" />
+                </View>
+                <Text className="text-xl font-bold text-foreground">12</Text>
+                <Text className="text-[10px] text-muted-foreground">Toplam Analiz</Text>
+              </View>
+            </Card>
 
-        <View className="flex flex-col gap-4 mb-6">
+            <Card className="flex-1 bg-card border-border">
+              <View className="py-3 px-2 items-center">
+                <View className="w-10 h-10 rounded-full bg-success/10 items-center justify-center mb-1">
+                  <Ionicons name="calendar" size={20} color="#10B981" />
+                </View>
+                <Text className="text-xl font-bold text-foreground">3</Text>
+                <Text className="text-[10px] text-muted-foreground">Bu Ay</Text>
+              </View>
+            </Card>
+
+            {!profile.is_premium && (
+              <Card className="flex-1 bg-card border-border">
+                <View className="py-3 px-2 items-center">
+                  <View className="w-10 h-10 rounded-full bg-amber-400/10 items-center justify-center mb-1">
+                    <Ionicons name="hourglass" size={20} color="#F59E0B" />
+                  </View>
+                  <Text className="text-xl font-bold text-foreground">2/5</Text>
+                  <Text className="text-[10px] text-muted-foreground">Kalan Hak</Text>
+                </View>
+              </Card>
+            )}
+          </View>
+
+          {/* Premium Upgrade Card */}
           {!profile.is_premium && (
-            <Button
-              onPress={() => router.push('/premium/subscription')}
-              className="h-16 bg-warning"
-            >
-              <Ionicons name="star" size={24} color="white" />
-              <Text className="text-warning-foreground font-bold text-base ml-2">
-                Premium'a Yüksel
-              </Text>
-            </Button>
+            <View className="mb-6 rounded-xl overflow-hidden shadow-lg">
+              <LinearGradient
+                colors={['#FBBF24', '#F59E0B', '#D97706']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={{ padding: 24 }}
+              >
+                <View className="flex-row items-center mb-3">
+                  <Ionicons name="star" size={28} color="white" />
+                  <Text className="text-xl font-bold text-white ml-2">
+                    Premium&apos;a Yükseltin
+                  </Text>
+                </View>
+                <Text className="text-white/90 mb-4 leading-5">
+                  Sınırsız analiz, gelişmiş raporlar ve özel öneriler için premium üyeliğe
+                  geçin
+                </Text>
+                <TouchableOpacity
+                  onPress={() => router.push('/premium/subscription')}
+                  className="bg-white rounded-xl py-3 px-6 flex-row items-center justify-center"
+                >
+                  <Ionicons name="arrow-forward" size={20} color="#D97706" />
+                  <Text className="text-amber-600 font-bold ml-2">Şimdi Yükselt</Text>
+                </TouchableOpacity>
+              </LinearGradient>
+            </View>
           )}
 
+          {/* Premium Expiry Info */}
+          {profile.is_premium && profile.premium_expires_at && (
+            <Card className="mb-6 bg-amber-50 border-amber-200">
+              <View className="p-4 flex-row items-center">
+                <Ionicons name="information-circle" size={24} color="#D97706" />
+                <View className="ml-3 flex-1">
+                  <Text className="font-semibold text-foreground">Premium Üyelik</Text>
+                  <Text className="text-sm text-muted-foreground">
+                    Bitiş: {new Date(profile.premium_expires_at).toLocaleDateString('tr-TR')}
+                  </Text>
+                </View>
+              </View>
+            </Card>
+          )}
+
+          {/* Quick Actions */}
+          <Text className="text-lg font-bold text-foreground mb-3">Hızlı İşlemler</Text>
+
+          <Card className="mb-4 bg-card border-border">
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)')}
+              className="flex-row items-center p-4"
+            >
+              <View className="w-12 h-12 rounded-full bg-primary/10 items-center justify-center">
+                <Ionicons name="scan" size={24} color="#8B5CF6" />
+              </View>
+              <View className="ml-4 flex-1">
+                <Text className="font-semibold text-foreground">Yeni Analiz Yap</Text>
+                <Text className="text-sm text-muted-foreground">
+                  Yüzünüzü tarayın ve detaylı analiz alın
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+          </Card>
+
+          <Card className="mb-4 bg-card border-border">
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/analysis')}
+              className="flex-row items-center p-4"
+            >
+              <View className="w-12 h-12 rounded-full bg-blue-500/10 items-center justify-center">
+                <Ionicons name="bar-chart" size={24} color="#3B82F6" />
+              </View>
+              <View className="ml-4 flex-1">
+                <Text className="font-semibold text-foreground">Analiz Sonuçları</Text>
+                <Text className="text-sm text-muted-foreground">
+                  Son analizinizi görüntüleyin
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+          </Card>
+
+          {/* Settings */}
+          <Text className="text-lg font-bold text-foreground mb-3 mt-2">Ayarlar</Text>
+
+          <Card className="mb-4 bg-card border-border">
+            <TouchableOpacity className="flex-row items-center justify-between p-4 border-b border-border">
+              <View className="flex-row items-center">
+                <Ionicons name="notifications" size={22} color="#6B7280" />
+                <Text className="text-foreground ml-3">Bildirimler</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            <TouchableOpacity className="flex-row items-center justify-between p-4 border-b border-border">
+              <View className="flex-row items-center">
+                <Ionicons name="shield-checkmark" size={22} color="#6B7280" />
+                <Text className="text-foreground ml-3">Gizlilik</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            <TouchableOpacity className="flex-row items-center justify-between p-4">
+              <View className="flex-row items-center">
+                <Ionicons name="help-circle" size={22} color="#6B7280" />
+                <Text className="text-foreground ml-3">Yardım & Destek</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            </TouchableOpacity>
+          </Card>
+
+          {/* Sign Out Button */}
           <Button
-            onPress={() => router.push('/(tabs)/analysis')}
+            onPress={handleSignOut}
             variant="outline"
-            className="h-14 border-success/30 bg-success/10"
+            className="h-14 border-destructive/30 bg-destructive/5 mb-8"
           >
-            <Ionicons name="camera" size={20} className="text-success" />
-            <Text className="text-success font-semibold ml-2">
-              Yeni Analiz Yap
-            </Text>
+            <Ionicons name="log-out" size={20} color="#EF4444" />
+            <Text className="text-destructive font-semibold ml-2">Çıkış Yap</Text>
           </Button>
-        </View>
 
-        {/* Account Actions */}
-        <View className="flex-row items-center gap-2 mb-4">
-          <Ionicons name="key-outline" size={20} color="#8B5CF6" />
-          <Text className="text-lg font-bold text-foreground">
-            Hesap Ayarları
-          </Text>
-        </View>
-
-        <Card className="p-4 mb-6">
-          <TouchableOpacity className="flex-row items-center justify-between py-3">
-            <View className="flex-row items-center">
-              <Ionicons name="notifications" size={20} className="text-muted-foreground" />
-              <Text className="text-foreground ml-3">Bildirimler</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} className="text-muted-foreground" />
-          </TouchableOpacity>
-
-          <View className="h-px bg-border my-2" />
-
-          <TouchableOpacity className="flex-row items-center justify-between py-3">
-            <View className="flex-row items-center">
-              <Ionicons name="shield-checkmark" size={20} className="text-muted-foreground" />
-              <Text className="text-foreground ml-3">Gizlilik</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} className="text-muted-foreground" />
-          </TouchableOpacity>
-
-          <View className="h-px bg-border my-2" />
-
-          <TouchableOpacity className="flex-row items-center justify-between py-3">
-            <View className="flex-row items-center">
-              <Ionicons name="help-circle" size={20} className="text-muted-foreground" />
-              <Text className="text-foreground ml-3">Yardım & Destek</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} className="text-muted-foreground" />
-          </TouchableOpacity>
-        </Card>
-
-        {/* Sign Out */}
-        <Button
-          onPress={handleSignOut}
-          variant="outline"
-          className="h-14 border-destructive/30 bg-destructive/10 mb-8"
-        >
-          <Ionicons name="log-out" size={20} className="text-destructive" />
-          <Text className="text-destructive font-semibold ml-2">
-            Çıkış Yap
-          </Text>
-        </Button>
-
-        {/* App Info */}
-        <View className="items-center">
-          <Text className="text-muted-foreground">
-            Face Analysis App v1.0
-          </Text>
-          <Text className="text-muted-foreground/70 text-xs mt-1">
-            Üyelik Tarihi: {new Date(profile.created_at).toLocaleDateString('tr-TR')}
-          </Text>
+          {/* App Info */}
+          <View className="items-center mb-8">
+            <Text className="text-muted-foreground text-sm">Face Analysis App v1.0</Text>
+            <Text className="text-muted-foreground/70 text-xs mt-1">
+              Üyelik Tarihi: {new Date(profile.created_at).toLocaleDateString('tr-TR')}
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </View>

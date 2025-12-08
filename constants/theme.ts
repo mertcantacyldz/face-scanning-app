@@ -5,7 +5,10 @@
 
 import { Platform } from 'react-native';
 
-const tintColorLight = '#0a7ea4';
+// Indigo theme color matching global.css --primary color
+// Light: hsl(243 75% 59%) = #6366f1
+// Dark: stays white for better contrast
+const tintColorLight = '#6366f1';
 const tintColorDark = '#fff';
 
 export const Colors = {

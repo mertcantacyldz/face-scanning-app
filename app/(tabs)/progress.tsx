@@ -1,23 +1,22 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { ProgressChart } from '@/components/progress/ProgressChart';
+import { RegionProgressCard } from '@/components/progress/RegionProgressCard';
+import { Card } from '@/components/ui/card';
+import { Text } from '@/components/ui/text';
+import { usePremium } from '@/hooks/use-premium';
+import { calculateOverallProgress } from '@/lib/comparison';
+import { getAllRegions, type RegionId } from '@/lib/exercises';
+import { supabase } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import {
-  View,
-  ScrollView,
   ActivityIndicator,
-  RefreshControl,
   Alert,
   Pressable,
+  RefreshControl,
+  ScrollView,
+  View,
 } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
-import { Text } from '@/components/ui/text';
-import { Card } from '@/components/ui/card';
-import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '@/lib/supabase';
-import { RegionProgressCard } from '@/components/progress/RegionProgressCard';
-import { ProgressChart } from '@/components/progress/ProgressChart';
-import { ComparisonBadge } from '@/components/progress/ComparisonBadge';
-import { getAllRegions, getRegionTitle, type RegionId } from '@/lib/exercises';
-import { compareAnalysis, calculateOverallProgress, getStreakMessage } from '@/lib/comparison';
-import { usePremium } from '@/hooks/use-premium';
 
 interface RegionSummary {
   regionId: RegionId;
@@ -184,7 +183,7 @@ const ProgressScreen = () => {
   if (!isPremium) {
     return (
       <View className="flex-1 bg-background">
-        <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
+        <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
           {/* Header */}
           <View className="mb-6">
             <Text className="text-3xl font-bold mb-2">Gelişim Takibi</Text>
@@ -250,7 +249,7 @@ const ProgressScreen = () => {
     <View className="flex-1 bg-background">
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 16 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
@@ -276,9 +275,8 @@ const ProgressScreen = () => {
             </View>
             <View className="items-center">
               <Text
-                className={`text-4xl font-bold ${
-                  overallProgress >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}
+                className={`text-4xl font-bold ${overallProgress >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}
               >
                 {overallProgress >= 0 ? '+' : ''}
                 {overallProgress}%

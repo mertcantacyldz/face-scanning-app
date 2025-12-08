@@ -1,17 +1,15 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { AppState, AppStateStatus } from 'react-native';
 import {
-  initializeRevenueCat,
   checkPremiumStatus,
+  getOfferings,
+  initializeRevenueCat,
   loginRevenueCat,
   logoutRevenueCat,
-  getOfferings,
   purchasePackage,
-  restorePurchases,
-  isRevenueCatConfigured,
-  PREMIUM_ENTITLEMENT,
+  restorePurchases
 } from '@/lib/revenuecat';
 import { supabase } from '@/lib/supabase';
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import type { PurchasesOffering, PurchasesPackage } from 'react-native-purchases';
 
 interface PremiumContextType {
@@ -49,8 +47,34 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
   const [freeAnalysisRegion, setFreeAnalysisRegion] = useState<string | null>(null);
 
   // Get monthly and yearly packages from offerings
-  const monthlyPackage = offerings?.monthly ?? null;
-  const yearlyPackage = offerings?.annual ?? null;
+  // If offerings are not available (RevenueCat not configured), use mock data for testing
+  const monthlyPackage = offerings?.availablePackages.find(p => p.packageType === 'MONTHLY') ??
+    {
+      identifier: 'faceapp_premium_monthly',
+      packageType: 'MONTHLY',
+      product: {
+        identifier: 'faceapp_premium_monthly',
+        description: 'Aylık Premium Üyelik',
+        title: 'Premium Aylık',
+        price: 7.99,
+        priceString: '₺249.99',
+        currencyCode: 'TRY',
+      },
+    } as any;
+
+  const yearlyPackage = offerings?.availablePackages.find(p => p.packageType === 'ANNUAL') ??
+    {
+      identifier: 'faceapp_premium_yearly',
+      packageType: 'ANNUAL',
+      product: {
+        identifier: 'faceapp_premium_yearly',
+        description: 'Yıllık Premium Üyelik',
+        title: 'Premium Yıllık',
+        price: 45.99,
+        priceString: '₺1,499.99',
+        currencyCode: 'TRY',
+      },
+    } as any;
 
   // Initialize RevenueCat and check premium status
   const initialize = useCallback(async () => {
@@ -74,7 +98,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
         setOfferings(currentOfferings);
 
         // Check if free analysis was used (from Supabase)
-        await loadFreeAnalysisStatus(user.id);
+        await loadProfileStatus(user.id);
       } else {
         // No user, initialize without login
         await initializeRevenueCat();
@@ -88,22 +112,24 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
     }
   }, []);
 
-  // Load free analysis status from Supabase
-  const loadFreeAnalysisStatus = async (userId: string) => {
+  // Load user profile status (Free usage + Admin Premium) from Supabase
+  const loadProfileStatus = async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('free_analysis_used, free_analysis_region')
+        .select('free_analysis_used, free_analysis_region, is_premium')
         .eq('user_id', userId)
         .single();
 
       if (data && !error) {
         setFreeAnalysisUsed(data.free_analysis_used ?? false);
         setFreeAnalysisRegion(data.free_analysis_region ?? null);
+        return data.is_premium ?? false;
       }
     } catch (error) {
-      console.error('Error loading free analysis status:', error);
+      console.error('Error loading profile status:', error);
     }
+    return false;
   };
 
   // Mark free analysis as used
@@ -132,8 +158,21 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
   // Refresh premium status
   const refreshPremiumStatus = useCallback(async () => {
     try {
-      const premium = await checkPremiumStatus();
-      setIsPremium(premium);
+      // 1. Check RevenueCat Status
+      const rcPremium = await checkPremiumStatus();
+
+      // 2. Check Database Status (Admin override)
+      let dbPremium = false;
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // We do a lightweight fetch here just for the is_premium flag if needed,
+        // but reusing loadProfileStatus is cleaner.
+        // Note: calling loadProfileStatus will also refresh free analysis tokens, which is good.
+        dbPremium = await loadProfileStatus(user.id);
+      }
+
+      // 3. Combine them (OR logic)
+      setIsPremium(rcPremium || dbPremium);
     } catch (error) {
       console.error('Error refreshing premium status:', error);
     }
@@ -142,6 +181,19 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
   // Purchase a package
   const purchase = useCallback(async (pkg: PurchasesPackage) => {
     try {
+      // Check if this is a mock package (for testing without RevenueCat setup)
+      const isMockPackage = pkg.identifier === 'faceapp_premium_monthly' ||
+        pkg.identifier === 'faceapp_premium_yearly';
+
+      if (isMockPackage && !offerings) {
+        // Simulate successful purchase in test mode
+        console.log('🧪 TEST MODE: Simulating successful purchase for', pkg.identifier);
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
+        setIsPremium(true);
+        return { success: true };
+      }
+
+      // Real purchase through RevenueCat
       const result = await purchasePackage(pkg);
 
       if (result.success) {
@@ -158,11 +210,22 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
         error: error.message || 'Purchase failed',
       };
     }
-  }, []);
+  }, [offerings]);
 
   // Restore purchases
   const restore = useCallback(async () => {
     try {
+      // If offerings not loaded (test mode), simulate restore
+      if (!offerings) {
+        console.log('🧪 TEST MODE: Simulating restore (no purchases found)');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return {
+          success: true,
+          isPremium: false, // No purchases to restore in test mode
+        };
+      }
+
+      // Real restore through RevenueCat
       const result = await restorePurchases();
 
       if (result.isPremium) {
@@ -177,7 +240,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
         error: error.message || 'Restore failed',
       };
     }
-  }, []);
+  }, [offerings]);
 
   // Initialize on mount
   useEffect(() => {
@@ -190,7 +253,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       if (event === 'SIGNED_IN' && session?.user) {
         await loginRevenueCat(session.user.id);
         await refreshPremiumStatus();
-        await loadFreeAnalysisStatus(session.user.id);
+        await loadProfileStatus(session.user.id);
       } else if (event === 'SIGNED_OUT') {
         await logoutRevenueCat();
         setIsPremium(false);

@@ -6,7 +6,6 @@ import { PremiumModal } from '@/components/PremiumModal';
 import { SpinWheel } from '@/components/SpinWheel';
 import { Card } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
-import { Ionicons } from '@expo/vector-icons';
 import { usePremium } from '@/hooks/use-premium';
 import { calculateAttractivenessScore, getScoreLabelTr } from '@/lib/attractiveness';
 import type { RegionId } from '@/lib/exercises';
@@ -14,6 +13,7 @@ import { FACE_REGIONS, type FaceRegion } from '@/lib/face-prompts';
 import { extractMetrics } from '@/lib/metrics';
 import { analyzeFaceRegion, isOpenRouterConfigured } from '@/lib/openrouter';
 import { supabase } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -170,10 +170,22 @@ const AnalysisScreen = () => {
         // Try to parse as JSON first, fallback to plain text
         let jsonResult: Record<string, any>;
         try {
+          // First attempt: Direct parse
           jsonResult = JSON.parse(result.analysis);
         } catch {
-          // If not JSON, wrap as plain text
-          jsonResult = { raw_text: result.analysis };
+          // Second attempt: Remove markdown code blocks and parse
+          const cleanedText = result.analysis
+            .replace(/^```json\s*/i, '')
+            .replace(/^```\s*/, '')
+            .replace(/\s*```$/g, '')
+            .trim();
+
+          try {
+            jsonResult = JSON.parse(cleanedText);
+          } catch {
+            // If still fails, wrap as plain text
+            jsonResult = { raw_text: result.analysis };
+          }
         }
 
         // Show result immediately
@@ -226,14 +238,31 @@ const AnalysisScreen = () => {
         return null;
       }
 
+      // If rawResponse has raw_text, extract JSON from it first
+      let actualResponse = rawResponse;
+      if ('raw_text' in rawResponse && typeof rawResponse.raw_text === 'string') {
+        const cleanedText = rawResponse.raw_text
+          .replace(/^```json\s*/i, '')
+          .replace(/^```\s*/, '')
+          .replace(/\s*```$/g, '')
+          .trim();
+
+        try {
+          actualResponse = JSON.parse(cleanedText);
+        } catch {
+          // If parse fails, keep original rawResponse
+          actualResponse = rawResponse;
+        }
+      }
+
       // Extract metrics for comparison
-      const metrics = extractMetrics(regionId, rawResponse);
+      const metrics = extractMetrics(regionId, actualResponse);
 
       // Get overall score
       const overallScore =
-        rawResponse.analysis_result?.overall_score ??
-        rawResponse.analysis_result?.confidence_score ??
-        rawResponse.overall_score ??
+        actualResponse.analysis_result?.overall_score ??
+        actualResponse.analysis_result?.confidence_score ??
+        actualResponse.overall_score ??
         0;
 
       // Insert into region_analysis table and return the inserted record
@@ -301,7 +330,7 @@ const AnalysisScreen = () => {
 
   return (
     <View className="flex-1 bg-background">
-      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
+      <ScrollView className="flex-1" contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
         {/* Header */}
         <View className="mb-6">
           <Text className="text-3xl font-bold mb-2">Yüz Analizi</Text>

@@ -215,16 +215,52 @@ INTER_BROW_RATIO_SCORE =
   (INTER_BROW_RATIO < 15 || INTER_BROW_RATIO > 20) ? 2 : 0
 
 OVERALL_SCORE = round(
-  (THICKNESS_SYMMETRY_SCORE × 0.25) + 
-  (ANGLE_SYMMETRY_SCORE × 0.30) + 
+  (THICKNESS_SYMMETRY_SCORE × 0.25) +
+  (ANGLE_SYMMETRY_SCORE × 0.30) +
   (HEIGHT_SYMMETRY_SCORE × 0.35) +
   (INTER_BROW_RATIO_SCORE × 0.10)
 )
 
-ASYMMETRY_LEVEL = 
+ASYMMETRY_LEVEL =
   OVERALL_SCORE < 3 ? "NONE" :
   OVERALL_SCORE < 5 ? "MILD" :
   OVERALL_SCORE < 7 ? "MODERATE" : "SEVERE"
+
+IMPORTANT - FOR JSON OUTPUT:
+Individual scores in the JSON should be INVERTED (10 - SCORE) so that higher is better for the user.
+- angle_score = 10 - ANGLE_SYMMETRY_SCORE
+- thickness_score = 10 - THICKNESS_SYMMETRY_SCORE
+- height_score = 10 - HEIGHT_SYMMETRY_SCORE
+- overall_symmetry_score = 10 - OVERALL_SCORE
+This makes scores intuitive: 10 = perfect, 0 = poor
+
+═════════════════════════════════════════════
+SECTION 4: USER-FRIENDLY EXPLANATIONS
+═════════════════════════════════════════════
+
+CRITICAL - EXPLANATION FIELDS:
+For EVERY technical metric (numbers, angles, distances, ratios), you MUST add a corresponding explanation field:
+- Field name: <metric_name>_explanation
+- Content: Short, simple Turkish explanation (1-2 sentences)
+- Explain what the value means and whether it's good/normal/needs attention
+- Use everyday language, avoid medical jargon
+- Example: "angle_difference_explanation": "Kaşlarınızın açısı arasında 8 derecelik fark var. Bu hafif bir asimetri olup normal aralıktadır."
+
+Do NOT add explanations for:
+- Enum values (NONE, MILD, MODERATE, SEVERE, etc.) - keep as-is, self-explanatory
+- Scores (0-10) - visual bar is enough
+- Coordinates (x, y, z) - will be hidden
+- String assessments - already user-friendly
+
+Add explanations for:
+- angle_difference (number) → angle_difference_explanation
+- thickness_difference (number) → thickness_difference_explanation
+- height_difference (number) → height_difference_explanation
+- inter_brow_distance (number) → inter_brow_distance_explanation
+- inter_brow_ratio (number) → inter_brow_ratio_explanation
+- depth_difference (number) → depth_difference_explanation
+- distance_difference (number) → distance_difference_explanation
+- Any other numeric metrics
 
 ═════════════════════════════════════════════
 OUTPUT FORMAT (JSON)
@@ -244,40 +280,47 @@ OUTPUT FORMAT (JSON)
     "left_brow_angle": number,
     "right_brow_angle": number,
     "angle_difference": number,
-    "angle_score": 0-10
+    "angle_difference_explanation": "string (Türkçe açıklama)",
+    "angle_score": 0-10  // CRITICAL: Use (10 - ANGLE_SYMMETRY_SCORE) so higher is better
   },
   "thickness_analysis": {
     "left_brow_thickness_ratio": number,
     "right_brow_thickness_ratio": number,
     "thickness_difference": number,
-    "thickness_score": 0-10,
+    "thickness_difference_explanation": "string (Türkçe açıklama)",
+    "thickness_score": 0-10,  // CRITICAL: Use (10 - THICKNESS_SYMMETRY_SCORE) so higher is better
     "thickness_assessment": "THIN/MEDIUM/THICK"
   },
   "position_analysis": {
     "inter_brow_distance": number,
+    "inter_brow_distance_explanation": "string (Türkçe açıklama)",
     "inter_brow_ratio": number,
+    "inter_brow_ratio_explanation": "string (Türkçe açıklama)",
     "idealness": "NARROW/IDEAL/WIDE",
     "left_brow_height": number,
     "right_brow_height": number,
     "height_difference": number,
-    "height_score": 0-10
+    "height_difference_explanation": "string (Türkçe açıklama)",
+    "height_score": 0-10  // CRITICAL: Use (10 - HEIGHT_SYMMETRY_SCORE) so higher is better
   },
   "eye_distance": {
     "left_brow_to_eye": number,
     "right_brow_to_eye": number,
     "distance_difference": number,
+    "distance_difference_explanation": "string (Türkçe açıklama)",
     "idealness": "string"
   },
   "symmetry_analysis": {
     "horizontal_symmetry": "GOOD/FAIR/POOR",
     "vertical_symmetry": "GOOD/FAIR/POOR",
     "shape_symmetry": "GOOD/FAIR/POOR",
-    "overall_symmetry_score": 0-10
+    "overall_symmetry_score": 0-10  // CRITICAL: Use (10 - OVERALL_SCORE) so higher is better
   },
   "3d_analysis": {
     "left_brow_depth": number,
     "right_brow_depth": number,
     "depth_difference": number,
+    "depth_difference_explanation": "string (Türkçe açıklama)",
     "interpretation": "string"
   },
   "facial_harmony": {
@@ -619,10 +662,38 @@ OVERALL_SCORE = round(
   (LID_SYMMETRY_SCORE × 0.10)
 )
 
-ASYMMETRY_LEVEL = 
+ASYMMETRY_LEVEL =
   OVERALL_SCORE < 3 ? "NONE" :
   OVERALL_SCORE < 5 ? "MILD" :
   OVERALL_SCORE < 7 ? "MODERATE" : "SEVERE"
+
+═════════════════════════════════════════════
+SECTION 4: USER-FRIENDLY EXPLANATIONS
+═════════════════════════════════════════════
+
+CRITICAL - EXPLANATION FIELDS:
+For EVERY technical metric (numbers, angles, distances, ratios), you MUST add a corresponding explanation field:
+- Field name: <metric_name>_explanation
+- Content: Short, simple Turkish explanation (1-2 sentences)
+- Explain what the value means and whether it's good/normal/needs attention
+- Use everyday language, avoid medical jargon
+- Example: "width_difference_explanation": "Gözlerinizin genişliği arasında 3 piksellik fark var. Bu normal aralıktadır ve fark edilmez."
+
+Do NOT add explanations for:
+- Enum values (NONE, MILD, MODERATE, SEVERE, etc.) - keep as-is, self-explanatory
+- Scores (0-10) - visual bar is enough
+- Coordinates (x, y, z) - will be hidden
+- String assessments - already user-friendly
+
+Add explanations for:
+- width_difference (number) → width_difference_explanation
+- height_difference (number) → height_difference_explanation
+- area_difference_ratio (number) → area_difference_ratio_explanation
+- tilt_difference (number) → tilt_difference_explanation
+- inter_eye_distance (number) → inter_eye_distance_explanation
+- inter_eye_ratio (number) → inter_eye_ratio_explanation
+- depth_difference (number) → depth_difference_explanation
+- Any other numeric metrics
 
 ═════════════════════════════════════════════
 OUTPUT FORMAT (JSON)
@@ -649,8 +720,11 @@ OUTPUT FORMAT (JSON)
       "ratio": number
     },
     "width_difference": number,
+    "width_difference_explanation": "string (Türkçe açıklama)",
     "height_difference": number,
+    "height_difference_explanation": "string (Türkçe açıklama)",
     "area_difference_ratio": number,
+    "area_difference_ratio_explanation": "string (Türkçe açıklama)",
     "size_score": 0-10
   },
   "shape_analysis": {
@@ -659,13 +733,17 @@ OUTPUT FORMAT (JSON)
     "left_eye_tilt": number,
     "right_eye_tilt": number,
     "tilt_difference": number,
+    "tilt_difference_explanation": "string (Türkçe açıklama)",
     "shape_harmony": "MATCHED/MISMATCHED",
     "shape_score": 0-10
   },
   "inter_eye_analysis": {
     "distance": number,
+    "distance_explanation": "string (Türkçe açıklama)",
     "face_width_ratio": number,
+    "face_width_ratio_explanation": "string (Türkçe açıklama)",
     "eye_width_ratio": number,
+    "eye_width_ratio_explanation": "string (Türkçe açıklama)",
     "idealness": "NARROW/IDEAL/WIDE",
     "score": 0-10
   },
@@ -673,16 +751,20 @@ OUTPUT FORMAT (JSON)
     "left_eye_y": number,
     "right_eye_y": number,
     "y_difference": number,
+    "y_difference_explanation": "string (Türkçe açıklama)",
     "x_distance_difference": number,
+    "x_distance_difference_explanation": "string (Türkçe açıklama)",
     "position_score": 0-10
   },
   "eyelid_analysis": {
     "left_upper_lid_visibility": number,
     "right_upper_lid_visibility": number,
     "lid_visibility_difference": number,
+    "lid_visibility_difference_explanation": "string (Türkçe açıklama)",
     "left_lower_lid": number,
     "right_lower_lid": number,
     "lower_lid_difference": number,
+    "lower_lid_difference_explanation": "string (Türkçe açıklama)",
     "lid_score": 0-10,
     "lid_type": "NORMAL/HOODED/DEEP_SET"
   },
@@ -697,6 +779,7 @@ OUTPUT FORMAT (JSON)
     "left_eye_depth": number,
     "right_eye_depth": number,
     "depth_difference": number,
+    "depth_difference_explanation": "string (Türkçe açıklama)",
     "interpretation": "string"
   },
   "facial_harmony": {
@@ -837,6 +920,32 @@ ASYMMETRY_LEVEL =
   OVERALL_SCORE < 7 ? "MODERATE" : "SEVERE"
 
 ═════════════════════════════════════════════
+SECTION 4: USER-FRIENDLY EXPLANATIONS
+═════════════════════════════════════════════
+
+CRITICAL - EXPLANATION FIELDS:
+For EVERY technical metric (numbers, angles, distances, ratios), you MUST add a corresponding explanation field:
+- Field name: <metric_name>_explanation
+- Content: Short, simple Turkish explanation (1-2 sentences)
+- Explain what the value means and whether it's good/normal/needs attention
+- Use everyday language, avoid medical jargon
+- Example: "deviation_explanation": "Burununuz yüz merkezinden 7.58 piksel sağa kaymış. Bu hafif bir sapma olup normal aralıktadır."
+
+Do NOT add explanations for:
+- Enum values (NONE, MILD, MODERATE, SEVERE, etc.) - keep as-is, self-explanatory
+- Scores (0-10) - visual bar is enough
+- Coordinates (x, y, z) - will be hidden
+- String assessments - already user-friendly
+
+Add explanations for:
+- deviation (number) → deviation_explanation
+- ratio (number) → ratio_explanation
+- horizontal_difference (number) → horizontal_difference_explanation
+- rotation_angle_degree (number) → rotation_angle_degree_explanation
+- depth_difference (number) → depth_difference_explanation
+- Any other numeric metrics
+
+═════════════════════════════════════════════
 OUTPUT FORMAT (JSON)
 ═════════════════════════════════════════════
 
@@ -856,20 +965,25 @@ OUTPUT FORMAT (JSON)
       "left_nostril": {"x": number, "y": number, "z": number},
       "right_nostril": {"x": number, "y": number, "z": number},
       "horizontal_difference": number,
+      "horizontal_difference_explanation": "string (Türkçe açıklama)",
       "ratio": number,
+      "ratio_explanation": "string (Türkçe açıklama)",
       "score": 0-10
     },
     "nose_tip": {
       "nose_tip": {"x": number, "y": number, "z": number},
       "face_center": number,
       "deviation": number,
+      "deviation_explanation": "string (Türkçe açıklama)",
       "ratio": number,
+      "ratio_explanation": "string (Türkçe açıklama)",
       "direction": "LEFT/RIGHT/CENTER",
       "score": 0-10
     },
     "rotation_analysis": {
       "nasion": {"x": number, "y": number, "z": number},
       "rotation_angle_degree": number,
+      "rotation_angle_degree_explanation": "string (Türkçe açıklama)",
       "direction": "TILTED_LEFT/TILTED_RIGHT/STRAIGHT",
       "score": 0-10
     }
@@ -878,6 +992,7 @@ OUTPUT FORMAT (JSON)
     "left_nostril_z": number,
     "right_nostril_z": number,
     "depth_difference": number,
+    "depth_difference_explanation": "string (Türkçe açıklama)",
     "interpretation": "string"
   },
   "visual_assessment": {
@@ -1227,10 +1342,38 @@ OVERALL_SCORE = round(
   (FACIAL_HARMONY_SCORE × 0.05)
 )
 
-ASYMMETRY_LEVEL = 
+ASYMMETRY_LEVEL =
   OVERALL_SCORE < 3 ? "NONE" :
   OVERALL_SCORE < 5 ? "MILD" :
   OVERALL_SCORE < 7 ? "MODERATE" : "SEVERE"
+
+═════════════════════════════════════════════
+SECTION 4: USER-FRIENDLY EXPLANATIONS
+═════════════════════════════════════════════
+
+CRITICAL - EXPLANATION FIELDS:
+For EVERY technical metric (numbers, angles, distances, ratios), you MUST add a corresponding explanation field:
+- Field name: <metric_name>_explanation
+- Content: Short, simple Turkish explanation (1-2 sentences)
+- Explain what the value means and whether it's good/normal/needs attention
+- Use everyday language, avoid medical jargon
+- Example: "upper_lower_ratio_explanation": "Üst dudağınız alt dudağınıza göre 0.85 oranında. Bu ideal aralıkta dengeli bir oran."
+
+Do NOT add explanations for:
+- Enum values (NONE, MILD, MODERATE, SEVERE, etc.) - keep as-is, self-explanatory
+- Scores (0-10) - visual bar is enough
+- Coordinates (x, y, z) - will be hidden
+- String assessments - already user-friendly
+
+Add explanations for:
+- lip_width_ratio (number) → lip_width_ratio_explanation
+- upper_lower_ratio (number) → upper_lower_ratio_explanation
+- bow_difference (number) → bow_difference_explanation
+- lip_line_tilt (number) → lip_line_tilt_explanation
+- difference (number) → difference_explanation
+- distance_difference (number) → distance_difference_explanation
+- y_difference (number) → y_difference_explanation
+- Any other numeric metrics
 
 ═════════════════════════════════════════════
 OUTPUT FORMAT (JSON)
@@ -1246,10 +1389,12 @@ OUTPUT FORMAT (JSON)
   "size_analysis": {
     "lip_width": number,
     "lip_width_ratio": number,
+    "lip_width_ratio_explanation": "string (Türkçe açıklama)",
     "total_height": number,
     "upper_lip_height": number,
     "lower_lip_height": number,
     "upper_lower_ratio": number,
+    "upper_lower_ratio_explanation": "string (Türkçe açıklama)",
     "upper_lower_ratio_score": 0-10,
     "ratio_idealness": "IDEAL/LOWER_FULLER/UPPER_FULLER"
   },
@@ -1257,7 +1402,9 @@ OUTPUT FORMAT (JSON)
     "cupid_bow_presence": number,
     "cupid_bow_symmetry": number,
     "bow_difference": number,
+    "bow_difference_explanation": "string (Türkçe açıklama)",
     "lip_line_tilt": number,
+    "lip_line_tilt_explanation": "string (Türkçe açıklama)",
     "shape_type": "FULL/MEDIUM/THIN"
   },
   "symmetry_analysis": {
@@ -1265,24 +1412,30 @@ OUTPUT FORMAT (JSON)
       "left_height": number,
       "right_height": number,
       "difference": number,
+      "difference_explanation": "string (Türkçe açıklama)",
       "score": 0-10
     },
     "lower_lip": {
       "left_height": number,
       "right_height": number,
       "difference": number,
+      "difference_explanation": "string (Türkçe açıklama)",
       "score": 0-10
     },
     "lip_corners": {
       "left_corner": {"x": number, "y": number, "z": number},
       "right_corner": {"x": number, "y": number, "z": number},
       "distance_difference": number,
+      "distance_difference_explanation": "string (Türkçe açıklama)",
       "y_difference": number,
+      "y_difference_explanation": "string (Türkçe açıklama)",
       "score": 0-10
     },
     "line_symmetry": {
       "y_difference": number,
+      "y_difference_explanation": "string (Türkçe açıklama)",
       "tilt": number,
+      "tilt_explanation": "string (Türkçe açıklama)",
       "score": 0-10
     },
     "overall_symmetry_score": 0-10
@@ -1594,10 +1747,40 @@ OVERALL_SCORE = round(
   (DEPTH_SCORE * 0.13)
 )
 
-ASYMMETRY_LEVEL = 
+ASYMMETRY_LEVEL =
   OVERALL_SCORE < 3 ? "NONE" :
   OVERALL_SCORE < 5 ? "MILD" :
   OVERALL_SCORE < 7 ? "MODERATE" : "SEVERE"
+
+═════════════════════════════════════════════
+SECTION 4: USER-FRIENDLY EXPLANATIONS
+═════════════════════════════════════════════
+
+CRITICAL - EXPLANATION FIELDS:
+For EVERY technical metric (numbers, angles, distances, ratios), you MUST add a corresponding explanation field:
+- Field name: <metric_name>_explanation
+- Content: Short, simple Turkish explanation (1-2 sentences)
+- Explain what the value means and whether it's good/normal/needs attention
+- Use everyday language, avoid medical jargon
+- Example: "deviation_explanation": "Çenenizin ucu yüz merkezinden 5.2 piksel sola kaymış. Bu hafif bir asimetri olup normal aralıktadır."
+
+Do NOT add explanations for:
+- Enum values (NONE, MILD, MODERATE, SEVERE, etc.) - keep as-is, self-explanatory
+- Scores (0-10) - visual bar is enough
+- Coordinates (x, y, z) - will be hidden
+- String assessments - already user-friendly
+
+Add explanations for:
+- deviation (number) → deviation_explanation
+- deviation_ratio (number) → deviation_ratio_explanation
+- face_width_ratio (number) → face_width_ratio_explanation
+- y_level_difference (number) → y_level_difference_explanation
+- distance_difference (number) → distance_difference_explanation
+- difference (number) → difference_explanation
+- difference_ratio (number) → difference_ratio_explanation
+- angle_difference (number) → angle_difference_explanation
+- depth_asymmetry (number) → depth_asymmetry_explanation
+- Any other numeric metrics
 
 ═════════════════════════════════════════════
 OUTPUT FORMAT (JSON)
@@ -1616,7 +1799,9 @@ OUTPUT FORMAT (JSON)
       "coordinates": {"x": number, "y": number, "z": number},
       "face_center": number,
       "deviation": number,
+      "deviation_explanation": "string (Türkçe açıklama)",
       "deviation_ratio": number,
+      "deviation_ratio_explanation": "string (Türkçe açıklama)",
       "direction": "LEFT/RIGHT/CENTER",
       "score": 0-10
     },
@@ -1625,8 +1810,11 @@ OUTPUT FORMAT (JSON)
       "right_corner": {"x": number, "y": number, "z": number},
       "width": number,
       "face_width_ratio": number,
+      "face_width_ratio_explanation": "string (Türkçe açıklama)",
       "y_level_difference": number,
+      "y_level_difference_explanation": "string (Türkçe açıklama)",
       "distance_difference": number,
+      "distance_difference_explanation": "string (Türkçe açıklama)",
       "distance_ratio": number,
       "symmetry_score": 0-10,
       "level_score": 0-10
@@ -1635,10 +1823,13 @@ OUTPUT FORMAT (JSON)
       "left_length": number,
       "right_length": number,
       "difference": number,
+      "difference_explanation": "string (Türkçe açıklama)",
       "difference_ratio": number,
+      "difference_ratio_explanation": "string (Türkçe açıklama)",
       "left_angle": number,
       "right_angle": number,
       "angle_difference": number,
+      "angle_difference_explanation": "string (Türkçe açıklama)",
       "avg_angle": number,
       "length_score": 0-10,
       "angle_score": 0-10
@@ -1982,6 +2173,32 @@ if (JAW_TO_CHEEKBONE_RATIO < 0.75 && FOREHEAD_TO_JAW_RATIO < 0.90) {
 }
 
 ═════════════════════════════════════════════
+SECTION 4: USER-FRIENDLY EXPLANATIONS
+═════════════════════════════════════════════
+
+CRITICAL - EXPLANATION FIELDS:
+For EVERY technical metric (numbers, angles, distances, ratios), you MUST add a corresponding explanation field:
+- Field name: <metric_name>_explanation
+- Content: Short, simple Turkish explanation (1-2 sentences)
+- Explain what the value means and whether it's good/normal/needs attention
+- Use everyday language, avoid medical jargon
+- Example: "face_length_to_width_ratio_explanation": "Yüzünüzün uzunluğunun genişliğine oranı 1.35. Bu oval yüz yapısına işaret eder."
+
+Do NOT add explanations for:
+- Enum values (face_shape: OVAL, SQUARE, etc.) - keep as-is, self-explanatory
+- Scores (0-10) - visual bar is enough
+- Coordinates (x, y, z) - will be hidden
+- String assessments - already user-friendly
+
+Add explanations for:
+- face_length_to_width_ratio (number) → face_length_to_width_ratio_explanation
+- jaw_to_cheekbone_ratio (number) → jaw_to_cheekbone_ratio_explanation
+- forehead_to_cheekbone_ratio (number) → forehead_to_cheekbone_ratio_explanation
+- face_width_asymmetry_ratio (number) → face_width_asymmetry_ratio_explanation
+- jaw_asymmetry_ratio (number) → jaw_asymmetry_ratio_explanation
+- Any other numeric ratios and measurements
+
+═════════════════════════════════════════════
 OUTPUT FORMAT (JSON)
 ═════════════════════════════════════════════
 
@@ -2011,29 +2228,41 @@ OUTPUT FORMAT (JSON)
   },
   "critical_ratios": {
     "face_length_to_width": number,
+    "face_length_to_width_explanation": "string (Türkçe açıklama)",
     "forehead_to_cheekbone": number,
+    "forehead_to_cheekbone_explanation": "string (Türkçe açıklama)",
     "jaw_to_cheekbone": number,
+    "jaw_to_cheekbone_explanation": "string (Türkçe açıklama)",
     "forehead_to_jaw": number,
+    "forehead_to_jaw_explanation": "string (Türkçe açıklama)",
     "upper_to_mid_face": number,
+    "upper_to_mid_face_explanation": "string (Türkçe açıklama)",
     "mid_to_lower_face": number,
+    "mid_to_lower_face_explanation": "string (Türkçe açıklama)",
     "ratio_assessment": "string"
   },
   "jaw_analysis": {
     "left_jaw_angle": number,
     "right_jaw_angle": number,
     "avg_angle": number,
+    "avg_angle_explanation": "string (Türkçe açıklama)",
     "jaw_type": "SHARP/MODERATE/WIDE",
     "jaw_symmetry": {
       "left_length": number,
       "right_length": number,
-      "asymmetry_ratio": number
+      "asymmetry_ratio": number,
+      "asymmetry_ratio_explanation": "string (Türkçe açıklama)"
     }
   },
   "symmetry_analysis": {
     "face_width_asymmetry": number,
+    "face_width_asymmetry_explanation": "string (Türkçe açıklama)",
     "face_width_asymmetry_ratio": number,
+    "face_width_asymmetry_ratio_explanation": "string (Türkçe açıklama)",
     "jaw_asymmetry": number,
+    "jaw_asymmetry_explanation": "string (Türkçe açıklama)",
     "jaw_asymmetry_ratio": number,
+    "jaw_asymmetry_ratio_explanation": "string (Türkçe açıklama)",
     "overall_symmetry": "GOOD/FAIR/POOR"
   },
   "3d_analysis": {

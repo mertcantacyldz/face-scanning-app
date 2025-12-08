@@ -1,17 +1,17 @@
-import React, { useState } from 'react';
-import {
-  View,
-  ScrollView,
-  Pressable,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
-import { router } from 'expo-router';
-import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
-import { Ionicons } from '@expo/vector-icons';
+import { Text } from '@/components/ui/text';
 import { usePremium } from '@/hooks/use-premium';
 import { calculateSavings } from '@/lib/revenuecat';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  View,
+} from 'react-native';
 
 const FEATURES = [
   { iconName: 'search-outline', text: '6 bölge tam AI analizi' },
@@ -35,11 +35,14 @@ const PaywallScreen = () => {
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
 
+  console.log(' Package:', selectedPackage);
+
   // Calculate savings
   const savings = calculateSavings(monthlyPackage ?? undefined, yearlyPackage ?? undefined);
 
   const handlePurchase = async () => {
     const pkg = selectedPackage === 'yearly' ? yearlyPackage : monthlyPackage;
+    console.log(' Selected Package for Purchase:', selectedPackage, pkg);
     if (!pkg) {
       Alert.alert('Hata', 'Paket bulunamadı. Lütfen daha sonra tekrar deneyin.');
       return;

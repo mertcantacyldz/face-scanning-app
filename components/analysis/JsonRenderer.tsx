@@ -1,7 +1,7 @@
+import { Card } from '@/components/ui/card';
+import { Text } from '@/components/ui/text';
 import React from 'react';
 import { View } from 'react-native';
-import { Text } from '@/components/ui/text';
-import { Card } from '@/components/ui/card';
 
 // Types
 type ValueType =
@@ -157,27 +157,15 @@ function EnumBadge({ value }: { value: string }) {
   );
 }
 
-// Component: Coordinate Display
-function CoordinateDisplay({ value }: { value: Record<string, number> }) {
-  return (
-    <View className="flex-row gap-2 flex-wrap">
-      {Object.entries(value).map(([key, val]) => (
-        <View key={key} className="bg-gray-100 px-2 py-1 rounded">
-          <Text className="text-xs">
-            <Text className="font-semibold">{key.toUpperCase()}:</Text>{' '}
-            {typeof val === 'number' ? val.toFixed(2) : String(val)}
-          </Text>
-        </View>
-      ))}
-    </View>
-  );
-}
+// Note: CoordinateDisplay component removed - coordinates are now hidden
+// See detectValueType() where 'coordinate' type returns null
 
 // Main render value function
 function renderValue(
   key: string,
   value: any,
-  depth: number
+  depth: number,
+  data?: any
 ): React.ReactElement | null {
   const type = detectValueType(value);
 
@@ -196,9 +184,9 @@ function renderValue(
     return <EnumBadge value={value} />;
   }
 
-  // Coordinate
+  // Coordinate - Hide coordinates (x, y, z)
   if (type === 'coordinate') {
-    return <CoordinateDisplay value={value} />;
+    return null; // Don't render coordinates at all
   }
 
   // Number
@@ -215,14 +203,12 @@ function renderValue(
   if (type === 'boolean') {
     return (
       <View
-        className={`${
-          value ? 'bg-green-100 border-green-300' : 'bg-red-100 border-red-300'
-        } border px-2 py-1 rounded self-start`}
+        className={`${value ? 'bg-green-100 border-green-300' : 'bg-red-100 border-red-300'
+          } border px-2 py-1 rounded self-start`}
       >
         <Text
-          className={`text-xs font-semibold ${
-            value ? 'text-green-800' : 'text-red-800'
-          }`}
+          className={`text-xs font-semibold ${value ? 'text-green-800' : 'text-red-800'
+            }`}
         >
           {value ? '✓ Yes' : '✗ No'}
         </Text>
@@ -278,6 +264,63 @@ function renderValue(
   return null;
 }
 
+// Wrapper function to add explanations
+function renderValueWithExplanation(
+  key: string,
+  value: any,
+  depth: number,
+  data?: any
+): React.ReactElement | null {
+  const renderedValue = renderValue(key, value, depth, data);
+
+  // If no value rendered (e.g., coordinates), return null
+  if (!renderedValue) {
+    return null;
+  }
+
+  // Check for explanation field (skip for scores and enums)
+  const type = detectValueType(value);
+  if (type === 'score' || type === 'enum') {
+    return renderedValue; // No explanation needed
+  }
+
+  // Look for explanation fields
+  if (data && typeof data === 'object') {
+    const explanationKey = `${key}_explanation`;
+    const interpretationKey = `${key}_interpretation`;
+    const explanation = data[explanationKey] || data[interpretationKey];
+
+    if (explanation && typeof explanation === 'string') {
+      return (
+        <View>
+          {renderedValue}
+          <Text className="text-xs text-muted-foreground italic mt-1.5 leading-relaxed">
+            💡 {explanation}
+          </Text>
+        </View>
+      );
+    }
+  }
+
+  return renderedValue;
+}
+
+// Helper: Extract JSON from markdown code block
+function extractJsonFromMarkdown(text: string): any {
+  // Remove markdown code blocks (```json ... ``` or ``` ... ```)
+  const cleanedText = text
+    .replace(/^```json\s*/i, '')
+    .replace(/^```\s*/, '')
+    .replace(/\s*```$/, '')
+    .trim();
+
+  try {
+    return JSON.parse(cleanedText);
+  } catch {
+    return null;
+  }
+}
+
 // Main component
 export function JsonRenderer({
   data,
@@ -285,36 +328,72 @@ export function JsonRenderer({
   excludeKeys = [],
 }: JsonRendererProps) {
   if (!data || typeof data !== 'object') {
-    return null;
+    return (
+      <View className="p-4 bg-muted/50 rounded-lg">
+        <Text className="text-muted-foreground text-center italic">
+          Veri bulunamadı
+        </Text>
+      </View>
+    );
+  }
+
+  // Check if data has raw_text field (markdown-wrapped JSON)
+  if ('raw_text' in data && typeof data.raw_text === 'string') {
+    const extractedJson = extractJsonFromMarkdown(data.raw_text);
+    if (extractedJson) {
+      // Recursively render the extracted JSON
+      return <JsonRenderer data={extractedJson} depth={depth} excludeKeys={excludeKeys} />;
+    }
+    // If extraction failed, show the raw text as plain text
+    return (
+      <Text className="text-sm leading-relaxed">{data.raw_text}</Text>
+    );
   }
 
   const entries = Object.entries(data).filter(
-    ([key]) => !excludeKeys.includes(key)
+    ([key]) => !excludeKeys.includes(key) &&
+      !key.endsWith('_explanation') &&
+      !key.endsWith('_interpretation')
   );
 
   if (entries.length === 0) {
-    return null;
+    return (
+      <View className="p-4 bg-muted/50 rounded-lg">
+        <Text className="text-muted-foreground text-center italic">
+          Analiz verisi boş
+        </Text>
+      </View>
+    );
   }
 
   return (
     <View className="gap-3">
-      {entries.map(([key, value]) => (
-        <View key={key}>
-          {/* Field label */}
-          <Text
-            className={
-              depth === 0
-                ? 'text-base font-bold mb-1.5 text-foreground'
-                : 'text-sm font-semibold mb-1 text-foreground'
-            }
-          >
-            {formatKeyName(key)}
-          </Text>
+      {entries.map(([key, value]) => {
+        const renderedValue = renderValueWithExplanation(key, value, depth, data);
 
-          {/* Field value */}
-          <View>{renderValue(key, value, depth)}</View>
-        </View>
-      ))}
+        // Skip if value is null (e.g., hidden coordinates)
+        if (!renderedValue) {
+          return null;
+        }
+
+        return (
+          <View key={key}>
+            {/* Field label */}
+            <Text
+              className={
+                depth === 0
+                  ? 'text-base font-bold mb-1.5 text-foreground'
+                  : 'text-sm font-semibold mb-1 text-foreground'
+              }
+            >
+              {formatKeyName(key)}
+            </Text>
+
+            {/* Field value */}
+            <View>{renderedValue}</View>
+          </View>
+        );
+      })}
     </View>
   );
 }
