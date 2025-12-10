@@ -6,7 +6,6 @@ import { PremiumModal } from '@/components/PremiumModal';
 import { SpinWheel } from '@/components/SpinWheel';
 import { Card } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
-import { Ionicons } from '@expo/vector-icons';
 import { usePremium } from '@/hooks/use-premium';
 import { calculateAttractivenessScore, getScoreLabelTr } from '@/lib/attractiveness';
 import type { RegionId } from '@/lib/exercises';
@@ -14,11 +13,13 @@ import { FACE_REGIONS, type FaceRegion } from '@/lib/face-prompts';
 import { extractMetrics } from '@/lib/metrics';
 import { analyzeFaceRegion, isOpenRouterConfigured } from '@/lib/openrouter';
 import { supabase } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Modal,
   Pressable,
   ScrollView,
@@ -67,10 +68,12 @@ const AnalysisScreen = () => {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        Alert.alert('Hata', 'Lütfen giriş yapın');
-        router.replace('/(auth)/login');
+        console.log('No user found in analysis screen');
+        Alert.alert('Hata', 'Kullanıcı bulunamadı. Lütfen uygulamayı yeniden başlatın.');
         return;
       }
+
+      console.log('Loading face analysis for user:', user.id);
 
       // Fetch latest face analysis
       const { data, error } = await supabase
@@ -166,14 +169,28 @@ const AnalysisScreen = () => {
         customPrompt: region.prompt,
       });
 
+      console.log('Analysis result for region', region.id, ':', result);
+
       if (result.success && result.analysis) {
         // Try to parse as JSON first, fallback to plain text
         let jsonResult: Record<string, any>;
         try {
+          // First attempt: Direct parse
           jsonResult = JSON.parse(result.analysis);
         } catch {
-          // If not JSON, wrap as plain text
-          jsonResult = { raw_text: result.analysis };
+          // Second attempt: Remove markdown code blocks and parse
+          const cleanedText = result.analysis
+            .replace(/^```json\s*/i, '')
+            .replace(/^```\s*/, '')
+            .replace(/\s*```$/g, '')
+            .trim();
+
+          try {
+            jsonResult = JSON.parse(cleanedText);
+          } catch {
+            // If still fails, wrap as plain text
+            jsonResult = { raw_text: result.analysis };
+          }
         }
 
         // Show result immediately
@@ -402,7 +419,11 @@ const AnalysisScreen = () => {
                 <Card className={`p-4 flex-row items-center border bg-card ${isLocked ? 'border-border/50 opacity-80' : 'border-border'}`}>
                   {/* Icon */}
                   <View className={`w-16 h-16 rounded-full items-center justify-center mr-4 ${isLocked ? 'bg-muted' : 'bg-primary/10'}`}>
-                    <Text className="text-4xl">{region.icon}</Text>
+                    {typeof region.icon === 'string' ? (
+                      <Text className="text-4xl">{region.icon}</Text>
+                    ) : (
+                      <Image source={region.icon} style={{ width: 40, height: 40 }} resizeMode="contain" />
+                    )}
                   </View>
 
                   {/* Content */}
@@ -505,7 +526,13 @@ const AnalysisScreen = () => {
           <View className="bg-primary p-4 pt-12 pb-6">
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center">
-                <Text className="text-5xl mr-3">{selectedRegion?.icon}</Text>
+                {selectedRegion?.icon && (
+                  typeof selectedRegion.icon === 'string' ? (
+                    <Text className="text-5xl mr-3">{selectedRegion.icon}</Text>
+                  ) : (
+                    <Image source={selectedRegion.icon} style={{ width: 50, height: 50, marginRight: 12 }} resizeMode="contain" />
+                  )
+                )}
                 <View>
                   <Text className="text-2xl font-bold text-primary-foreground">
                     {selectedRegion?.title}

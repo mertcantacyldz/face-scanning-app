@@ -1,7 +1,6 @@
 // app/(tabs)/index.tsx - Home Screen
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   Dimensions,
   Image,
   Modal,
@@ -23,6 +22,7 @@ import { WebView } from 'react-native-webview';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
+import { useAuth } from '@/hooks/use-auth';
 import { useFaceMesh } from '@/hooks/use-face-mesh';
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
@@ -37,6 +37,7 @@ interface Profile {
 
 export default function HomeScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const { session } = useAuth();
 
   // Face mesh analiz hook'u
   const {
@@ -66,33 +67,51 @@ export default function HomeScreen() {
   const carouselRef = useRef<any>(null);
   const arrowScale = useSharedValue(1);
 
-  // Kullanıcı profilini al
+  // Kullanıcı profilini al - session hazır olduğunda
   useEffect(() => {
     const fetchProfile = async () => {
+      if (!session?.user) {
+        console.log('No session yet, waiting...');
+        return;
+      }
+
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
- 
-        const { data: profileData } = await supabase
+        const userId = session.user.id;
+        console.log('Fetching profile for user:', userId);
+
+        const { data: profileData, error } = await supabase
           .from('profiles')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .single();
- 
+
         if (profileData) {
+          console.log('Profile loaded successfully:', profileData);
           setProfile(profileData);
         } else {
-          Alert.alert('Hata', 'Profil bulunamadı');
+          console.log('Profile not found, error:', error);
+          // Anonymous user için default profile oluştur
+          setProfile({
+            id: userId,
+            full_name: 'Kullanıcı',
+            is_premium: false,
+          });
         }
       } catch (error) {
-        if (__DEV__) {
-          console.error('Profil yükleme hatası:', error);
+        console.error('Profil yükleme hatası:', error);
+        // Hata durumunda da default profile kullan
+        if (session?.user) {
+          setProfile({
+            id: session.user.id,
+            full_name: 'Kullanıcı',
+            is_premium: false,
+          });
         }
       }
     };
 
     fetchProfile();
-  }, []);
+  }, [session]); // session değiştiğinde yeniden çalışsın
 
   // Arrow pulse animation
   useEffect(() => {

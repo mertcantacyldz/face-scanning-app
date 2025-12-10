@@ -1,13 +1,13 @@
 // RevenueCat Configuration
 // Handles premium subscription management
 
+import { Platform } from 'react-native';
 import Purchases, {
-  PurchasesOffering,
-  PurchasesPackage,
   CustomerInfo,
   LOG_LEVEL,
+  PurchasesOffering,
+  PurchasesPackage,
 } from 'react-native-purchases';
-import { Platform } from 'react-native';
 
 // RevenueCat API Keys (from RevenueCat Dashboard)
 const REVENUECAT_API_KEY_IOS = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY || '';
@@ -22,7 +22,11 @@ export const PRODUCT_IDS = {
   YEARLY: 'faceapp_premium_yearly', // $45.99/year
 };
 
-// Initialize RevenueCat
+// Flag to prevent multiple initializations
+let isRevenueCatInitialized = false;
+let initializationPromise: Promise<void> | null = null;
+
+// Initialize RevenueCat (singleton pattern to prevent multiple configurations)
 export async function initializeRevenueCat(userId?: string): Promise<void> {
   const apiKey = Platform.OS === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
 
@@ -31,24 +35,59 @@ export async function initializeRevenueCat(userId?: string): Promise<void> {
     return;
   }
 
-  try {
-    // Set log level for debugging (remove in production)
-    if (__DEV__) {
-      Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-    }
-
-    // Configure RevenueCat
-    await Purchases.configure({ apiKey });
-
-    // If user is logged in, identify them
+  // If already initialized, just login with new user if provided
+  if (isRevenueCatInitialized) {
+    console.log('RevenueCat already initialized, skipping configure...');
     if (userId) {
-      await Purchases.logIn(userId);
+      try {
+        await Purchases.logIn(userId);
+        console.log('RevenueCat: User logged in:', userId);
+      } catch (error) {
+        console.error('RevenueCat login error:', error);
+      }
     }
-
-    console.log('RevenueCat initialized successfully');
-  } catch (error) {
-    console.error('Failed to initialize RevenueCat:', error);
+    return;
   }
+
+  // If initialization is in progress, wait for it
+  if (initializationPromise) {
+    console.log('RevenueCat initialization in progress, waiting...');
+    await initializationPromise;
+    if (userId) {
+      try {
+        await Purchases.logIn(userId);
+      } catch (error) {
+        console.error('RevenueCat login error:', error);
+      }
+    }
+    return;
+  }
+
+  // Start initialization
+  initializationPromise = (async () => {
+    try {
+      // Set log level for debugging (remove in production)
+      if (__DEV__) {
+        Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+      }
+
+      // Configure RevenueCat
+      await Purchases.configure({ apiKey });
+      isRevenueCatInitialized = true;
+
+      // If user is logged in, identify them
+      if (userId) {
+        await Purchases.logIn(userId);
+      }
+
+      console.log('RevenueCat initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize RevenueCat:', error);
+      initializationPromise = null; // Allow retry on failure
+    }
+  })();
+
+  await initializationPromise;
 }
 
 // Login user to RevenueCat (call when user logs in)
@@ -136,15 +175,30 @@ export async function restorePurchases(): Promise<{
   error?: string;
 }> {
   try {
+    console.log('🔄 Starting restore purchases...');
+
+    // 1. Call RevenueCat restore
     const customerInfo = await Purchases.restorePurchases();
-    const isPremium = customerInfo.entitlements.active[PREMIUM_ENTITLEMENT] !== undefined;
+    const premiumEntitlement = customerInfo.entitlements.active[PREMIUM_ENTITLEMENT];
+    const isPremium = premiumEntitlement !== undefined;
+
+    console.log('📦 RevenueCat restore complete. Premium:', isPremium);
+
+    // RevenueCat is the source of truth for premium status
+    // Supabase is_premium field is only for manual override if needed
+
+    if (isPremium) {
+      console.log('✅ Active premium subscription found!');
+    } else {
+      console.log('❌ No active premium subscription found');
+    }
 
     return {
       success: true,
       isPremium,
     };
   } catch (error: any) {
-    console.error('Restore error:', error);
+    console.error('❌ Restore error:', error);
     return {
       success: false,
       isPremium: false,

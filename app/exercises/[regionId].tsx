@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
-import { View, ScrollView, Pressable } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
-import { Text } from '@/components/ui/text';
-import { Card } from '@/components/ui/card';
-import { Ionicons } from '@expo/vector-icons';
-import { ExerciseCard } from '@/components/progress/ExerciseCard';
-import {
-  getRegionTitle,
-  getRegionIcon,
-  getExercisesByRegion,
-  type RegionId,
-  type Exercise,
-} from '@/lib/exercises';
-import { usePremium } from '@/hooks/use-premium';
+import ExerciseGuideCard from '@/components/ExerciseGuideCard';
 import { PremiumModal } from '@/components/PremiumModal';
+import { ExerciseCard } from '@/components/progress/ExerciseCard';
+import { Card } from '@/components/ui/card';
+import { Text } from '@/components/ui/text';
+import { usePremium } from '@/hooks/use-premium';
+import {
+  getExercisesByRegion,
+  getRegionIcon,
+  getRegionTitle,
+  type Exercise,
+  type RegionId,
+} from '@/lib/exercises';
+import { Ionicons } from '@expo/vector-icons';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useState } from 'react';
+import { Pressable, ScrollView, View } from 'react-native';
 
 const ExercisesScreen = () => {
   const { regionId } = useLocalSearchParams<{ regionId: string }>();
@@ -159,7 +160,7 @@ const ExercisesScreen = () => {
         {hasAccess && (
           <Card className="p-5 mb-6 bg-purple-50 border-2 border-purple-200">
             <View className="flex-row items-start">
-              <Ionicons name="target-outline" size={32} color="#6B21A8" style={{ marginRight: 12 }} />
+              <Ionicons name="trophy-outline" size={32} color="#6B21A8" style={{ marginRight: 12 }} />
               <View className="flex-1">
                 <Text className="text-lg font-bold text-purple-900 mb-2">
                   Neden Düzenli Egzersiz Önemli?
@@ -199,6 +200,11 @@ const ExercisesScreen = () => {
               </Text>
             </View>
           </Card>
+        )}
+
+        {/* Exercise Guide Info Card */}
+        {hasAccess && (
+          <ExerciseGuideCard />
         )}
 
         {/* Exercises List */}
@@ -276,18 +282,16 @@ const ExercisesScreen = () => {
                     {/* Complete button */}
                     <Pressable
                       onPress={() => handleCompleteExercise(exercise.id, index)}
-                      className={`mt-2 py-3 rounded-lg items-center ${
-                        completedExercises.has(exercise.id)
-                          ? 'bg-gray-200'
-                          : 'bg-green-500'
-                      }`}
+                      className={`mt-2 py-3 rounded-lg items-center ${completedExercises.has(exercise.id)
+                        ? 'bg-gray-200'
+                        : 'bg-green-500'
+                        }`}
                     >
                       <Text
-                        className={`font-semibold ${
-                          completedExercises.has(exercise.id)
-                            ? 'text-gray-600'
-                            : 'text-white'
-                        }`}
+                        className={`font-semibold ${completedExercises.has(exercise.id)
+                          ? 'text-gray-600'
+                          : 'text-white'
+                          }`}
                       >
                         {completedExercises.has(exercise.id) && (
                           <Ionicons name="checkmark-circle" size={16} color="#4B5563" style={{ marginRight: 6 }} />
@@ -369,18 +373,16 @@ const ExercisesScreen = () => {
                 handleCompleteExercise(selectedExercise.id, index);
                 handleCloseDetail();
               }}
-              className={`mt-6 py-4 rounded-lg items-center ${
-                completedExercises.has(selectedExercise.id)
-                  ? 'bg-gray-200'
-                  : 'bg-green-500'
-              }`}
+              className={`mt-6 py-4 rounded-lg items-center ${completedExercises.has(selectedExercise.id)
+                ? 'bg-gray-200'
+                : 'bg-green-500'
+                }`}
             >
               <Text
-                className={`text-lg font-semibold ${
-                  completedExercises.has(selectedExercise.id)
-                    ? 'text-gray-600'
-                    : 'text-white'
-                }`}
+                className={`text-lg font-semibold ${completedExercises.has(selectedExercise.id)
+                  ? 'text-gray-600'
+                  : 'text-white'
+                  }`}
               >
                 {completedExercises.has(selectedExercise.id) && (
                   <Ionicons name="checkmark-circle" size={18} color="#4B5563" style={{ marginRight: 8 }} />

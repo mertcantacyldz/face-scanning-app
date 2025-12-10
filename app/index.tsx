@@ -4,16 +4,18 @@ import { Redirect } from 'expo-router';
 import { ActivityIndicator, View } from 'react-native';
 
 export default function Index() {
-  const { session, loading } = useAuth();
+  const { loading } = useAuth();
 
+  // Show loading while auth initializes (device ID + anonymous auth)
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+        <ActivityIndicator size="large" color="#8B5CF6" />
       </View>
     );
   }
 
-  // Auth durumuna göre yönlendirme
-  return <Redirect href={session ? "/(tabs)" : "/(auth)/login"} />;
+  // Always redirect to main app (no login required!)
+  // Anonymous auth happens automatically in useAuth hook
+  return <Redirect href="/(tabs)" />;
 }

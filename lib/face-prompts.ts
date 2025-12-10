@@ -3,10 +3,18 @@
  * Custom prompts for each facial region analysis
  */
 
+// Import icon assets
+const eyebrowsIcon = require('@/assets/icons/eyesbrown.png');
+const eyesIcon = require('@/assets/icons/eyes.png');
+const noseIcon = require('@/assets/icons/nose.png');
+const lipsIcon = require('@/assets/icons/lips.png');
+const jawlineIcon = require('@/assets/icons/jawline.png');
+const faceShapeIcon = require('@/assets/icons/face-shape.png');
+
 export interface FaceRegion {
   id: 'eyebrows' | 'eyes' | 'nose' | 'lips' | 'jawline' | 'face_shape';
   title: string;
-  icon: string;
+  icon: string | any; // Support both emoji strings and image requires
   description: string;
   prompt: string;
 }
@@ -15,7 +23,7 @@ export const FACE_REGIONS: FaceRegion[] = [
   {
     id: 'eyebrows',
     title: 'Kaşlar',
-    icon: '👁️',
+    icon: eyebrowsIcon,
     description: 'Kaş şekli ve simetri analizi',
     prompt: ` You are a facial anatomy and eyebrow structure expert. You will analyze raw 3D landmark data (x, y, z, index) for eyebrow shape, thickness, symmetry, angle, and facial harmony, returning results in JSON format.
 
@@ -316,7 +324,7 @@ Start with { and end with }
   {
     id: 'eyes',
     title: 'Gözler',
-    icon: '👀',
+    icon: eyesIcon,
     description: 'Göz şekli ve boyut analizi',
     prompt: `You are a facial anatomy and eye structure expert. You will analyze raw 3D landmark data (x, y, z, index) for eye shape, size, symmetry, inter-eye distance, and eyelid structure, returning results in JSON format.
 
@@ -735,7 +743,7 @@ Start with { and end with }`,
   {
     id: 'nose',
     title: 'Burun',
-    icon: '👃',
+    icon: noseIcon,
     description: 'Burun şekli ve simetri',
     prompt: `You are a facial anatomy and nose structure expert. You will analyze raw 3D landmark data (x, y, z, index) for nasal asymmetry and return results in JSON format.
 
@@ -913,7 +921,7 @@ Start with { and end with }`,
   {
     id: 'lips',
     title: 'Dudaklar',
-    icon: '👄',
+    icon: lipsIcon,
     description: 'Dudak şekli ve kalınlık',
     prompt: `You are a facial anatomy and lip structure expert. You will analyze raw 3D landmark data (x, y, z, index) for lip shape, upper-lower ratio, symmetry, vermillion border, and facial harmony, returning results in JSON format.
 
@@ -1336,9 +1344,9 @@ Start with { and end with }`,
   {
     id: 'jawline',
     title: 'Çene Hattı',
-    icon: '⬜',
+    icon: jawlineIcon,
     description: 'Çene keskinliği ve şekli',
-    prompt:`You are a facial anatomy and jawline structure expert. You will analyze raw 3D landmark data (x, y, z, index) for jawline sharpness, shape, symmetry, and angles, returning results in JSON format.
+    prompt: `You are a facial anatomy and jawline structure expert. You will analyze raw 3D landmark data (x, y, z, index) for jawline sharpness, shape, symmetry, and angles, returning results in JSON format.
 
 ⚠️ STRICT MODE: 
 - Return ONLY valid JSON output
@@ -1706,7 +1714,7 @@ Start with { and end with }`,
   {
     id: 'face_shape',
     title: 'Yüz Şekli',
-    icon: '🔷',
+    icon: faceShapeIcon,
     description: 'Genel yüz şekli analizi',
     prompt: `You are a facial anatomy and face shape expert. You will analyze raw 3D landmark data (x, y, z, index) to determine face shape (oval, square, round, diamond, heart, triangle, etc.), returning results in JSON format.
 

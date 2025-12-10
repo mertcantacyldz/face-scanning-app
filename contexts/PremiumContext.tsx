@@ -3,7 +3,6 @@ import { AppState, AppStateStatus } from 'react-native';
 import {
   initializeRevenueCat,
   checkPremiumStatus,
-  loginRevenueCat,
   logoutRevenueCat,
   getOfferings,
   purchasePackage,
@@ -61,9 +60,8 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
-        // Initialize RevenueCat with user ID
+        // Initialize RevenueCat with user ID (this also logs in the user)
         await initializeRevenueCat(user.id);
-        await loginRevenueCat(user.id);
 
         // Check premium status
         const premium = await checkPremiumStatus();
@@ -188,7 +186,8 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        await loginRevenueCat(session.user.id);
+        // Re-initialize RevenueCat with new user
+        await initializeRevenueCat(session.user.id);
         await refreshPremiumStatus();
         await loadFreeAnalysisStatus(session.user.id);
       } else if (event === 'SIGNED_OUT') {
