@@ -1,29 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  ScrollView,
-  ActivityIndicator,
-  Pressable,
-  Alert,
-} from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
-import { Text } from '@/components/ui/text';
-import { Card } from '@/components/ui/card';
-import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '@/lib/supabase';
-import { ProgressChart } from '@/components/progress/ProgressChart';
+import { JsonRenderer } from '@/components/analysis/JsonRenderer';
+import { PremiumModal } from '@/components/PremiumModal';
 import { ComparisonBadge } from '@/components/progress/ComparisonBadge';
 import { ExerciseCard } from '@/components/progress/ExerciseCard';
-import { JsonRenderer } from '@/components/analysis/JsonRenderer';
+import { ProgressChart } from '@/components/progress/ProgressChart';
+import { Card } from '@/components/ui/card';
+import { Text } from '@/components/ui/text';
+import { usePremium } from '@/hooks/use-premium';
+import { compareAnalysis } from '@/lib/comparison';
 import {
-  getRegionTitle,
-  getRegionIcon,
   getExercisesByRegion,
+  getRegionIcon,
+  getRegionTitle,
   type RegionId,
 } from '@/lib/exercises';
-import { compareAnalysis } from '@/lib/comparison';
-import { usePremium } from '@/hooks/use-premium';
-import { PremiumModal } from '@/components/PremiumModal';
+import { supabase } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  View,
+} from 'react-native';
 
 interface AnalysisRecord {
   id: string;
@@ -101,22 +101,22 @@ const RegionDetailScreen = () => {
   const previousAnalysis = analyses[1] || null;
   const comparison = latestAnalysis
     ? compareAnalysis(
-        {
-          id: latestAnalysis.id,
-          overall_score: latestAnalysis.overall_score,
-          metrics: latestAnalysis.metrics as any,
-          created_at: latestAnalysis.created_at,
-        },
-        previousAnalysis
-          ? {
-              id: previousAnalysis.id,
-              overall_score: previousAnalysis.overall_score,
-              metrics: previousAnalysis.metrics as any,
-              created_at: previousAnalysis.created_at,
-            }
-          : null,
-        false // TODO: Check if user completed exercises
-      )
+      {
+        id: latestAnalysis.id,
+        overall_score: latestAnalysis.overall_score,
+        metrics: latestAnalysis.metrics as any,
+        created_at: latestAnalysis.created_at,
+      },
+      previousAnalysis
+        ? {
+          id: previousAnalysis.id,
+          overall_score: previousAnalysis.overall_score,
+          metrics: previousAnalysis.metrics as any,
+          created_at: previousAnalysis.created_at,
+        }
+        : null,
+      false // TODO: Check if user completed exercises
+    )
     : null;
 
   const handleExercisesPress = () => {
@@ -179,13 +179,12 @@ const RegionDetailScreen = () => {
               </Text>
               <View className="w-28 h-28 rounded-full bg-white shadow-lg items-center justify-center border-4 border-primary/20">
                 <Text
-                  className={`text-5xl font-bold ${
-                    latestAnalysis.overall_score >= 7
+                  className={`text-5xl font-bold ${latestAnalysis.overall_score >= 7
                       ? 'text-green-600'
                       : latestAnalysis.overall_score >= 4
                         ? 'text-yellow-600'
                         : 'text-red-600'
-                  }`}
+                    }`}
                 >
                   {latestAnalysis.overall_score}
                 </Text>
@@ -260,22 +259,20 @@ const RegionDetailScreen = () => {
                   <Card className="p-4 border border-border flex-row items-center">
                     {/* Score */}
                     <View
-                      className={`w-12 h-12 rounded-full items-center justify-center mr-4 ${
-                        analysis.overall_score >= 7
+                      className={`w-12 h-12 rounded-full items-center justify-center mr-4 ${analysis.overall_score >= 7
                           ? 'bg-green-100'
                           : analysis.overall_score >= 4
                             ? 'bg-yellow-100'
                             : 'bg-red-100'
-                      }`}
+                        }`}
                     >
                       <Text
-                        className={`text-lg font-bold ${
-                          analysis.overall_score >= 7
+                        className={`text-lg font-bold ${analysis.overall_score >= 7
                             ? 'text-green-800'
                             : analysis.overall_score >= 4
                               ? 'text-yellow-800'
                               : 'text-red-800'
-                        }`}
+                          }`}
                       >
                         {analysis.overall_score}
                       </Text>
@@ -388,13 +385,12 @@ const RegionDetailScreen = () => {
             <Card className="p-6 mb-6 items-center bg-primary/5 border-2 border-primary/20">
               <View className="w-24 h-24 rounded-full bg-white shadow-lg items-center justify-center border-4 border-primary/20">
                 <Text
-                  className={`text-4xl font-bold ${
-                    selectedAnalysis.overall_score >= 7
+                  className={`text-4xl font-bold ${selectedAnalysis.overall_score >= 7
                       ? 'text-green-600'
                       : selectedAnalysis.overall_score >= 4
                         ? 'text-yellow-600'
                         : 'text-red-600'
-                  }`}
+                    }`}
                 >
                   {selectedAnalysis.overall_score}
                 </Text>

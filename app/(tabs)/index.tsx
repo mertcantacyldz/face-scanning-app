@@ -490,18 +490,10 @@ return (
                 </Card>
               )}
 
-              {/* İpuçları */}
-              <Card className="bg-muted p-4 mb-4">
-                <Text className="text-foreground font-semibold mb-2">
-                  💡 İyi Bir Tarama İçin:
-                </Text>
-                <Text className="text-muted-foreground text-xs">
-                  • Yüzünüz tamamen görünür olmalı{'\n'}
-                  • Gözler, burun ve ağız net olmalı{'\n'}
-                  • Saç veya el yüzü kapatmamalı{'\n'}
-                  • Işıklandırma yeterli olmalı
-                </Text>
-              </Card>
+              {/* AI Disclaimer */}
+              <Text className="text-xs text-muted-foreground text-center mb-3 px-2">
+                ℹ️ Sonuçlar yapay zeka tarafından üretilen yaklaşık değerlendirmelerdir. Fotoğraf kalitesi ve ışık sonuçları etkileyebilir.
+              </Text>
 
               {/* Butonlar */}
               <View className="flex-row gap-3">
@@ -595,11 +587,24 @@ return (
               <Text className="text-xl font-bold text-foreground mb-2 text-center">
                 FaceAnalyzer AI ile Analiz
               </Text>
-              <Text className="text-muted-foreground text-sm text-center mb-6">
+              <Text className="text-muted-foreground text-sm text-center mb-4">
                 468 noktalı özgün AI analizi için fotoğraf seçin
               </Text>
-              
-              <View className="space-y-4">
+
+              {/* İpuçları */}
+              <View className="bg-muted/30 rounded-xl p-4 mb-4">
+                <Text className="text-foreground font-semibold text-sm mb-2">
+                  💡 İyi Bir Tarama İçin:
+                </Text>
+                <Text className="text-muted-foreground text-xs">
+                  • Yüzünüz tamamen görünür olmalı{'\n'}
+                  • Gözler, burun ve ağız net olmalı{'\n'}
+                  • Saç veya el yüzü kapatmamalı{'\n'}
+                  • Işıklandırma yeterli olmalı
+                </Text>
+              </View>
+
+              <View className=" flex justify-center gap-3">
                 <Button 
                   onPress={takePhoto}
                   className="w-full"
