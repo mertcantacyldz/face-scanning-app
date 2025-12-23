@@ -97,8 +97,8 @@ export function HeroCard({ data }: HeroCardProps) {
 
       {/* Optional: Dominant Issue or Asymmetry Type */}
       {(data.dominant_issue || data.asymmetry_type) && (
-        <View className="mt-4 p-3 bg-white/50 rounded-lg">
-          <Text className="text-sm text-muted-foreground text-center">
+        <View className="mt-4 p-3 bg-muted rounded-lg">
+          <Text className="text-sm text-foreground text-center">
             {data.dominant_issue || data.asymmetry_type}
           </Text>
         </View>

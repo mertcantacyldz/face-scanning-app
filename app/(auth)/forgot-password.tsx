@@ -2,6 +2,7 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -11,13 +12,14 @@ import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ForgotPasswordScreen() {
+  const { t } = useTranslation('auth');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
   const handleResetPassword = async () => {
     if (!email) {
-      Alert.alert('Hata', 'Lütfen e-posta adresinizi girin');
+      Alert.alert(t('errors.title', { ns: 'errors' }), t('errors.fillAllFields'));
       return;
     }
 
@@ -26,17 +28,17 @@ export default function ForgotPasswordScreen() {
       const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
 
       if (error) {
-        Alert.alert('Hata', error.message);
+        Alert.alert(t('errors.title', { ns: 'errors' }), error.message);
       } else {
         setSent(true);
         Alert.alert(
-          'Başarılı!',
-          'Şifre sıfırlama bağlantısı e-postanıza gönderildi.',
+          t('states.success', { ns: 'common' }),
+          t('success.passwordResetSent'),
         );
       }
     } catch (error:any) {
         console.log(error.message);
-      Alert.alert('Hata', 'Bir şeyler yanlış gitti');
+      Alert.alert(t('errors.title', { ns: 'errors' }), t('errors.somethingWentWrong'));
     }
     setLoading(false);
   };
@@ -55,7 +57,7 @@ export default function ForgotPasswordScreen() {
             onPress={() => router.back()}
             className="self-start mb-8"
           >
-            <Text className="text-blue-600">← Geri</Text>
+            <Text className="text-blue-600">{t('forgotPassword.backButton')}</Text>
           </Button>
 
           {/* Header */}
@@ -64,12 +66,12 @@ export default function ForgotPasswordScreen() {
               <Ionicons name="lock-closed-outline" size={48} color="#F97316" />
             </View>
             <Text className="text-2xl font-bold text-gray-900">
-              Şifre Sıfırla
+              {t('forgotPassword.title')}
             </Text>
             <Text className="text-gray-600 mt-2 text-center">
               {sent
-                ? 'E-postanızı kontrol edin'
-                : 'E-posta adresinizi girin'
+                ? t('forgotPassword.subtitleSent')
+                : t('forgotPassword.subtitle')
               }
             </Text>
           </View>
@@ -80,10 +82,10 @@ export default function ForgotPasswordScreen() {
               <View className="space-y-4">
                 <View>
                   <Text className="text-gray-700 font-medium mb-2">
-                    E-posta
+                    {t('forgotPassword.emailLabel')}
                   </Text>
                   <Input
-                    placeholder="ornek@email.com"
+                    placeholder={t('forgotPassword.emailPlaceholder')}
                     value={email}
                     onChangeText={setEmail}
                     keyboardType="email-address"
@@ -93,16 +95,16 @@ export default function ForgotPasswordScreen() {
                 </View>
 
                 <Text className="text-gray-500 text-sm">
-                  E-posta adresinize şifre sıfırlama bağlantısı göndereceğiz.
+                  {t('forgotPassword.description')}
                 </Text>
 
-                <Button 
+                <Button
                   onPress={handleResetPassword}
                   disabled={loading}
                   className="bg-orange-600 mt-6"
                 >
                   <Text className="text-white font-semibold">
-                    {loading ? 'Gönderiliyor...' : 'Sıfırlama Bağlantısı Gönder'}
+                    {loading ? t('forgotPassword.submittingButton') : t('forgotPassword.submitButton')}
                   </Text>
                 </Button>
               </View>
@@ -112,19 +114,18 @@ export default function ForgotPasswordScreen() {
                   <Text className="text-2xl">✓</Text>
                 </View>
                 <Text className="text-green-600 font-semibold text-center">
-                  E-posta Gönderildi!
+                  {t('forgotPassword.sentTitle')}
                 </Text>
                 <Text className="text-gray-600 text-center">
-                  {email} adresine şifre sıfırlama bağlantısı gönderdik.
-                  E-postanızı kontrol edin.
+                  {t('forgotPassword.sentMessage', { email })}
                 </Text>
-                
-                <Button 
+
+                <Button
                   onPress={() => router.back()}
                   variant="outline"
                   className="mt-4"
                 >
-                  <Text className="text-blue-600">Giriş Sayfasına Dön</Text>
+                  <Text className="text-blue-600">{t('forgotPassword.backToLogin')}</Text>
                 </Button>
               </View>
             )}

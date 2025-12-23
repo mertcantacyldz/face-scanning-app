@@ -1,0 +1,56 @@
+{
+  "header": {
+    "subtitle": "Exercises"
+  },
+  "noAccess": {
+    "title": "This Region is Locked",
+    "description": "To access {{region}} exercises, you must first analyze this region or upgrade to Premium.",
+    "upgradeButton": "Upgrade to Premium"
+  },
+  "progress": {
+    "title": "Today's Progress",
+    "completed": "{{completed}}/{{total}} exercises completed"
+  },
+  "motivation": {
+    "title": "Why Regular Exercise Matters?",
+    "point1": {
+      "highlight": "One exercise is not enough",
+      "text": " - Work all regional muscles"
+    },
+    "point2": {
+      "highlight": "Consistency is magic",
+      "text": " - 10 minutes daily, dramatic results in 3 months"
+    },
+    "point3": {
+      "highlight": "Track your progress",
+      "text": " - Completed exercises boost motivation"
+    },
+    "premiumNote": "With Premium: Unlock all {{count}} exercises, track progress with charts"
+  },
+  "tip": {
+    "title": "Tip:",
+    "text": " It's recommended to do exercises twice daily, morning and evening. Each session takes only 5-10 minutes."
+  },
+  "list": {
+    "title": "Exercises ({{count}})",
+    "titleFree": "Exercises ({{current}}/{{total}})",
+    "premiumBadge": "+ {{count}} More",
+    "locked": "Premium",
+    "complete": "Complete",
+    "completed": "Completed"
+  },
+  "completion": {
+    "title": "Congratulations!",
+    "messagePremium": "You've completed all of today's exercises. See you tomorrow!",
+    "messageFree": "You've completed the free exercise! Unlock all exercises with Premium.",
+    "upgradeButton": "Upgrade to Premium"
+  },
+  "detail": {
+    "subtitle": "{{region}}",
+    "complete": "Complete Exercise",
+    "completed": "Marked as Completed"
+  },
+  "premiumModal": {
+    "feature": "All Exercises"
+  }
+}

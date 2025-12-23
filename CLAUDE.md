@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Face Scanning App** - A React Native mobile application (iOS/Android/Web) that uses MediaPipe Face Mesh AI to detect 468 facial landmarks for face analysis.
+**FaceLoom** - A React Native mobile application (iOS/Android/Web) that uses MediaPipe Face Mesh AI to detect 468 facial landmarks for face analysis.
 
 ## Tech Stack
 

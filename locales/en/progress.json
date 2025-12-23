@@ -1,0 +1,36 @@
+{
+  "title": "Progress Tracking",
+  "subtitle": "Track your face analyses and progress",
+  "loading": "Loading...",
+  "premiumFeature": {
+    "title": "Premium Feature",
+    "description": "Progress tracking, charts, and comparative analysis features are exclusive to Premium members.",
+    "benefits": [
+      "Progress charts for all regions",
+      "Comparison with previous analyses",
+      "Detailed score breakdown",
+      "Personalized recommendations"
+    ],
+    "upgradeButton": "Upgrade to Premium",
+    "preview": "With Premium, you can track your face analyses over time, see your progress, and receive personalized exercise recommendations."
+  },
+  "overallProgress": {
+    "title": "Overall Progress",
+    "subtitle": "All regions",
+    "label": "progress"
+  },
+  "stats": {
+    "totalAnalyses": "Total Analyses",
+    "activeRegions": "Active Regions"
+  },
+  "chartTitle": "Overall Score Chart",
+  "regionsTitle": "Regions",
+  "emptyState": {
+    "title": "No Analyses Yet",
+    "description": "Go to the analysis page to analyze your facial regions and start tracking your progress."
+  },
+  "tip": {
+    "title": "Tip:",
+    "description": "You can strengthen your facial muscles and improve your symmetry by exercising regularly. Click on each region to view recommended exercises."
+  }
+}

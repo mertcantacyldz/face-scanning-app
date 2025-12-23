@@ -7,22 +7,24 @@ import {
   Alert,
 } from 'react-native';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
 import { Ionicons } from '@expo/vector-icons';
 import { usePremium } from '@/hooks/use-premium';
 import { calculateSavings } from '@/lib/revenuecat';
 
-const FEATURES = [
-  { iconName: 'search-outline', text: '6 bölge tam AI analizi' },
-  { iconName: 'stats-chart-outline', text: 'Detaylı çekicilik skoru' },
-  { iconName: 'barbell-outline', text: 'Tüm egzersiz adımları' },
-  { iconName: 'trending-up-outline', text: 'İlerleme takibi & grafikler' },
-  { iconName: 'calendar-outline', text: 'Sınırsız analiz geçmişi' },
-  { iconName: 'target-outline', text: 'Kişiselleştirilmiş öneriler' },
+const FEATURE_KEYS = [
+  { iconName: 'search-outline', key: 'fullAnalysis' },
+  { iconName: 'stats-chart-outline', key: 'detailedScore' },
+  { iconName: 'barbell-outline', key: 'allExercises' },
+  { iconName: 'trending-up-outline', key: 'progressTracking' },
+  { iconName: 'calendar-outline', key: 'unlimitedHistory' },
+  { iconName: 'target-outline', key: 'personalizedRecommendations' },
 ];
 
 const PaywallScreen = () => {
+  const { t } = useTranslation('premium');
   const {
     monthlyPackage,
     yearlyPackage,
@@ -41,7 +43,7 @@ const PaywallScreen = () => {
   const handlePurchase = async () => {
     const pkg = selectedPackage === 'yearly' ? yearlyPackage : monthlyPackage;
     if (!pkg) {
-      Alert.alert('Hata', 'Paket bulunamadı. Lütfen daha sonra tekrar deneyin.');
+      Alert.alert(t('paywall.alerts.noPackageTitle'), t('paywall.alerts.noPackageMessage'));
       return;
     }
 
@@ -50,11 +52,11 @@ const PaywallScreen = () => {
     setPurchasing(false);
 
     if (result.success) {
-      Alert.alert('Başarılı! 🎉', 'Premium üyeliğiniz aktif edildi!', [
-        { text: 'Harika!', onPress: () => router.back() },
+      Alert.alert(t('paywall.alerts.successTitle'), t('paywall.alerts.successMessage'), [
+        { text: t('paywall.alerts.successButton'), onPress: () => router.back() },
       ]);
     } else if (result.error && result.error !== 'cancelled') {
-      Alert.alert('Hata', result.error);
+      Alert.alert(t('paywall.alerts.noPackageTitle'), result.error);
     }
   };
 
@@ -64,13 +66,13 @@ const PaywallScreen = () => {
     setRestoring(false);
 
     if (result.success && result.isPremium) {
-      Alert.alert('Başarılı!', 'Satın alımlarınız geri yüklendi!', [
-        { text: 'Harika!', onPress: () => router.back() },
+      Alert.alert(t('paywall.alerts.restoreSuccessTitle'), t('paywall.alerts.restoreSuccessMessage'), [
+        { text: t('paywall.alerts.successButton'), onPress: () => router.back() },
       ]);
     } else if (result.success && !result.isPremium) {
-      Alert.alert('Bilgi', 'Geri yüklenecek satın alım bulunamadı.');
+      Alert.alert(t('paywall.alerts.restoreInfoTitle'), t('paywall.alerts.restoreInfoMessage'));
     } else {
-      Alert.alert('Hata', result.error || 'Geri yükleme başarısız');
+      Alert.alert(t('paywall.alerts.restoreErrorTitle'), result.error || t('paywall.alerts.restoreErrorMessage'));
     }
   };
 
@@ -98,10 +100,10 @@ const PaywallScreen = () => {
           <View className="items-center">
             <Ionicons name="diamond-outline" size={64} color="#8B5CF6" style={{ marginBottom: 16 }} />
             <Text className="text-3xl font-bold text-center mb-2">
-              Premium'a Geç
+              {t('paywall.title')}
             </Text>
             <Text className="text-muted-foreground text-center">
-              Tüm özelliklerin kilidini aç
+              {t('paywall.subtitle')}
             </Text>
           </View>
         </View>
@@ -109,12 +111,12 @@ const PaywallScreen = () => {
         {/* Features */}
         <View className="px-6 py-6">
           <Card className="p-5 bg-card border border-border">
-            <Text className="text-lg font-bold mb-4">Premium Özellikleri</Text>
+            <Text className="text-lg font-bold mb-4">{t('paywall.featuresTitle')}</Text>
             <View className="gap-3">
-              {FEATURES.map((feature, index) => (
+              {FEATURE_KEYS.map((feature, index) => (
                 <View key={index} className="flex-row items-center">
                   <Ionicons name={feature.iconName as any} size={24} color="#8B5CF6" />
-                  <Text className="text-foreground flex-1 ml-3">{feature.text}</Text>
+                  <Text className="text-foreground flex-1 ml-3">{t(`paywall.features.${feature.key}`)}</Text>
                   <Ionicons name="checkmark-circle" size={20} color="#10B981" />
                 </View>
               ))}
@@ -124,7 +126,7 @@ const PaywallScreen = () => {
 
         {/* Packages */}
         <View className="px-6 pb-6">
-          <Text className="text-lg font-bold mb-4">Plan Seçin</Text>
+          <Text className="text-lg font-bold mb-4">{t('paywall.plans.selectPlan')}</Text>
 
           {/* Yearly Package */}
           <Pressable
@@ -141,17 +143,17 @@ const PaywallScreen = () => {
               {/* Best Value Badge */}
               <View className="absolute -top-3 left-4 bg-primary px-3 py-1 rounded-full">
                 <Text className="text-primary-foreground text-xs font-bold">
-                  EN POPÜLER
+                  {t('paywall.plans.mostPopular')}
                 </Text>
               </View>
 
               <View className="flex-row items-center justify-between mt-2 pr-10">
                 <View>
                   <Text className="text-lg font-bold text-foreground">
-                    Yıllık Plan
+                    {t('paywall.plans.yearly')}
                   </Text>
                   <Text className="text-muted-foreground text-sm">
-                    {yearlyPackage ? `${(yearlyPackage.product.price / 12).toFixed(2)}/ay` : '$3.83/ay'}
+                    {yearlyPackage ? `${(yearlyPackage.product.price / 12).toFixed(2)}${t('paywall.plans.perMonth')}` : `$3.83${t('paywall.plans.perMonth')}`}
                   </Text>
                 </View>
                 <View className="items-end">
@@ -160,7 +162,7 @@ const PaywallScreen = () => {
                   </Text>
                   <View className="bg-green-100 px-2 py-0.5 rounded-full mt-1">
                     <Text className="text-green-800 text-xs font-semibold">
-                      %{savings || 52} TASARRUF
+                      {t('paywall.plans.save', { percent: savings || 52 })}
                     </Text>
                   </View>
                 </View>
@@ -195,10 +197,10 @@ const PaywallScreen = () => {
               <View className="flex-row items-center justify-between pr-10">
                 <View>
                   <Text className="text-lg font-bold text-foreground">
-                    Aylık Plan
+                    {t('paywall.plans.monthly')}
                   </Text>
                   <Text className="text-muted-foreground text-sm">
-                    Her ay yenilenir
+                    {t('paywall.plans.renewsMonthly')}
                   </Text>
                 </View>
                 <Text className="text-2xl font-bold text-foreground">
@@ -225,8 +227,7 @@ const PaywallScreen = () => {
         {/* Terms */}
         <View className="px-6 pb-6">
           <Text className="text-xs text-muted-foreground text-center">
-            Ödeme Apple/Google hesabınızdan alınır. Abonelik dönem sonunda otomatik
-            yenilenir. İstediğiniz zaman iptal edebilirsiniz.
+            {t('paywall.terms')}
           </Text>
         </View>
       </ScrollView>
@@ -245,7 +246,7 @@ const PaywallScreen = () => {
             <ActivityIndicator color="white" />
           ) : (
             <Text className="text-primary-foreground font-bold text-lg">
-              {selectedPackage === 'yearly' ? 'Yıllık Planı Başlat' : 'Aylık Planı Başlat'}
+              {selectedPackage === 'yearly' ? t('paywall.cta.startYearly') : t('paywall.cta.startMonthly')}
             </Text>
           )}
         </Pressable>
@@ -260,7 +261,7 @@ const PaywallScreen = () => {
             <ActivityIndicator color="#007AFF" size="small" />
           ) : (
             <Text className="text-primary text-sm">
-              Satın Alımları Geri Yükle
+              {t('paywall.cta.restore')}
             </Text>
           )}
         </Pressable>

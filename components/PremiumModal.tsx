@@ -1,30 +1,35 @@
-import React from 'react';
-import { View, Modal, Pressable } from 'react-native';
-import { router } from 'expo-router';
-import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
+import { Text } from '@/components/ui/text';
+import { useAuth } from '@/contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Modal, Pressable, View } from 'react-native';
 
 interface PremiumModalProps {
   visible: boolean;
   onClose: () => void;
-  feature?: string; // e.g., "Burun Analizi", "İlerleme Takibi"
+  feature?: string; // e.g., "Nose Analysis", "Progress Tracking"
   featureIconName?: string; // Ionicons name
 }
 
-const PREMIUM_BENEFITS = [
-  '6 bölge detaylı AI analizi',
-  'Kişiselleştirilmiş egzersizler',
-  'İlerleme takibi & grafikler',
-  'Sınırsız analiz geçmişi',
+const PREMIUM_BENEFIT_KEYS = [
+  'detailedAnalysis',
+  'personalizedExercises',
+  'progressTracking',
+  'unlimitedHistory',
 ];
 
 export function PremiumModal({
   visible,
   onClose,
-  feature = 'Bu özellik',
+  feature = '',
   featureIconName = 'lock-closed-outline',
 }: PremiumModalProps) {
+  const { t } = useTranslation('premium');
+  const { isAnonymous } = useAuth();
+
   const handleGoPremium = () => {
     onClose();
     router.push('/paywall');
@@ -45,27 +50,49 @@ export function PremiumModal({
               <Ionicons name={featureIconName as any} size={48} color="#8B5CF6" />
             </View>
             <Text className="text-xl font-bold text-center text-foreground">
-              Premium Özellik
+              {t('modal.title')}
             </Text>
             <Text className="text-muted-foreground text-center mt-1">
-              &quot;{feature}&quot; için Premium üyelik gerekli
+              {t('modal.subtitle', { feature: feature || t('modal.title') })}
             </Text>
           </View>
 
           {/* Benefits */}
           <View className="px-6 py-4">
             <Text className="text-sm font-semibold text-foreground mb-3">
-              Premium ile neler kazanırsın:
+              {t('modal.benefitsTitle')}
             </Text>
             <View className="gap-2">
-              {PREMIUM_BENEFITS.map((benefit, index) => (
+              {PREMIUM_BENEFIT_KEYS.map((benefitKey, index) => (
                 <View key={index} className="flex-row items-center">
                   <Ionicons name="checkmark-circle" size={18} color="#10B981" />
-                  <Text className="text-sm text-foreground ml-2">{benefit}</Text>
+                  <Text className="text-sm text-foreground ml-2">{t(`modal.benefits.${benefitKey}`)}</Text>
                 </View>
               ))}
             </View>
           </View>
+
+          {/* Info for Anonymous Users - Friendly & Non-Scary */}
+          {isAnonymous && (
+            <View className="px-6 py-3">
+              <Card className="bg-blue-50 border-blue-200 border p-4">
+                <View className="flex-row items-start">
+                  <Ionicons name="information-circle" size={24} color="#3B82F6" style={{ marginRight: 8, marginTop: 2 }} />
+                  <View className="flex-1">
+                    <Text className="text-sm font-semibold text-blue-900 mb-1">
+                      💡 İpucu: Verilerinizi Her Cihazda Kullanın
+                    </Text>
+                    <Text className="text-xs text-blue-800 mb-2">
+                      Premium özellikleriniz her zaman korunur ve tüm cihazlarınızda kullanılabilir.
+                    </Text>
+                    <Text className="text-xs text-blue-800">
+                      Dilerseniz email veya Google ile hesap oluşturarak yüz analizi ve egzersiz verilerinize de her cihazdan erişebilirsiniz. Tamamen isteğe bağlı! 😊
+                    </Text>
+                  </View>
+                </View>
+              </Card>
+            </View>
+          )}
 
           {/* Price Preview */}
           <View className="px-6 py-3">
@@ -73,15 +100,15 @@ export function PremiumModal({
               <View className="flex-row items-center justify-between">
                 <View>
                   <Text className="text-xs text-muted-foreground">
-                    Yıllık Plan
+                    {t('modal.price.yearly')}
                   </Text>
                   <Text className="font-bold text-foreground">
-                    $45.99/yıl
+                    {t('modal.price.amount')}
                   </Text>
                 </View>
                 <View className="bg-green-100 px-2 py-1 rounded-full">
                   <Text className="text-green-800 text-xs font-semibold">
-                    %52 TASARRUF
+                    {t('modal.price.save', { percent: 52 })}
                   </Text>
                 </View>
               </View>
@@ -95,9 +122,9 @@ export function PremiumModal({
               className="bg-primary py-4 rounded-xl items-center active:opacity-80"
             >
               <View className="flex-row items-center gap-2">
-                <Ionicons name="crown-outline" size={20} color="#FFFFFF" />
+                <Ionicons name="star" size={20} color="#FFFFFF" />
                 <Text className="text-primary-foreground font-bold text-base">
-                  Premium&apos;a Geç
+                  {t('modal.buttons.upgrade')}
                 </Text>
               </View>
             </Pressable>
@@ -107,7 +134,7 @@ export function PremiumModal({
               className="py-3 items-center active:opacity-70"
             >
               <Text className="text-muted-foreground">
-                Belki Sonra
+                {t('modal.buttons.maybeLater')}
               </Text>
             </Pressable>
           </View>

@@ -1,13 +1,16 @@
 // app/(tabs)/profile.tsx
+import { LanguageSelector } from '@/components/LanguageSelector';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   Alert,
@@ -27,6 +30,8 @@ interface Profile {
 }
 
 export default function ProfileScreen() {
+  const { t } = useTranslation('profile');
+  const { isAnonymous } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -48,10 +53,10 @@ export default function ProfileScreen() {
         setProfile(profileData);
         setFullName(profileData.full_name || '');
       } else {
-        Alert.alert('Hata', 'Profil bulunamadı');
+        Alert.alert(t('errors.title', { ns: 'errors' }), t('notFound'));
       }
     } catch (error) {
-      console.error('Hata:', error);
+      console.error('Error:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -64,7 +69,7 @@ export default function ProfileScreen() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ 
+        .update({
           full_name: fullName.trim(),
           updated_at: new Date().toISOString()
         })
@@ -74,20 +79,20 @@ export default function ProfileScreen() {
 
       setProfile({ ...profile, full_name: fullName.trim() });
       setEditMode(false);
-      Alert.alert('Başarılı', 'Profil güncellendi');
+      Alert.alert(t('states.success', { ns: 'common' }), t('alerts.profileUpdateSuccess'));
     } catch (error) {
-      Alert.alert('Hata', 'Profil güncellenemedi');
+      Alert.alert(t('errors.title', { ns: 'errors' }), t('alerts.profileUpdateError'));
     }
   };
 
   const handleSignOut = async () => {
     Alert.alert(
-      'Çıkış Yap',
-      'Hesabınızdan çıkmak istediğinize emin misiniz?',
+      t('signOut.confirmTitle'),
+      t('signOut.confirmMessage'),
       [
-        { text: 'İptal', style: 'cancel' },
+        { text: t('signOut.cancelButton'), style: 'cancel' },
         {
-          text: 'Çıkış Yap',
+          text: t('signOut.confirmButton'),
           style: 'destructive',
           onPress: async () => {
             await supabase.auth.signOut();
@@ -114,7 +119,7 @@ export default function ProfileScreen() {
           <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mb-4">
             <Ionicons name="person-circle" size={48} className="text-primary" />
           </View>
-          <Text className="text-muted-foreground mt-2">Yükleniyor...</Text>
+          <Text className="text-muted-foreground mt-2">{t('loading')}</Text>
         </View>
       </View>
     );
@@ -127,9 +132,9 @@ export default function ProfileScreen() {
           <View className="w-16 h-16 bg-destructive/10 rounded-full items-center justify-center mb-4">
             <Ionicons name="alert-circle" size={48} className="text-destructive" />
           </View>
-          <Text className="text-muted-foreground mt-2 text-center">Profil bilgileri bulunamadı</Text>
+          <Text className="text-muted-foreground mt-2 text-center">{t('notFound')}</Text>
           <Button onPress={fetchProfile} className="mt-6">
-            <Text className="text-primary-foreground font-semibold">Tekrar Dene</Text>
+            <Text className="text-primary-foreground font-semibold">{t('retryButton')}</Text>
           </Button>
         </View>
       </View>
@@ -174,7 +179,7 @@ export default function ProfileScreen() {
               <Input
                 value={fullName}
                 onChangeText={setFullName}
-                placeholder="Ad Soyad"
+                placeholder={t('editProfile.fullNameLabel')}
                 className="text-center text-lg text-foreground"
                 placeholderTextColor="hsl(220, 9%, 46%)"
                 autoFocus
@@ -185,7 +190,7 @@ export default function ProfileScreen() {
                   className="flex-1 bg-success"
                 >
                   <Ionicons name="checkmark" size={20} color="white" />
-                  <Text className="text-success-foreground font-semibold ml-2">Kaydet</Text>
+                  <Text className="text-success-foreground font-semibold ml-2">{t('editProfile.saveButton')}</Text>
                 </Button>
                 <Button
                   onPress={() => {
@@ -195,7 +200,7 @@ export default function ProfileScreen() {
                   variant="outline"
                   className="flex-1"
                 >
-                  <Text className="text-muted-foreground">İptal</Text>
+                  <Text className="text-muted-foreground">{t('editProfile.cancelButton')}</Text>
                 </Button>
               </View>
             </View>
@@ -219,7 +224,7 @@ export default function ProfileScreen() {
                   className="mr-1"
                 />
                 <Text className="text-white font-semibold">
-                  {profile.is_premium ? 'Premium Üye' : 'Standart Üye'}
+                  {profile.is_premium ? t('membership.premium') : t('membership.standard')}
                 </Text>
               </Badge>
             </>
@@ -235,10 +240,10 @@ export default function ProfileScreen() {
               </View>
               <View className="flex-1">
                 <Text className="font-bold text-lg text-foreground">
-                  Premium Üyelik
+                  {t('membership.title')}
                 </Text>
                 <Text className="text-muted-foreground text-sm">
-                  Bitiş: {new Date(profile.premium_expires_at).toLocaleDateString('tr-TR')}
+                  {new Date(profile.premium_expires_at).toLocaleDateString()}
                 </Text>
               </View>
             </View>
@@ -250,7 +255,7 @@ export default function ProfileScreen() {
           <View className="flex-row items-center gap-2 mb-5">
             <Ionicons name="bar-chart-outline" size={20} color="#8B5CF6" />
             <Text className="text-lg font-bold text-foreground">
-              Hesap İstatistikleri
+              {t('stats.title')}
             </Text>
           </View>
 
@@ -260,7 +265,7 @@ export default function ProfileScreen() {
                 <View className="w-8 h-8 bg-primary/10 rounded-full items-center justify-center mr-3">
                   <Ionicons name="analytics" size={16} className="text-primary" />
                 </View>
-                <Text className="text-muted-foreground">Toplam Analiz</Text>
+                <Text className="text-muted-foreground">{t('stats.totalAnalysis')}</Text>
               </View>
               <Text className="text-lg font-bold text-primary">
                 12
@@ -272,7 +277,7 @@ export default function ProfileScreen() {
                 <View className="w-8 h-8 bg-success/10 rounded-full items-center justify-center mr-3">
                   <Ionicons name="calendar" size={16} className="text-success" />
                 </View>
-                <Text className="text-muted-foreground">Bu Ay</Text>
+                <Text className="text-muted-foreground">{t('stats.thisMonth')}</Text>
               </View>
               <Text className="text-lg font-bold text-success">
                 3
@@ -285,7 +290,7 @@ export default function ProfileScreen() {
                   <View className="w-8 h-8 bg-warning/10 rounded-full items-center justify-center mr-3">
                     <Ionicons name="alert-circle" size={16} className="text-warning" />
                   </View>
-                  <Text className="text-muted-foreground">Kalan Limit</Text>
+                  <Text className="text-muted-foreground">{t('stats.remainingLimit')}</Text>
                 </View>
                 <Text className="text-lg font-bold text-warning">
                   2/5
@@ -299,19 +304,19 @@ export default function ProfileScreen() {
         <View className="flex-row items-center gap-2 mb-4">
           <Ionicons name="flash-outline" size={20} color="#8B5CF6" />
           <Text className="text-lg font-bold text-foreground">
-            Hızlı İşlemler
+            {t('quickActions.title')}
           </Text>
         </View>
 
         <View className="flex flex-col gap-4 mb-6">
           {!profile.is_premium && (
             <Button
-              onPress={() => router.push('/premium/subscription')}
+              onPress={() => router.push('/premium/subscribe')}
               className="h-16 bg-warning"
             >
               <Ionicons name="star" size={24} color="white" />
               <Text className="text-warning-foreground font-bold text-base ml-2">
-                Premium'a Yüksel
+                {t('quickActions.upgradePremium')}
               </Text>
             </Button>
           )}
@@ -323,7 +328,7 @@ export default function ProfileScreen() {
           >
             <Ionicons name="camera" size={20} className="text-success" />
             <Text className="text-success font-semibold ml-2">
-              Yeni Analiz Yap
+              {t('quickActions.newAnalysis')}
             </Text>
           </Button>
         </View>
@@ -332,15 +337,28 @@ export default function ProfileScreen() {
         <View className="flex-row items-center gap-2 mb-4">
           <Ionicons name="key-outline" size={20} color="#8B5CF6" />
           <Text className="text-lg font-bold text-foreground">
-            Hesap Ayarları
+            {t('settings.title')}
           </Text>
         </View>
 
         <Card className="p-4 mb-6">
+          {/* Language Selector */}
+          <View className="py-3">
+            <View className="flex-row items-center gap-2 mb-4">
+              <Ionicons name="language-outline" size={20} className="text-primary" />
+              <Text className="text-foreground font-semibold">
+                Dil / Language
+              </Text>
+            </View>
+            <LanguageSelector />
+          </View>
+
+          <View className="h-px bg-border my-2" />
+
           <TouchableOpacity className="flex-row items-center justify-between py-3">
             <View className="flex-row items-center">
               <Ionicons name="notifications" size={20} className="text-muted-foreground" />
-              <Text className="text-foreground ml-3">Bildirimler</Text>
+              <Text className="text-foreground ml-3">{t('settings.notifications')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} className="text-muted-foreground" />
           </TouchableOpacity>
@@ -350,7 +368,7 @@ export default function ProfileScreen() {
           <TouchableOpacity className="flex-row items-center justify-between py-3">
             <View className="flex-row items-center">
               <Ionicons name="shield-checkmark" size={20} className="text-muted-foreground" />
-              <Text className="text-foreground ml-3">Gizlilik</Text>
+              <Text className="text-foreground ml-3">{t('settings.privacy')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} className="text-muted-foreground" />
           </TouchableOpacity>
@@ -360,23 +378,25 @@ export default function ProfileScreen() {
           <TouchableOpacity className="flex-row items-center justify-between py-3">
             <View className="flex-row items-center">
               <Ionicons name="help-circle" size={20} className="text-muted-foreground" />
-              <Text className="text-foreground ml-3">Yardım & Destek</Text>
+              <Text className="text-foreground ml-3">{t('settings.help')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} className="text-muted-foreground" />
           </TouchableOpacity>
         </Card>
 
-        {/* Sign Out */}
-        <Button
-          onPress={handleSignOut}
-          variant="outline"
-          className="h-14 border-destructive/30 bg-destructive/10 mb-8"
-        >
-          <Ionicons name="log-out" size={20} className="text-destructive" />
-          <Text className="text-destructive font-semibold ml-2">
-            Çıkış Yap
-          </Text>
-        </Button>
+        {/* Sign Out - Only for authenticated (non-anonymous) users */}
+        {!isAnonymous && (
+          <Button
+            onPress={handleSignOut}
+            variant="outline"
+            className="h-14 border-destructive/30 bg-destructive/10 mb-8"
+          >
+            <Ionicons name="log-out" size={20} className="text-destructive" />
+            <Text className="text-destructive font-semibold ml-2">
+              {t('signOut.button')}
+            </Text>
+          </Button>
+        )}
 
         {/* App Info */}
         <View className="items-center">

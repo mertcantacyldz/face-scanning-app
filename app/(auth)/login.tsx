@@ -2,6 +2,7 @@ import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -11,13 +12,14 @@ import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
+  const { t } = useTranslation('auth');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Hata', 'Lütfen tüm alanları doldurun');
+      Alert.alert(t('errors.title', { ns: 'errors' }), t('errors.fillAllFields'));
       return;
     }
 
@@ -29,13 +31,13 @@ export default function LoginScreen() {
       });
 
       if (error) {
-        Alert.alert('Giriş Hatası', error.message);
+        Alert.alert(t('errors.title', { ns: 'errors' }), error.message);
       } else {
         router.replace('/(tabs)');
       }
     } catch (error:any) {
         console.log(error.message);
-      Alert.alert('Hata', 'Bir şeyler yanlış gitti');
+      Alert.alert(t('errors.title', { ns: 'errors' }), t('errors.somethingWentWrong'));
     }
     setLoading(false);
   };
@@ -58,10 +60,10 @@ export default function LoginScreen() {
                 <Ionicons name="person-circle-outline" size={48} color="#3B82F6" />
               </View>
               <Text className="text-2xl font-bold ">
-                Hoş Geldin
+                {t('login.title')}
               </Text>
               <Text className=" mt-2 text-center">
-                Yüz analizi için giriş yapın
+                {t('login.subtitle')}
               </Text>
             </View>
 
@@ -70,10 +72,10 @@ export default function LoginScreen() {
               <View className="space-y-4">
                 <View>
                   <Text className=" font-medium mb-2">
-                    E-posta
+                    {t('login.emailLabel')}
                   </Text>
                   <Input
-                    placeholder="ornek@email.com"
+                    placeholder={t('login.emailPlaceholder')}
                     value={email}
                     onChangeText={setEmail}
                     keyboardType="email-address"
@@ -84,10 +86,10 @@ export default function LoginScreen() {
 
                 <View>
                   <Text className=" font-medium mb-2">
-                    Şifre
+                    {t('login.passwordLabel')}
                   </Text>
                   <Input
-                    placeholder="Şifrenizi girin"
+                    placeholder={t('login.passwordPlaceholder')}
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
@@ -97,17 +99,17 @@ export default function LoginScreen() {
 
                 <Link href="/(auth)/forgot-password" className="self-end">
                   <Text className=" text-sm">
-                    Şifrenizi mi unuttunuz?
+                    {t('login.forgotPassword')}
                   </Text>
                 </Link>
 
-                <Button 
+                <Button
                   onPress={handleLogin}
                   disabled={loading}
                   className=" mt-6"
                 >
                   <Text className=" font-semibold">
-                    {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+                    {loading ? t('login.submittingButton') : t('login.submitButton')}
                   </Text>
                 </Button>
               </View>
@@ -116,11 +118,11 @@ export default function LoginScreen() {
             {/* Register Link */}
             <View className="flex-row justify-center items-center mt-6 gap-5 ">
               <Text className="text-gray-600">
-                Hesabınız yok mu? 
+                {t('login.noAccount')}
               </Text>
               <Link href="/(auth)/register">
                 <Text className=" font-semibold ml-1">
-                  Kayıt Olun
+                  {t('login.signUpLink')}
                 </Text>
               </Link>
             </View>

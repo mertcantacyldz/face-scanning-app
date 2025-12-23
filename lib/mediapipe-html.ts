@@ -174,6 +174,20 @@ export const mediaPipeHTML = `
                         }));
                 });
 
+                // Kalite bazlı confidence skoru hesapla
+                let detectionConfidence = 0;
+                const boxArea = (maxX - minX) * (maxY - minY);
+
+                if (boxArea < 0.10) {
+                    detectionConfidence = 0.70; // Çok küçük yüz (uzaktan)
+                } else if (boxArea > 0.85) {
+                    detectionConfidence = 0.75; // Çok büyük yüz (çok yakın)
+                } else if (boxArea > 0.15 && boxArea < 0.80) {
+                    detectionConfidence = 0.99; // Optimal boyut
+                } else {
+                    detectionConfidence = 0.85; // Kabul edilebilir
+                }
+
                 // React Native'e TÜM VERİYİ gönder
                 const result = {
                     type: 'LANDMARKS',
@@ -185,7 +199,7 @@ export const mediaPipeHTML = `
                             index: index
                         })),
                         totalPoints: landmarks.length,
-                        confidence: 0.95,
+                        confidence: detectionConfidence,
                         faceBox: {
                             x: minX * canvasElement.width,
                             y: minY * canvasElement.height,

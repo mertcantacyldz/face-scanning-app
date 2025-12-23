@@ -1,0 +1,27 @@
+{
+  "buttons": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "confirm": "Confirm",
+    "tryAgain": "Try Again",
+    "continue": "Continue",
+    "back": "Back",
+    "next": "Next",
+    "done": "Done"
+  },
+  "states": {
+    "loading": "Loading...",
+    "processing": "Processing...",
+    "success": "Success!",
+    "error": "Error",
+    "noData": "No data available"
+  },
+  "app": {
+    "name": "Face Analysis",
+    "version": "v1.0"
+  },
+  "welcome": {
+    "defaultUser": "User"
+  }
+}

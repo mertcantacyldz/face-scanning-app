@@ -1,0 +1,27 @@
+{
+  "buttons": {
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "close": "Kapat",
+    "confirm": "Onayla",
+    "tryAgain": "Tekrar Dene",
+    "continue": "Devam Et",
+    "back": "Geri",
+    "next": "İleri",
+    "done": "Tamam"
+  },
+  "states": {
+    "loading": "Yükleniyor...",
+    "processing": "İşleniyor...",
+    "success": "Başarılı!",
+    "error": "Hata",
+    "noData": "Veri bulunamadı"
+  },
+  "app": {
+    "name": "Yüz Analizi",
+    "version": "v1.0"
+  },
+  "welcome": {
+    "defaultUser": "Kullanıcı"
+  }
+}

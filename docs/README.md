@@ -29,17 +29,17 @@ git push origin main
 
 ### 2. Your URLs will be:
 ```
-https://[your-username].github.io/face-scanning-app/
-https://[your-username].github.io/face-scanning-app/privacy.html
-https://[your-username].github.io/face-scanning-app/terms.html
+https://[your-username].github.io/faceloom/
+https://[your-username].github.io/faceloom/privacy.html
+https://[your-username].github.io/faceloom/terms.html
 ```
 
 ### 3. Update URLs in App
 
 Edit `INTEGRATION_EXAMPLE.tsx` and replace:
 ```typescript
-const PRIVACY_URL = 'https://[your-username].github.io/face-scanning-app/privacy.html';
-const TERMS_URL = 'https://[your-username].github.io/face-scanning-app/terms.html';
+const PRIVACY_URL = 'https://[your-username].github.io/faceloom/privacy.html';
+const TERMS_URL = 'https://[your-username].github.io/faceloom/terms.html';
 ```
 
 ---
@@ -59,13 +59,12 @@ const TERMS_URL = 'https://[your-username].github.io/face-scanning-app/terms.htm
 
 ### Update App Name
 When you have your final app name, search and replace in all HTML files:
-- Find: `Face Scanning App`
+- Find: `FaceLoom`
 - Replace: `Your New App Name`
 
 ### Update Contact Emails
 Replace placeholder emails in privacy.html and terms.html:
-- `privacy@facescanningapp.com` → your actual email
-- `support@facescanningapp.com` → your actual email
+- `mertcabtacyldz@gmail.com` → your actual email
 
 ### Customize Colors
 Edit `styles.css` to match your brand colors.

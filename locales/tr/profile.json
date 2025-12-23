@@ -1,0 +1,48 @@
+{
+  "header": {
+    "title": "Profil"
+  },
+  "loading": "Yükleniyor...",
+  "notFound": "Profil bulunamadı",
+  "retryButton": "Tekrar Dene",
+  "membership": {
+    "premium": "Premium Üye",
+    "standard": "Standart Üye",
+    "title": "Premium Üyelik"
+  },
+  "stats": {
+    "title": "Hesap İstatistikleri",
+    "totalAnalysis": "Toplam Analiz",
+    "thisMonth": "Bu Ay",
+    "remainingLimit": "Kalan Limit"
+  },
+  "quickActions": {
+    "title": "Hızlı İşlemler",
+    "upgradePremium": "Premium'a Yüksel",
+    "newAnalysis": "Yeni Analiz Yap"
+  },
+  "settings": {
+    "title": "Hesap Ayarları",
+    "language": "Dil",
+    "notifications": "Bildirimler",
+    "privacy": "Gizlilik",
+    "help": "Yardım & Destek"
+  },
+  "editProfile": {
+    "title": "Profili Düzenle",
+    "fullNameLabel": "Ad Soyad",
+    "saveButton": "Değişiklikleri Kaydet",
+    "cancelButton": "İptal"
+  },
+  "signOut": {
+    "button": "Çıkış Yap",
+    "confirmTitle": "Çıkış Yap",
+    "confirmMessage": "Hesabınızdan çıkmak istediğinize emin misiniz?",
+    "confirmButton": "Çıkış Yap",
+    "cancelButton": "İptal"
+  },
+  "alerts": {
+    "profileUpdateSuccess": "Profil güncellendi",
+    "profileUpdateError": "Profil güncellenemedi"
+  }
+}

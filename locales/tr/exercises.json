@@ -1,0 +1,56 @@
+{
+  "header": {
+    "subtitle": "Egzersizler"
+  },
+  "noAccess": {
+    "title": "Bu Bölge Kilitli",
+    "description": "{{region}} egzersizlerine erişmek için önce bu bölgenin analizini yapmalısınız veya Premium'a geçmelisiniz.",
+    "upgradeButton": "Premium'a Geç"
+  },
+  "progress": {
+    "title": "Bugünkü İlerleme",
+    "completed": "{{completed}}/{{total}} egzersiz tamamlandı"
+  },
+  "motivation": {
+    "title": "Neden Düzenli Egzersiz Önemli?",
+    "point1": {
+      "highlight": "Tek egzersiz yetmez",
+      "text": " - Tüm bölge kaslarını çalıştırmalısınız"
+    },
+    "point2": {
+      "highlight": "Düzen sihirdir",
+      "text": " - Günlük 10 dakika, 3 ayda dramatik sonuçlar"
+    },
+    "point3": {
+      "highlight": "İlerlemeyi takip edin",
+      "text": " - Tamamlanan egzersizler motivasyonu artırır"
+    },
+    "premiumNote": "Premium'da: Tüm {{count}} egzersizi açın, ilerlemenizi grafiklerle takip edin"
+  },
+  "tip": {
+    "title": "İpucu:",
+    "text": " Egzersizleri sabah ve akşam olmak üzere günde 2 kez yapmanız önerilir. Her seans sadece 5-10 dakika sürer."
+  },
+  "list": {
+    "title": "Egzersizler ({{count}})",
+    "titleFree": "Egzersizler ({{current}}/{{total}})",
+    "premiumBadge": "+ {{count}} Daha",
+    "locked": "Premium",
+    "complete": "Tamamla",
+    "completed": "Tamamlandı"
+  },
+  "completion": {
+    "title": "Tebrikler!",
+    "messagePremium": "Bugünkü tüm egzersizleri tamamladınız. Yarın tekrar görüşmek üzere!",
+    "messageFree": "Ücretsiz egzersizi tamamladınız! Premium ile tüm egzersizleri açın.",
+    "upgradeButton": "Premium'a Geç"
+  },
+  "detail": {
+    "subtitle": "{{region}}",
+    "complete": "Egzersizi Tamamla",
+    "completed": "Tamamlandı Olarak İşaretlendi"
+  },
+  "premiumModal": {
+    "feature": "Tüm Egzersizler"
+  }
+}

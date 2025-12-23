@@ -7,10 +7,11 @@ import '@/global.css';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { supabase } from '@/lib/supabase';
 import { PortalHost } from '@rn-primitives/portal';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 import { PremiumProvider } from '@/contexts/PremiumContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { initializeI18n } from '@/locales';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -18,7 +19,14 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-    useEffect(() => {
+  const [i18nReady, setI18nReady] = useState(false);
+
+  useEffect(() => {
+    // Initialize i18n
+    initializeI18n().then(() => setI18nReady(true));
+  }, []);
+
+  useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         supabase.auth.startAutoRefresh()
@@ -29,6 +37,10 @@ export default function RootLayout() {
 
     return () => subscription?.remove()
   }, [])
+
+  if (!i18nReady) {
+    return null; // Or a splash screen
+  }
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

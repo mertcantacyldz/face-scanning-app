@@ -2,9 +2,9 @@ import React from 'react';
 import { Alert, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 // 🔗 GitHub Pages URLs - Update these after deployment!
-const PRIVACY_URL = 'https://[your-username].github.io/face-scanning-app/privacy.html';
-const TERMS_URL = 'https://[your-username].github.io/face-scanning-app/terms.html';
-const LEGAL_HOME_URL = 'https://[your-username].github.io/face-scanning-app/';
+const PRIVACY_URL = 'https://[your-username].github.io/faceloom/privacy.html';
+const TERMS_URL = 'https://[your-username].github.io/faceloom/terms.html';
+const LEGAL_HOME_URL = 'https://[your-username].github.io/faceloom/';
 
 /**
  * Legal Links Component
@@ -113,7 +113,7 @@ export function LegalFooter() {
             </View>
 
             <Text className="text-xs text-gray-400 text-center mt-2">
-                © 2024 Face Scanning App
+                © 2024 FaceLoom
             </Text>
         </View>
     );
@@ -150,7 +150,7 @@ export default function SettingsScreen() {
 
                     <View className="p-4 bg-white rounded-lg border border-gray-200">
                         <Text className="text-sm text-gray-600">Version 1.0.0</Text>
-                        <Text className="text-sm text-gray-600 mt-1">© 2024 Face Scanning App</Text>
+                        <Text className="text-sm text-gray-600 mt-1">© 2024 FaceLoom</Text>
                     </View>
                 </View>
 

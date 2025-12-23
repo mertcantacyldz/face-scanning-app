@@ -1,0 +1,48 @@
+{
+  "header": {
+    "title": "Profile"
+  },
+  "loading": "Loading...",
+  "notFound": "Profile not found",
+  "retryButton": "Try Again",
+  "membership": {
+    "premium": "Premium Member",
+    "standard": "Standard Member",
+    "title": "Premium Membership"
+  },
+  "stats": {
+    "title": "Account Statistics",
+    "totalAnalysis": "Total Analysis",
+    "thisMonth": "This Month",
+    "remainingLimit": "Remaining Limit"
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "upgradePremium": "Upgrade to Premium",
+    "newAnalysis": "New Analysis"
+  },
+  "settings": {
+    "title": "Account Settings",
+    "language": "Language",
+    "notifications": "Notifications",
+    "privacy": "Privacy",
+    "help": "Help & Support"
+  },
+  "editProfile": {
+    "title": "Edit Profile",
+    "fullNameLabel": "Full Name",
+    "saveButton": "Save Changes",
+    "cancelButton": "Cancel"
+  },
+  "signOut": {
+    "button": "Sign Out",
+    "confirmTitle": "Sign Out",
+    "confirmMessage": "Are you sure you want to sign out?",
+    "confirmButton": "Sign Out",
+    "cancelButton": "Cancel"
+  },
+  "alerts": {
+    "profileUpdateSuccess": "Profile updated successfully",
+    "profileUpdateError": "Failed to update profile"
+  }
+}

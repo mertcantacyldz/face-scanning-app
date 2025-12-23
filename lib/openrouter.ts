@@ -4,7 +4,9 @@
  */
 
 // Güncellendi: Daha hızlı TTFT ve daha yüksek kalite sunan Gemini 2.0 Flash Experimental modeline geçildi.
-const OPENROUTER_MODEL = 'google/gemini-2.0-flash-exp:free'; 
+const OPENROUTER_MODEL_TWO = 'meta-llama/llama-3.3-70b-instruct:free';
+const OPENROUTER_MODEL = 'google/gemini-2.0-flash-exp:free';
+
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 const MAX_RETRIES = 3; // Maksimum deneme sayısı
 const INITIAL_BACKOFF_MS = 1000; // İlk gecikme süresi (1 saniye)
@@ -41,6 +43,7 @@ export interface FaceAnalysisRequest {
   landmarks: { x: number; y: number; z: number; index: number }[];
   region: 'eyebrows' | 'eyes' | 'nose' | 'lips' | 'jawline' | 'face_shape';
   customPrompt: string;
+  language?: 'en' | 'tr'; // Add language support
 }
 
 export interface FaceAnalysisResponse {
@@ -117,19 +120,52 @@ export async function analyzeFaceRegion(
       );
     }
 
-    // Prepare the system prompt
-    const systemPrompt = `Sen bir yüz analizi uzmanısın. MediaPipe Face Mesh tarafından tespit edilen 468 yüz noktası verisini analiz ediyorsun.
-Kullanıcı dostu, pozitif ve detaylı analizler yapıyorsun. Cevaplarını Türkçe olarak veriyorsun.
-Teknik terimler yerine anlaşılır bir dil kullanıyorsun.`;
+    // Determine language (default to English)
+    const language = request.language || 'en';
+    const languageName = language === 'tr' ? 'TURKISH (Türkçe)' : 'ENGLISH';
+
+    // Prepare the system prompt with language instruction
+    const systemPrompt = `You are a face analysis expert. You analyze 468 facial landmark data detected by MediaPipe Face Mesh.
+You provide user-friendly, positive, and detailed analyses.
+
+📍 COORDINATE SYSTEM (CRITICAL):
+- Unit: Pixels (NOT normalized 0-1 values)
+- Canvas: 512x512 square
+- Range: x and y coordinates are 0 to 512
+- Origin: Top-left corner (0,0)
+- Format: {x: float, y: float, z: float, index: int}
+⚠️ DO NOT assume normalized coordinates!
+⚠️ DO NOT multiply by 100 for "mm conversion" - already pixels!
+
+📊 SCORING SCALE (0-10):
+- 0-2: Excellent symmetry (diff <2px) → NONE asymmetry
+- 3-4: Good symmetry (minor diff) → MILD asymmetry
+- 5-6: Moderate asymmetry (noticeable) → MODERATE
+- 7-10: Significant asymmetry → SEVERE
+
+✅ MATH VERIFICATION:
+Show calculation steps for every measurement.
+Example: LEFT = 95.67 - 23.45 = 72.22 ✓
+
+CRITICAL LANGUAGE INSTRUCTION:
+- You MUST respond in ${languageName} language ONLY
+- All analysis text, descriptions, and recommendations must be in ${languageName}
+- Use simple, understandable language instead of technical terms
+- JSON structure remains the same, only the content language changes
+
+CRITICAL JSON INSTRUCTION:
+- Values defined as 'number' in the schema must be plain numbers (e.g., 42.5), NOT formulas or strings (e.g., "40+2.5").
+- Calculate all values internally before constructing the JSON.
+- Do not output mathematical expressions like "(A - B) / C".`;
 
     // Prepare the user prompt with landmarks data
-    const userPrompt = `Aşağıda MediaPipe Face Mesh tarafından tespit edilen 468 yüz noktası verisi bulunmaktadır:
+    const userPrompt = `Below is the 468 facial landmark data detected by MediaPipe Face Mesh:
 
 ${JSON.stringify(request.landmarks, null, 2)}
 
 ${request.customPrompt}
 
-Lütfen detaylı ve kullanıcı dostu bir analiz yap. Sonucu düzenli paragraflar halinde sun.`;
+Please provide a detailed and user-friendly analysis. Present the results in well-organized paragraphs.`;
 
     // Kullanıcının isteği üzerine prompt içeriğini konsola yazdırıyoruz.
     console.log('--- Gönderilen System Prompt ---');
@@ -140,7 +176,7 @@ Lütfen detaylı ve kullanıcı dostu bir analiz yap. Sonucu düzenli paragrafla
 
     const requestBody: OpenRouterRequest = {
       // Daha stabil ve yüksek kapasiteli model kullanılıyor
-      model: OPENROUTER_MODEL, 
+      model: OPENROUTER_MODEL_TWO,
       messages: [
         {
           role: 'system',
@@ -153,7 +189,7 @@ Lütfen detaylı ve kullanıcı dostu bir analiz yap. Sonucu düzenli paragrafla
       ],
       temperature: 0.7,
       // Çıktının kesilmesini önlemek ve yeterli uzunluk sağlamak için 4096 (4K) olarak ayarlandı
-      max_tokens: 4096, 
+      max_tokens: 4096,
     };
 
     const response = await fetchWithBackoff(OPENROUTER_API_URL, { // Yeni, geri çekilmeli fetch fonksiyonu kullanılıyor
@@ -162,7 +198,7 @@ Lütfen detaylı ve kullanıcı dostu bir analiz yap. Sonucu düzenli paragrafla
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://face-scanning-app.com', // Optional: your app URL
-        'X-Title': 'Face Scanning App', // Optional: your app name
+        'X-Title': 'FaceLoom', // Optional: your app name
       },
       body: JSON.stringify(requestBody),
     });
@@ -171,8 +207,7 @@ Lütfen detaylı ve kullanıcı dostu bir analiz yap. Sonucu düzenli paragrafla
       const errorData = await response.json().catch(() => ({}));
       // Hata mesajını daha anlaşılır hale getirelim
       throw new Error(
-        `OpenRouter API Hatası: ${response.status} - ${
-          errorData.error?.message || response.statusText
+        `OpenRouter API Hatası: ${response.status} - ${errorData.error?.message || response.statusText
         }. (Not: Uzun promptlarda 429 alırsanız, lütfen 30 saniye bekleyip tekrar deneyin.)`
       );
     }

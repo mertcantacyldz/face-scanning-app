@@ -1,0 +1,36 @@
+{
+  "title": "Gelişim Takibi",
+  "subtitle": "Yüz analizlerinizi ve ilerlemenizi takip edin",
+  "loading": "Yükleniyor...",
+  "premiumFeature": {
+    "title": "Premium Özellik",
+    "description": "Gelişim takibi, grafikler ve karşılaştırmalı analiz özellikleri Premium üyelere özeldir.",
+    "benefits": [
+      "Tüm bölgelerin ilerleme grafikleri",
+      "Önceki analizlerle karşılaştırma",
+      "Detaylı skor dökümü",
+      "Kişiselleştirilmiş öneriler"
+    ],
+    "upgradeButton": "Premium'a Geç",
+    "preview": "Premium ile yüz analizlerinizi zaman içinde takip edebilir, gelişiminizi görebilir ve kişiselleştirilmiş egzersiz önerileri alabilirsiniz."
+  },
+  "overallProgress": {
+    "title": "Genel İlerleme",
+    "subtitle": "Tüm bölgeler",
+    "label": "ilerleme"
+  },
+  "stats": {
+    "totalAnalyses": "Toplam Analiz",
+    "activeRegions": "Aktif Bölge"
+  },
+  "chartTitle": "Genel Skor Grafiği",
+  "regionsTitle": "Bölgeler",
+  "emptyState": {
+    "title": "Henüz Analiz Yok",
+    "description": "Analiz sayfasına giderek yüz bölgelerinizi analiz edin ve gelişiminizi takip etmeye başlayın."
+  },
+  "tip": {
+    "title": "İpucu:",
+    "description": "Düzenli egzersiz yaparak yüz kaslarınızı güçlendirebilir ve simetrinizi iyileştirebilirsiniz. Her bölgeye tıklayarak önerilen egzersizleri görüntüleyin."
+  }
+}

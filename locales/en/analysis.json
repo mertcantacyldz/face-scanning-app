@@ -1,0 +1,71 @@
+{
+  "header": {
+    "title": "Face Analysis",
+    "subtitle": "Select the region you want to analyze"
+  },
+  "regions": {
+    "eyebrows": {
+      "title": "Eyebrows",
+      "description": "Eyebrow shape and symmetry analysis"
+    },
+    "eyes": {
+      "title": "Eyes",
+      "description": "Eye structure and spacing analysis"
+    },
+    "nose": {
+      "title": "Nose",
+      "description": "Nasal proportions and symmetry"
+    },
+    "lips": {
+      "title": "Lips",
+      "description": "Lip shape and fullness analysis"
+    },
+    "jawline": {
+      "title": "Jawline",
+      "description": "Jaw structure and definition"
+    },
+    "faceShape": {
+      "title": "Face Shape",
+      "description": "Overall facial proportions"
+    }
+  },
+  "score": {
+    "overall": "Overall Attractiveness Score",
+    "outOf": "out of 100",
+    "detailsTitle": "Detailed Score Breakdown",
+    "upgradePremium": "Upgrade to Premium for detailed score breakdown"
+  },
+  "freeAnalysis": {
+    "title": "You Have a Free Analysis!",
+    "subtitle": "Spin the wheel, win 1 region analysis",
+    "button": "Spin Wheel"
+  },
+  "result": {
+    "title": "Analysis Result",
+    "analyzing": "Analyzing...",
+    "noData": "No analysis data available"
+  },
+  "noScanFound": {
+    "title": "No Face Scan Found",
+    "message": "You haven't performed a face scan yet.",
+    "button": "Go to Scanner"
+  },
+  "errors": {
+    "analysisFailed": "Analysis failed. Please try again.",
+    "noLandmarks": "No face landmarks detected"
+  },
+  "lastScan": "Last scan",
+  "spinWheel": {
+    "title": "Spin the Wheel",
+    "close": "Close"
+  },
+  "freeAnalysisUsed": "Your free analysis for {{region}} region has been used",
+  "freeBadge": "Free",
+  "infoCard": {
+    "tip": "Tip:",
+    "description": "You will receive detailed AI-powered analysis for each region. Analysis results are prepared based on 468 facial landmark data detected by MediaPipe."
+  },
+  "closeButton": "Close",
+  "aiDisclaimer": "This analysis was created by artificial intelligence using MediaPipe Face Mesh data. Results are for informational purposes only.",
+  "thisFeature": "This feature"
+}

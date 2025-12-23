@@ -1,0 +1,29 @@
+# Netlify Configuration for FaceLoom Legal Pages
+
+[build]
+  # Publish directory (the folder to deploy)
+  publish = "."
+  
+  # No build command needed since these are static HTML files
+  command = ""
+
+# Redirect rules
+[[redirects]]
+  from = "/"
+  to = "/index.html"
+  status = 200
+
+# Headers for security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Cache static assets
+[[headers]]
+  for = "/styles.css"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

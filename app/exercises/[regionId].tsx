@@ -14,11 +14,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, View } from 'react-native';
 
 const ExercisesScreen = () => {
   const { regionId } = useLocalSearchParams<{ regionId: string }>();
   const region = regionId as RegionId;
+  const { t } = useTranslation('exercises');
 
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(new Set());
@@ -97,7 +99,7 @@ const ExercisesScreen = () => {
           </View>
           <View className="flex-1">
             <Text className="text-2xl font-bold">{title}</Text>
-            <Text className="text-muted-foreground">Egzersizler</Text>
+            <Text className="text-muted-foreground">{t('header.subtitle')}</Text>
           </View>
         </View>
 
@@ -107,10 +109,10 @@ const ExercisesScreen = () => {
             <View className="items-center">
               <Ionicons name="lock-closed-outline" size={48} color="#991B1B" style={{ marginBottom: 12 }} />
               <Text className="text-lg font-bold text-red-800 text-center mb-2">
-                Bu Bölge Kilitli
+                {t('noAccess.title')}
               </Text>
               <Text className="text-sm text-red-700 text-center mb-4">
-                {title} egzersizlerine erişmek için önce bu bölgenin analizini yapmalısınız veya Premium'a geçmelisiniz.
+                {t('noAccess.description', { region: title })}
               </Text>
               <Pressable
                 onPress={() => setShowPremiumModal(true)}
@@ -133,10 +135,10 @@ const ExercisesScreen = () => {
             <View className="flex-row items-center justify-between mb-3">
               <View>
                 <Text className="text-lg font-bold text-foreground">
-                  Bugünkü İlerleme
+                  {t('progress.title')}
                 </Text>
                 <Text className="text-sm text-muted-foreground">
-                  {completedCount}/{totalCount} egzersiz tamamlandı
+                  {t('progress.completed', { completed: completedCount, total: totalCount })}
                 </Text>
               </View>
               <View className="items-center">
@@ -163,23 +165,23 @@ const ExercisesScreen = () => {
               <Ionicons name="trophy-outline" size={32} color="#6B21A8" style={{ marginRight: 12 }} />
               <View className="flex-1">
                 <Text className="text-lg font-bold text-purple-900 mb-2">
-                  Neden Düzenli Egzersiz Önemli?
+                  {t('motivation.title')}
                 </Text>
                 <Text className="text-sm text-purple-800 mb-2">
-                  • <Text className="font-semibold">Tek egzersiz yetmez</Text> - Tüm bölge kaslarını çalıştırmalısınız
+                  • <Text className="font-semibold">{t('motivation.point1.highlight')}</Text>{t('motivation.point1.text')}
                 </Text>
                 <Text className="text-sm text-purple-800 mb-2">
-                  • <Text className="font-semibold">Düzen sihirdir</Text> - Günlük 10 dakika, 3 ayda dramatik sonuçlar
+                  • <Text className="font-semibold">{t('motivation.point2.highlight')}</Text>{t('motivation.point2.text')}
                 </Text>
                 <Text className="text-sm text-purple-800 mb-2">
-                  • <Text className="font-semibold">İlerlemeyi takip edin</Text> - Tamamlanan egzersizler motivasyonu artırır
+                  • <Text className="font-semibold">{t('motivation.point3.highlight')}</Text>{t('motivation.point3.text')}
                 </Text>
                 {!isPremium && (
                   <View className="mt-3 p-3 bg-purple-100 rounded-lg">
                     <View className="flex-row items-start">
                       <Ionicons name="diamond-outline" size={12} color="#581C87" style={{ marginTop: 2 }} />
                       <Text className="text-xs text-purple-900 font-semibold ml-1 flex-1">
-                        Premium'da: Tüm {exercises.length} egzersizi açın, ilerlemenizi grafiklerle takip edin
+                        {t('motivation.premiumNote', { count: exercises.length })}
                       </Text>
                     </View>
                   </View>
@@ -195,8 +197,7 @@ const ExercisesScreen = () => {
             <View className="flex-row items-start">
               <Ionicons name="bulb-outline" size={16} color="#1E3A8A" style={{ marginTop: 2 }} />
               <Text className="text-sm text-blue-800 ml-2 flex-1">
-                <Text className="font-semibold">İpucu:</Text> Egzersizleri
-                sabah ve akşam olmak üzere günde 2 kez yapmanız önerilir. Her seans sadece 5-10 dakika sürer.
+                <Text className="font-semibold">{t('tip.title')}</Text>{t('tip.text')}
               </Text>
             </View>
           </Card>
@@ -212,7 +213,10 @@ const ExercisesScreen = () => {
           <View className="mb-6">
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-xl font-bold">
-                Egzersizler ({isPremium ? exercises.length : `1/${exercises.length}`})
+                {isPremium
+                  ? t('list.title', { count: exercises.length })
+                  : t('list.titleFree', { current: 1, total: exercises.length })
+                }
               </Text>
               {!isPremium && (
                 <Pressable
@@ -220,7 +224,7 @@ const ExercisesScreen = () => {
                   className="bg-primary/10 px-3 py-1 rounded-full"
                 >
                   <Text className="text-primary text-xs font-semibold">
-                    + {exercises.length - 1} Daha
+                    {t('list.premiumBadge', { count: exercises.length - 1 })}
                   </Text>
                 </Pressable>
               )}
@@ -244,7 +248,7 @@ const ExercisesScreen = () => {
                         <View className="absolute inset-0 bg-background/60 z-10 items-center justify-center">
                           <View className="items-center">
                             <Ionicons name="lock-closed-outline" size={40} color="#6B7280" style={{ marginBottom: 8 }} />
-                            <Text className="text-sm font-bold text-foreground">Premium</Text>
+                            <Text className="text-sm font-bold text-foreground">{t('list.locked')}</Text>
                           </View>
                         </View>
 
@@ -297,8 +301,8 @@ const ExercisesScreen = () => {
                           <Ionicons name="checkmark-circle" size={16} color="#4B5563" style={{ marginRight: 6 }} />
                         )}
                         {completedExercises.has(exercise.id)
-                          ? 'Tamamlandı'
-                          : 'Tamamla'}
+                          ? t('list.completed')
+                          : t('list.complete')}
                       </Text>
                     </Pressable>
                   </View>
@@ -313,12 +317,12 @@ const ExercisesScreen = () => {
           <Card className="p-6 bg-green-50 border-2 border-green-200 items-center">
             <Ionicons name="trophy-outline" size={56} color="#15803D" style={{ marginBottom: 12 }} />
             <Text className="text-xl font-bold text-green-800 text-center mb-2">
-              Tebrikler!
+              {t('completion.title')}
             </Text>
             <Text className="text-green-700 text-center">
               {isPremium
-                ? 'Bugünkü tüm egzersizleri tamamladınız. Yarın tekrar görüşmek üzere!'
-                : 'Ücretsiz egzersizi tamamladınız! Premium ile tüm egzersizleri açın.'}
+                ? t('completion.messagePremium')
+                : t('completion.messageFree')}
             </Text>
             {!isPremium && (
               <Pressable
@@ -356,7 +360,7 @@ const ExercisesScreen = () => {
                 <Text className="text-2xl font-bold">
                   {selectedExercise.titleTr}
                 </Text>
-                <Text className="text-muted-foreground">{title}</Text>
+                <Text className="text-muted-foreground">{t('detail.subtitle', { region: title })}</Text>
               </View>
             </View>
 
@@ -388,8 +392,8 @@ const ExercisesScreen = () => {
                   <Ionicons name="checkmark-circle" size={18} color="#4B5563" style={{ marginRight: 8 }} />
                 )}
                 {completedExercises.has(selectedExercise.id)
-                  ? 'Tamamlandı Olarak İşaretlendi'
-                  : 'Egzersizi Tamamla'}
+                  ? t('detail.completed')
+                  : t('detail.complete')}
               </Text>
             </Pressable>
 
@@ -402,7 +406,7 @@ const ExercisesScreen = () => {
       <PremiumModal
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
-        feature="Tüm Egzersizler"
+        feature={t('premiumModal.feature')}
         featureIconName="barbell-outline"
       />
     </View>

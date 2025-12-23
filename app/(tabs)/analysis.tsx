@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
@@ -33,6 +34,7 @@ interface FaceAnalysisData {
 }
 
 const AnalysisScreen = () => {
+  const { t, i18n } = useTranslation('analysis');
   const [loading, setLoading] = useState(true);
   const [faceData, setFaceData] = useState<FaceAnalysisData | null>(null);
   const [analyzingRegion, setAnalyzingRegion] = useState<string | null>(null);
@@ -69,7 +71,7 @@ const AnalysisScreen = () => {
 
       if (!user) {
         console.log('No user found in analysis screen');
-        Alert.alert('Hata', 'Kullanıcı bulunamadı. Lütfen uygulamayı yeniden başlatın.');
+        Alert.alert(t('errors.title', { ns: 'errors' }), t('errors.noLandmarks'));
         return;
       }
 
@@ -88,11 +90,11 @@ const AnalysisScreen = () => {
         if (error.code === 'PGRST116') {
           // No data found
           Alert.alert(
-            'Yüz Taraması Bulunamadı',
-            'Henüz bir yüz taraması yapmadınız. Lütfen önce bir tarama yapın.',
+            t('noScanFound.title'),
+            t('noScanFound.message'),
             [
               {
-                text: 'Tamam',
+                text: t('buttons.done', { ns: 'common' }),
                 onPress: () => router.push('/(tabs)'),
               },
             ]
@@ -167,6 +169,7 @@ const AnalysisScreen = () => {
         landmarks: faceData.landmarks,
         region: region.id,
         customPrompt: region.prompt,
+        language: i18n.language as 'en' | 'tr', // Pass current language
       });
 
       console.log('Analysis result for region', region.id, ':', result);
@@ -299,17 +302,17 @@ const AnalysisScreen = () => {
     return (
       <View className="flex-1 bg-background items-center justify-center p-6">
         <Text className="text-2xl font-bold text-center mb-4">
-          Yüz Taraması Bulunamadı
+          {t('noScanFound.title')}
         </Text>
         <Text className="text-muted-foreground text-center mb-6">
-          Analiz yapabilmek için önce bir yüz taraması yapmalısınız.
+          {t('noScanFound.message')}
         </Text>
         <Pressable
           onPress={() => router.push('/(tabs)')}
           className="bg-primary px-6 py-3 rounded-lg"
         >
           <Text className="text-primary-foreground font-semibold">
-            Tarama Yap
+            {t('noScanFound.button')}
           </Text>
         </Pressable>
       </View>
@@ -321,13 +324,13 @@ const AnalysisScreen = () => {
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
         {/* Header */}
         <View className="mb-6">
-          <Text className="text-3xl font-bold mb-2">Yüz Analizi</Text>
+          <Text className="text-3xl font-bold mb-2">{t('header.title')}</Text>
           <Text className="text-muted-foreground">
-            Analizini yapmak istediğiniz bölgeyi seçin
+            {t('header.subtitle')}
           </Text>
           <Text className="text-xs text-muted-foreground mt-2">
-            Son tarama:{' '}
-            {new Date(faceData.created_at).toLocaleDateString('tr-TR', {
+            {t('lastScan')}:{' '}
+            {new Date(faceData.created_at).toLocaleDateString(i18n.language === 'tr' ? 'tr-TR' : 'en-US', {
               day: 'numeric',
               month: 'long',
               year: 'numeric',
@@ -343,7 +346,7 @@ const AnalysisScreen = () => {
             <View className="flex-row items-center justify-between">
               <View>
                 <Text className="text-sm text-muted-foreground mb-1">
-                  Genel Çekicilik Puanı
+                  {t('score.overall')}
                 </Text>
                 <Text className="text-3xl font-bold text-foreground">
                   {attractivenessScore.toFixed(1)}/10
@@ -360,7 +363,7 @@ const AnalysisScreen = () => {
               <View className="flex-row items-center mt-3">
                 <Ionicons name="diamond-outline" size={12} color="#6B7280" />
                 <Text className="text-xs text-muted-foreground ml-1">
-                  Detaylı puan dökümü için Premium'a geçin
+                  {t('score.upgradePremium')}
                 </Text>
               </View>
             )}
@@ -375,10 +378,10 @@ const AnalysisScreen = () => {
                 <Ionicons name="disc-outline" size={40} color="#CA8A04" />
                 <View className="flex-1 ml-3">
                   <Text className="font-bold text-yellow-800">
-                    Ücretsiz Analiz Hakkın Var!
+                    {t('freeAnalysis.title')}
                   </Text>
                   <Text className="text-sm text-yellow-700">
-                    Çarkı çevir, 1 bölge analizi kazan
+                    {t('freeAnalysis.subtitle')}
                   </Text>
                 </View>
                 <Ionicons name="chevron-forward" size={24} color="#CA8A04" />
@@ -393,10 +396,9 @@ const AnalysisScreen = () => {
             <View className="flex-row items-center">
               <Ionicons name="checkmark-circle" size={16} color="#16A34A" />
               <Text className="text-sm text-green-700 ml-2">
-                <Text className="font-semibold">
-                  {FACE_REGIONS.find(r => r.id === freeAnalysisRegion)?.title}
-                </Text>
-                {' '}bölgesi için ücretsiz analiz hakkınız kullanıldı
+                {t('freeAnalysisUsed', {
+                  region: t(`regions.${freeAnalysisRegion}.title`)
+                })}
               </Text>
             </View>
           </Card>
@@ -429,18 +431,18 @@ const AnalysisScreen = () => {
                   {/* Content */}
                   <View className="flex-1">
                     <View className="flex-row items-center">
-                      <Text className="text-lg font-bold mb-1">{region.title}</Text>
+                      <Text className="text-lg font-bold mb-1">{t(`regions.${region.id}.title`)}</Text>
                       {isLocked && (
                         <Ionicons name="lock-closed" size={14} color="#9CA3AF" style={{ marginLeft: 8, marginBottom: 4 }} />
                       )}
                       {isUnlocked && !isPremium && (
                         <View className="ml-2 mb-1 bg-green-100 px-2 py-0.5 rounded-full">
-                          <Text className="text-xs text-green-700 font-medium">Ücretsiz</Text>
+                          <Text className="text-xs text-green-700 font-medium">{t('freeBadge')}</Text>
                         </View>
                       )}
                     </View>
                     <Text className="text-sm text-muted-foreground">
-                      {region.description}
+                      {t(`regions.${region.id}.description`)}
                     </Text>
                   </View>
 
@@ -465,10 +467,7 @@ const AnalysisScreen = () => {
           <View className="flex-row items-start">
             <Ionicons name="bulb-outline" size={16} color="#8B5CF6" style={{ marginTop: 2 }} />
             <Text className="text-sm text-muted-foreground ml-2 flex-1">
-              <Text className="font-semibold">İpucu:</Text> Her bölge için
-              yapay zeka destekli detaylı analiz alacaksınız. Analiz sonuçları
-              MediaPipe tarafından tespit edilen 468 yüz noktası verisi üzerinden
-              hazırlanmaktadır.
+              <Text className="font-semibold">{t('infoCard.tip')}</Text> {t('infoCard.description')}
             </Text>
           </View>
         </Card>
@@ -487,7 +486,7 @@ const AnalysisScreen = () => {
         <View className="flex-1 bg-background">
           {/* Modal Header */}
           <View className="flex-row items-center justify-between p-4 pt-12 border-b border-border">
-            <Text className="text-xl font-bold">Şans Çarkı</Text>
+            <Text className="text-xl font-bold">{t('spinWheel.title')}</Text>
             <Pressable
               onPress={() => setShowSpinWheel(false)}
               className="w-10 h-10 rounded-full bg-muted items-center justify-center active:opacity-70"
@@ -510,7 +509,7 @@ const AnalysisScreen = () => {
       <PremiumModal
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
-        feature={selectedRegion?.title || 'Bu özellik'}
+        feature={selectedRegion ? t(`regions.${selectedRegion.id}.title`) : t('thisFeature')}
         featureIconName="lock-closed-outline"
       />
 
@@ -535,10 +534,10 @@ const AnalysisScreen = () => {
                 )}
                 <View>
                   <Text className="text-2xl font-bold text-primary-foreground">
-                    {selectedRegion?.title}
+                    {selectedRegion && t(`regions.${selectedRegion.id}.title`)}
                   </Text>
                   <Text className="text-primary-foreground/80 text-sm">
-                    Analiz Sonucu
+                    {t('result.title')}
                   </Text>
                 </View>
               </View>
@@ -617,7 +616,7 @@ const AnalysisScreen = () => {
               <View className="items-center justify-center py-12">
                 <ActivityIndicator size="large" color="#007AFF" />
                 <Text className="mt-4 text-muted-foreground">
-                  Analiz yapılıyor...
+                  {t('result.analyzing')}
                 </Text>
               </View>
             )}
@@ -626,8 +625,7 @@ const AnalysisScreen = () => {
             {analysisResult && (
               <Card className="mt-6 p-4 bg-muted border-0">
                 <Text className="text-xs text-muted-foreground text-center">
-                  Bu analiz yapay zeka tarafından MediaPipe Face Mesh verisi
-                  kullanılarak oluşturulmuştur. Sonuçlar bilgilendirme amaçlıdır.
+                  {t('aiDisclaimer')}
                 </Text>
               </Card>
             )}
@@ -642,7 +640,7 @@ const AnalysisScreen = () => {
               className="bg-primary py-4 rounded-lg items-center active:opacity-80"
             >
               <Text className="text-primary-foreground font-semibold text-base">
-                Kapat
+                {t('closeButton')}
               </Text>
             </Pressable>
           </View>

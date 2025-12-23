@@ -5,8 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 export default function TabLayout() {
+  const { t } = useTranslation('tabs');
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
 
@@ -37,28 +39,28 @@ export default function TabLayout() {
             paddingBottom: 0,
           },
         }}>
-      <Tabs.Screen 
-        name="index" 
-        options={{ 
-          title: 'Ana Sayfa',
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: t('home'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
           )
-        }} 
+        }}
       />
-      <Tabs.Screen 
-        name="analysis" 
-        options={{ 
-          title: 'Analiz Et',
+      <Tabs.Screen
+        name="analysis"
+        options={{
+          title: t('analysis'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="analytics" size={size} color={color} />
           )
-        }} 
+        }}
       />
       <Tabs.Screen
         name="progress"
         options={{
-          title: 'Gelişim',
+          title: t('progress'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="trending-up" size={size} color={color} />
           )
@@ -67,7 +69,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profil',
+          title: t('profile'),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           )

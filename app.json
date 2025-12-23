@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "face-scanning-app",
-    "slug": "face-scanning-app",
+    "name": "FaceLoom",
+    "slug": "faceloom",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "facescanningapp",
+    "scheme": "FaceLoom",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -39,7 +39,8 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,

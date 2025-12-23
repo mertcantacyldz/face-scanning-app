@@ -1,0 +1,20 @@
+{
+  "title": "Hata",
+  "auth": {
+    "fillAllFields": "Lütfen tüm alanları doldurun",
+    "passwordMismatch": "Şifreler eşleşmiyor",
+    "passwordTooShort": "Şifre en az 6 karakter olmalıdır",
+    "invalidEmail": "Geçersiz e-posta adresi",
+    "loginFailed": "Giriş başarısız. Lütfen bilgilerinizi kontrol edin.",
+    "registrationFailed": "Kayıt başarısız oldu. Lütfen tekrar deneyin.",
+    "emailInUse": "Bu e-posta adresi zaten kullanımda",
+    "weakPassword": "Şifre çok zayıf",
+    "unauthorized": "Devam etmek için lütfen giriş yapın"
+  },
+  "general": {
+    "somethingWentWrong": "Bir şeyler ters gitti",
+    "networkError": "Ağ hatası. Lütfen bağlantınızı kontrol edin.",
+    "tryAgainLater": "Lütfen daha sonra tekrar deneyin",
+    "noPermission": "İzin reddedildi"
+  }
+}

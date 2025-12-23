@@ -1,0 +1,69 @@
+{
+  "paywall": {
+    "title": "Upgrade to Premium",
+    "subtitle": "Unlock all features",
+    "featuresTitle": "Premium Features",
+    "features": {
+      "fullAnalysis": "6-region full AI analysis",
+      "detailedScore": "Detailed attractiveness score",
+      "allExercises": "All exercise steps",
+      "progressTracking": "Progress tracking & charts",
+      "unlimitedHistory": "Unlimited analysis history",
+      "personalizedRecommendations": "Personalized recommendations"
+    },
+    "plans": {
+      "selectPlan": "Choose Plan",
+      "yearly": "Annual Plan",
+      "monthly": "Monthly Plan",
+      "perMonth": "/mo",
+      "perYear": "/yr",
+      "renewsMonthly": "Renews monthly",
+      "mostPopular": "MOST POPULAR",
+      "save": "{{percent}}% SAVE"
+    },
+    "cta": {
+      "startYearly": "Start Annual Plan",
+      "startMonthly": "Start Monthly Plan",
+      "restore": "Restore Purchases"
+    },
+    "terms": "Payment will be charged to your Apple/Google account. Subscription automatically renews at the end of the period. Cancel anytime.",
+    "alerts": {
+      "noPackageTitle": "Error",
+      "noPackageMessage": "Package not found. Please try again later.",
+      "successTitle": "Success! 🎉",
+      "successMessage": "Your Premium membership has been activated!",
+      "successButton": "Great!",
+      "restoreSuccessTitle": "Success!",
+      "restoreSuccessMessage": "Your purchases have been restored!",
+      "restoreInfoTitle": "Info",
+      "restoreInfoMessage": "No purchases found to restore.",
+      "restoreErrorTitle": "Error",
+      "restoreErrorMessage": "Restore failed"
+    }
+  },
+  "modal": {
+    "title": "Premium Feature",
+    "subtitle": "\"{{feature}}\" requires Premium membership",
+    "benefitsTitle": "What you get with Premium:",
+    "benefits": {
+      "detailedAnalysis": "6-region detailed AI analysis",
+      "personalizedExercises": "Personalized exercises",
+      "progressTracking": "Progress tracking & charts",
+      "unlimitedHistory": "Unlimited analysis history"
+    },
+    "price": {
+      "yearly": "Annual Plan",
+      "amount": "$45.99/year",
+      "save": "{{percent}}% SAVE"
+    },
+    "buttons": {
+      "upgrade": "Upgrade to Premium",
+      "maybeLater": "Maybe Later"
+    }
+  },
+  "placeholders": {
+    "payment": "Payment Page",
+    "subscription": "Membership Plans",
+    "advancedAnalysis": "Advanced Analysis"
+  }
+}

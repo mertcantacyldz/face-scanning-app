@@ -134,10 +134,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (existingDevice?.supabase_user_id) {
         console.log('🔍 Found existing user mapping for this device:', existingDevice.supabase_user_id);
-        console.log('⚠️ Device has existing user but session is lost/expired.');
-        console.log('   Unfortunately, anonymous users cannot be re-authenticated.');
-        console.log('   This device will keep the mapping but create a new anonymous user.');
-        console.log('   (In premium flow, users can restore via OAuth/email)');
+        console.log('⚠️ Device has existing user but session cannot be restored for anonymous users.');
+        console.log('   A new anonymous user will be created. Previous data remains in database.');
+        console.log('   Users can preserve data across devices by creating an account with email/OAuth.');
       } else {
         console.log('✅ No existing user for this device');
       }

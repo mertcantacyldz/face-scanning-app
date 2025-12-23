@@ -1,0 +1,45 @@
+{
+    "loading": "Yükleniyor...",
+    "header": {
+        "analysisCount": "{{count}} analiz"
+    },
+    "latestScore": {
+        "title": "Son Skor",
+        "outOf": "/10"
+    },
+    "chart": {
+        "title": "Skor Geçmişi"
+    },
+    "exercises": {
+        "title": "Önerilen Egzersizler",
+        "viewAll": "Tümünü Gör →"
+    },
+    "history": {
+        "title": "Analiz Geçmişi",
+        "premiumBadge": "Premium",
+        "analysisNumber": "Analiz #{{number}}",
+        "upgradeMessage": "+{{count}} analiz daha görmek için Premium'a geç"
+    },
+    "emptyState": {
+        "title": "Henüz Analiz Yok",
+        "description": "Bu bölge için henüz bir analiz yapmadınız. Analiz sayfasına giderek başlayabilirsiniz.",
+        "button": "Analiz Yap"
+    },
+    "detailModal": {
+        "title": "{{region}} Analizi",
+        "detailedAnalysis": "Detaylı Analiz"
+    },
+    "alerts": {
+        "loginRequired": {
+            "title": "Hata",
+            "message": "Lütfen giriş yapın"
+        },
+        "loadError": {
+            "title": "Hata",
+            "message": "Veriler yüklenirken bir hata oluştu"
+        }
+    },
+    "premiumModal": {
+        "feature": "Analiz Geçmişi"
+    }
+}

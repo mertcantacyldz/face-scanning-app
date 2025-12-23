@@ -132,10 +132,10 @@ export default function OpenRouterTest() {
           Authorization: `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
           'HTTP-Referer': 'https://face-scanning-app.local',
-          'X-Title': 'Face Scanning App Test',
+          'X-Title': 'FaceLoom Test',
         },
         body: JSON.stringify({
-          model: 'google/gemini-2.0-flash-exp:free', // GERÇEK MODEL - lib/openrouter.ts ile aynı
+          model: 'meta-llama/llama-3.3-70b-instruct:free', // GERÇEK MODEL - lib/openrouter.ts ile aynı
           messages: [{ role: 'user', content: prompt }],
           max_tokens: 100,
         }),
@@ -362,8 +362,8 @@ export default function OpenRouterTest() {
                         result.statusCode === 429
                           ? 'text-red-500 font-bold'
                           : result.statusCode === 200
-                          ? 'text-green-500'
-                          : 'text-foreground'
+                            ? 'text-green-500'
+                            : 'text-foreground'
                       }
                     >
                       {result.statusCode}
@@ -422,11 +422,10 @@ export default function OpenRouterTest() {
                   isSequentialTest ? runSequentialTest(index) : runSingleTest(index)
                 }
                 disabled={result.status === 'running' || isRunningAll}
-                className={`py-2 px-4 rounded ${
-                  result.status === 'running' || isRunningAll
+                className={`py-2 px-4 rounded ${result.status === 'running' || isRunningAll
                     ? 'bg-muted'
                     : 'bg-primary'
-                }`}
+                  }`}
               >
                 {result.status === 'running' ? (
                   <View className="flex-row items-center justify-center">
@@ -447,9 +446,8 @@ export default function OpenRouterTest() {
           <Pressable
             onPress={runAllTests}
             disabled={isRunningAll}
-            className={`flex-1 py-3 px-4 rounded ${
-              isRunningAll ? 'bg-muted' : 'bg-primary'
-            }`}
+            className={`flex-1 py-3 px-4 rounded ${isRunningAll ? 'bg-muted' : 'bg-primary'
+              }`}
           >
             {isRunningAll ? (
               <View className="flex-row items-center justify-center">

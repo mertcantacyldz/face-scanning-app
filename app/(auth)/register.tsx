@@ -2,6 +2,7 @@ import { Link, router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function RegisterScreen() {
+  const { t } = useTranslation('auth');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -19,17 +21,17 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!email || !password || !confirmPassword || !fullName) {
-      Alert.alert('Hata', 'Lütfen tüm alanları doldurun');
+      Alert.alert(t('errors.title', { ns: 'errors' }), t('errors.fillAllFields'));
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Hata', 'Şifreler eşleşmiyor');
+      Alert.alert(t('errors.title', { ns: 'errors' }), t('errors.passwordMismatch'));
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Hata', 'Şifre en az 6 karakter olmalıdır');
+      Alert.alert(t('errors.title', { ns: 'errors' }), t('errors.passwordTooShort'));
       return;
     }
 
@@ -46,17 +48,17 @@ export default function RegisterScreen() {
       });
 
       if (error) {
-        Alert.alert('Kayıt Hatası', error.message);
+        Alert.alert(t('errors.title', { ns: 'errors' }), error.message);
       } else {
         Alert.alert(
-          'Başarılı!',
-          'Kayıt işlemi tamamlandı. E-postanızı kontrol edin.',
-          [{ text: 'Tamam', onPress: () => router.back() }]
+          t('states.success', { ns: 'common' }),
+          t('success.registrationComplete'),
+          [{ text: t('buttons.done', { ns: 'common' }), onPress: () => router.back() }]
         );
       }
     } catch (error:any) {
         console.log(error.message);
-      Alert.alert('Hata', 'Bir şeyler yanlış gitti');
+      Alert.alert(t('errors.title', { ns: 'errors' }), t('errors.somethingWentWrong'));
     }
     setLoading(false);
   };
@@ -79,10 +81,10 @@ export default function RegisterScreen() {
                 <Ionicons name="sparkles-outline" size={48} color="#10B981" />
               </View>
               <Text className="text-2xl font-bold text-gray-900">
-                Hesap Oluştur
+                {t('register.title')}
               </Text>
               <Text className="text-gray-600 mt-2 text-center">
-                Yüz analizi deneyiminizi başlatın
+                {t('register.subtitle')}
               </Text>
             </View>
 
@@ -91,10 +93,10 @@ export default function RegisterScreen() {
               <View className="space-y-4">
                 <View>
                   <Text className="text-gray-700 font-medium mb-2">
-                    Ad Soyad
+                    {t('register.fullNameLabel')}
                   </Text>
                   <Input
-                    placeholder="Ad Soyadınız"
+                    placeholder={t('register.fullNamePlaceholder')}
                     value={fullName}
                     onChangeText={setFullName}
                     autoComplete="name"
@@ -103,10 +105,10 @@ export default function RegisterScreen() {
 
                 <View>
                   <Text className="text-gray-700 font-medium mb-2">
-                    E-posta
+                    {t('register.emailLabel')}
                   </Text>
                   <Input
-                    placeholder="ornek@email.com"
+                    placeholder={t('register.emailPlaceholder')}
                     value={email}
                     onChangeText={setEmail}
                     keyboardType="email-address"
@@ -117,10 +119,10 @@ export default function RegisterScreen() {
 
                 <View>
                   <Text className="text-gray-700 font-medium mb-2">
-                    Şifre
+                    {t('register.passwordLabel')}
                   </Text>
                   <Input
-                    placeholder="En az 6 karakter"
+                    placeholder={t('register.passwordPlaceholder')}
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
@@ -130,23 +132,23 @@ export default function RegisterScreen() {
 
                 <View>
                   <Text className="text-gray-700 font-medium mb-2">
-                    Şifre Tekrar
+                    {t('register.confirmPasswordLabel')}
                   </Text>
                   <Input
-                    placeholder="Şifrenizi tekrar girin"
+                    placeholder={t('register.confirmPasswordPlaceholder')}
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     secureTextEntry
                   />
                 </View>
 
-                <Button 
+                <Button
                   onPress={handleRegister}
                   disabled={loading}
                   className="bg-green-600 mt-6"
                 >
                   <Text className="text-white font-semibold">
-                    {loading ? 'Kayıt yapılıyor...' : 'Hesap Oluştur'}
+                    {loading ? t('register.submittingButton') : t('register.submitButton')}
                   </Text>
                 </Button>
               </View>
@@ -155,11 +157,11 @@ export default function RegisterScreen() {
             {/* Login Link */}
             <View className="flex-row justify-center items-center mt-6">
               <Text className="text-gray-600">
-                Zaten hesabınız var mı? 
+                {t('register.hasAccount')}
               </Text>
               <Link href="/(auth)/login">
                 <Text className="text-blue-600 font-semibold ml-1">
-                  Giriş Yapın
+                  {t('register.signInLink')}
                 </Text>
               </Link>
             </View>

@@ -1,0 +1,45 @@
+{
+    "loading": "Loading...",
+    "header": {
+        "analysisCount": "{{count}} analyses"
+    },
+    "latestScore": {
+        "title": "Latest Score",
+        "outOf": "/10"
+    },
+    "chart": {
+        "title": "Score History"
+    },
+    "exercises": {
+        "title": "Recommended Exercises",
+        "viewAll": "View All →"
+    },
+    "history": {
+        "title": "Analysis History",
+        "premiumBadge": "Premium",
+        "analysisNumber": "Analysis #{{number}}",
+        "upgradeMessage": "Upgrade to Premium to see {{count}} more analyses"
+    },
+    "emptyState": {
+        "title": "No Analyses Yet",
+        "description": "You haven't analyzed this region yet. Go to the analysis page to get started.",
+        "button": "Analyze"
+    },
+    "detailModal": {
+        "title": "{{region}} Analysis",
+        "detailedAnalysis": "Detailed Analysis"
+    },
+    "alerts": {
+        "loginRequired": {
+            "title": "Error",
+            "message": "Please log in"
+        },
+        "loadError": {
+            "title": "Error",
+            "message": "An error occurred while loading data"
+        }
+    },
+    "premiumModal": {
+        "feature": "Analysis History"
+    }
+}

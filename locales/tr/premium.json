@@ -1,0 +1,69 @@
+{
+  "paywall": {
+    "title": "Premium'a Geç",
+    "subtitle": "Tüm özelliklerin kilidini aç",
+    "featuresTitle": "Premium Özellikleri",
+    "features": {
+      "fullAnalysis": "6 bölge tam AI analizi",
+      "detailedScore": "Detaylı çekicilik skoru",
+      "allExercises": "Tüm egzersiz adımları",
+      "progressTracking": "İlerleme takibi & grafikler",
+      "unlimitedHistory": "Sınırsız analiz geçmişi",
+      "personalizedRecommendations": "Kişiselleştirilmiş öneriler"
+    },
+    "plans": {
+      "selectPlan": "Plan Seçin",
+      "yearly": "Yıllık Plan",
+      "monthly": "Aylık Plan",
+      "perMonth": "/ay",
+      "perYear": "/yıl",
+      "renewsMonthly": "Her ay yenilenir",
+      "mostPopular": "EN POPÜLER",
+      "save": "%{{percent}} TASARRUF"
+    },
+    "cta": {
+      "startYearly": "Yıllık Planı Başlat",
+      "startMonthly": "Aylık Planı Başlat",
+      "restore": "Satın Alımları Geri Yükle"
+    },
+    "terms": "Ödeme Apple/Google hesabınızdan alınır. Abonelik dönem sonunda otomatik yenilenir. İstediğiniz zaman iptal edebilirsiniz.",
+    "alerts": {
+      "noPackageTitle": "Hata",
+      "noPackageMessage": "Paket bulunamadı. Lütfen daha sonra tekrar deneyin.",
+      "successTitle": "Başarılı! 🎉",
+      "successMessage": "Premium üyeliğiniz aktif edildi!",
+      "successButton": "Harika!",
+      "restoreSuccessTitle": "Başarılı!",
+      "restoreSuccessMessage": "Satın alımlarınız geri yüklendi!",
+      "restoreInfoTitle": "Bilgi",
+      "restoreInfoMessage": "Geri yüklenecek satın alım bulunamadı.",
+      "restoreErrorTitle": "Hata",
+      "restoreErrorMessage": "Geri yükleme başarısız"
+    }
+  },
+  "modal": {
+    "title": "Premium Özellik",
+    "subtitle": "\"{{feature}}\" için Premium üyelik gerekli",
+    "benefitsTitle": "Premium ile neler kazanırsın:",
+    "benefits": {
+      "detailedAnalysis": "6 bölge detaylı AI analizi",
+      "personalizedExercises": "Kişiselleştirilmiş egzersizler",
+      "progressTracking": "İlerleme takibi & grafikler",
+      "unlimitedHistory": "Sınırsız analiz geçmişi"
+    },
+    "price": {
+      "yearly": "Yıllık Plan",
+      "amount": "$45.99/yıl",
+      "save": "%{{percent}} TASARRUF"
+    },
+    "buttons": {
+      "upgrade": "Premium'a Geç",
+      "maybeLater": "Belki Sonra"
+    }
+  },
+  "placeholders": {
+    "payment": "Ödeme Sayfası",
+    "subscription": "Üyelik planları",
+    "advancedAnalysis": "Gelişmiş Analiz"
+  }
+}

@@ -8,6 +8,7 @@ import {
   Pressable,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,6 +42,7 @@ interface RegionAnalysisRow {
 }
 
 const ProgressScreen = () => {
+  const { t } = useTranslation('progress');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [regionSummaries, setRegionSummaries] = useState<RegionSummary[]>([]);
@@ -66,7 +68,7 @@ const ProgressScreen = () => {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        Alert.alert('Hata', 'Lütfen giriş yapın');
+        Alert.alert(t('errors.title', { ns: 'errors' }), t('errors.pleaseLogin', { ns: 'errors' }));
         router.replace('/(auth)/login');
         return;
       }
@@ -155,7 +157,7 @@ const ProgressScreen = () => {
       setTotalAnalyses(analyses?.length || 0);
     } catch (error) {
       console.error('Error loading progress data:', error);
-      Alert.alert('Hata', 'Veriler yüklenirken bir hata oluştu');
+      Alert.alert(t('errors.title', { ns: 'errors' }), t('errors.loadingError', { ns: 'errors' }));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -175,7 +177,7 @@ const ProgressScreen = () => {
     return (
       <View className="flex-1 bg-background items-center justify-center">
         <ActivityIndicator size="large" color="#007AFF" />
-        <Text className="mt-4 text-muted-foreground">Yükleniyor...</Text>
+        <Text className="mt-4 text-muted-foreground">{t('loading')}</Text>
       </View>
     );
   }
@@ -187,9 +189,9 @@ const ProgressScreen = () => {
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
           {/* Header */}
           <View className="mb-6">
-            <Text className="text-3xl font-bold mb-2">Gelişim Takibi</Text>
+            <Text className="text-3xl font-bold mb-2">{t('title')}</Text>
             <Text className="text-muted-foreground">
-              Yüz analizlerinizi ve ilerlemenizi takip edin
+              {t('subtitle')}
             </Text>
           </View>
 
@@ -199,20 +201,15 @@ const ProgressScreen = () => {
               <Ionicons name="stats-chart-outline" size={56} color="#8B5CF6" />
             </View>
             <Text className="text-2xl font-bold text-center mb-2">
-              Premium Özellik
+              {t('premiumFeature.title')}
             </Text>
             <Text className="text-muted-foreground text-center mb-6">
-              Gelişim takibi, grafikler ve karşılaştırmalı analiz özellikleri Premium üyelere özeldir.
+              {t('premiumFeature.description')}
             </Text>
 
             {/* Benefits */}
             <View className="w-full gap-3 mb-6">
-              {[
-                'Tüm bölgelerin ilerleme grafikleri',
-                'Önceki analizlerle karşılaştırma',
-                'Detaylı skor dökümü',
-                'Kişiselleştirilmiş öneriler',
-              ].map((benefit, index) => (
+              {(t('premiumFeature.benefits', { returnObjects: true }) as string[]).map((benefit: string, index: number) => (
                 <View key={index} className="flex-row items-center">
                   <Ionicons name="checkmark-circle" size={18} color="#10B981" />
                   <Text className="text-foreground ml-2">{benefit}</Text>
@@ -227,7 +224,7 @@ const ProgressScreen = () => {
               <View className="flex-row items-center">
                 <Ionicons name="diamond-outline" size={20} color="#FFFFFF" />
                 <Text className="text-primary-foreground font-bold text-base ml-2">
-                  Premium&apos;a Geç
+                  {t('premiumFeature.upgradeButton')}
                 </Text>
               </View>
             </Pressable>
@@ -236,7 +233,7 @@ const ProgressScreen = () => {
           {/* Preview Card */}
           <Card className="mt-6 p-4 bg-muted/50 border-0">
             <Text className="text-xs text-muted-foreground text-center">
-              Premium ile yüz analizlerinizi zaman içinde takip edebilir, gelişiminizi görebilir ve kişiselleştirilmiş egzersiz önerileri alabilirsiniz.
+              {t('premiumFeature.preview')}
             </Text>
           </Card>
 
@@ -257,9 +254,9 @@ const ProgressScreen = () => {
       >
         {/* Header */}
         <View className="mb-6">
-          <Text className="text-3xl font-bold mb-2">Gelişim Takibi</Text>
+          <Text className="text-3xl font-bold mb-2">{t('title')}</Text>
           <Text className="text-muted-foreground">
-            Yüz analizlerinizi ve ilerlemenizi takip edin
+            {t('subtitle')}
           </Text>
         </View>
 
@@ -268,10 +265,10 @@ const ProgressScreen = () => {
           <View className="flex-row items-center justify-between mb-4">
             <View>
               <Text className="text-lg font-bold text-foreground">
-                Genel İlerleme
+                {t('overallProgress.title')}
               </Text>
               <Text className="text-sm text-muted-foreground">
-                Tüm bölgeler
+                {t('overallProgress.subtitle')}
               </Text>
             </View>
             <View className="items-center">
@@ -283,7 +280,7 @@ const ProgressScreen = () => {
                 {overallProgress >= 0 ? '+' : ''}
                 {overallProgress}%
               </Text>
-              <Text className="text-xs text-muted-foreground">ilerleme</Text>
+              <Text className="text-xs text-muted-foreground">{t('overallProgress.label')}</Text>
             </View>
           </View>
 
@@ -291,7 +288,7 @@ const ProgressScreen = () => {
           <View className="flex-row">
             <View className="flex-1 bg-white/50 p-3 rounded-lg mr-2">
               <Text className="text-xs text-muted-foreground">
-                Toplam Analiz
+                {t('stats.totalAnalyses')}
               </Text>
               <Text className="text-xl font-bold text-foreground">
                 {totalAnalyses}
@@ -299,7 +296,7 @@ const ProgressScreen = () => {
             </View>
             <View className="flex-1 bg-white/50 p-3 rounded-lg ml-2">
               <Text className="text-xs text-muted-foreground">
-                Aktif Bölge
+                {t('stats.activeRegions')}
               </Text>
               <Text className="text-xl font-bold text-foreground">
                 {regionSummaries.filter((r) => r.analysisCount > 0).length}/6
@@ -313,7 +310,7 @@ const ProgressScreen = () => {
           <View className="mb-6">
             <ProgressChart
               data={overallChartData}
-              titleTr="Genel Skor Grafiği"
+              titleTr={t('chartTitle')}
               color="#007AFF"
               height={180}
             />
@@ -322,7 +319,7 @@ const ProgressScreen = () => {
 
         {/* Region Cards */}
         <View className="mb-4">
-          <Text className="text-xl font-bold mb-4">Bölgeler</Text>
+          <Text className="text-xl font-bold mb-4">{t('regionsTitle')}</Text>
           <View className="gap-3">
             {regionSummaries.map((summary) => (
               <RegionProgressCard
@@ -343,11 +340,10 @@ const ProgressScreen = () => {
           <Card className="p-6 bg-muted/50 border-0 items-center">
             <Ionicons name="stats-chart-outline" size={56} color="#8B5CF6" style={{ marginBottom: 16 }} />
             <Text className="text-lg font-bold text-center mb-2">
-              Henüz Analiz Yok
+              {t('emptyState.title')}
             </Text>
             <Text className="text-muted-foreground text-center">
-              Analiz sayfasına giderek yüz bölgelerinizi analiz edin ve
-              gelişiminizi takip etmeye başlayın.
+              {t('emptyState.description')}
             </Text>
           </Card>
         )}
@@ -357,10 +353,7 @@ const ProgressScreen = () => {
           <View className="flex-row items-start">
             <Ionicons name="bulb-outline" size={16} color="#1E3A8A" style={{ marginTop: 2 }} />
             <Text className="text-sm text-blue-800 ml-2 flex-1">
-              <Text className="font-semibold">İpucu:</Text> Düzenli egzersiz
-              yaparak yüz kaslarınızı güçlendirebilir ve simetrinizi
-              iyileştirebilirsiniz. Her bölgeye tıklayarak önerilen egzersizleri
-              görüntüleyin.
+              <Text className="font-semibold">{t('tip.title')}</Text> {t('tip.description')}
             </Text>
           </View>
         </Card>

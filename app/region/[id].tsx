@@ -17,6 +17,7 @@ import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
@@ -36,6 +37,7 @@ interface AnalysisRecord {
 const RegionDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const regionId = id as RegionId;
+  const { t } = useTranslation('region');
 
   const [loading, setLoading] = useState(true);
   const [analyses, setAnalyses] = useState<AnalysisRecord[]>([]);
@@ -64,7 +66,7 @@ const RegionDetailScreen = () => {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        Alert.alert('Hata', 'Lütfen giriş yapın');
+        Alert.alert(t('alerts.loginRequired.title'), t('alerts.loginRequired.message'));
         router.replace('/(auth)/login');
         return;
       }
@@ -82,7 +84,7 @@ const RegionDetailScreen = () => {
       setAnalyses(data || []);
     } catch (error) {
       console.error('Error loading region data:', error);
-      Alert.alert('Hata', 'Veriler yüklenirken bir hata oluştu');
+      Alert.alert(t('alerts.loadError.title'), t('alerts.loadError.message'));
     } finally {
       setLoading(false);
     }
@@ -136,7 +138,7 @@ const RegionDetailScreen = () => {
     return (
       <View className="flex-1 bg-background items-center justify-center">
         <ActivityIndicator size="large" color="#007AFF" />
-        <Text className="mt-4 text-muted-foreground">Yükleniyor...</Text>
+        <Text className="mt-4 text-muted-foreground">{t('loading')}</Text>
       </View>
     );
   }
@@ -158,7 +160,7 @@ const RegionDetailScreen = () => {
           <View>
             <Text className="text-2xl font-bold">{title}</Text>
             <Text className="text-muted-foreground">
-              {analyses.length} analiz
+              {t('header.analysisCount', { count: analyses.length })}
             </Text>
           </View>
         </View>
@@ -175,20 +177,20 @@ const RegionDetailScreen = () => {
           <Card className="p-6 mb-6 bg-primary/10 border-2 border-primary/20">
             <View className="items-center">
               <Text className="text-sm text-muted-foreground mb-2">
-                Son Skor
+                {t('latestScore.title')}
               </Text>
               <View className="w-28 h-28 rounded-full bg-white shadow-lg items-center justify-center border-4 border-primary/20">
                 <Text
                   className={`text-5xl font-bold ${latestAnalysis.overall_score >= 7
-                      ? 'text-green-600'
-                      : latestAnalysis.overall_score >= 4
-                        ? 'text-yellow-600'
-                        : 'text-red-600'
+                    ? 'text-green-600'
+                    : latestAnalysis.overall_score >= 4
+                      ? 'text-yellow-600'
+                      : 'text-red-600'
                     }`}
                 >
                   {latestAnalysis.overall_score}
                 </Text>
-                <Text className="text-sm text-muted-foreground">/10</Text>
+                <Text className="text-sm text-muted-foreground">{t('latestScore.outOf')}</Text>
               </View>
               <Text className="text-xs text-muted-foreground mt-3">
                 {new Date(latestAnalysis.created_at).toLocaleDateString(
@@ -209,7 +211,7 @@ const RegionDetailScreen = () => {
           <View className="mb-6">
             <ProgressChart
               data={chartData}
-              titleTr="Skor Geçmişi"
+              titleTr={t('chart.title')}
               color="#007AFF"
               height={180}
             />
@@ -219,9 +221,9 @@ const RegionDetailScreen = () => {
         {/* Exercises Section */}
         <View className="mb-6">
           <View className="flex-row items-center justify-between mb-4">
-            <Text className="text-xl font-bold">Önerilen Egzersizler</Text>
+            <Text className="text-xl font-bold">{t('exercises.title')}</Text>
             <Pressable onPress={handleExercisesPress}>
-              <Text className="text-primary font-semibold">Tümünü Gör →</Text>
+              <Text className="text-primary font-semibold">{t('exercises.viewAll')}</Text>
             </Pressable>
           </View>
 
@@ -241,11 +243,11 @@ const RegionDetailScreen = () => {
         {analyses.length > 0 && (
           <View className="mb-6">
             <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-xl font-bold">Analiz Geçmişi</Text>
+              <Text className="text-xl font-bold">{t('history.title')}</Text>
               {!isPremium && (
                 <View className="flex-row items-center">
                   <Ionicons name="lock-closed-outline" size={16} color="#6B7280" />
-                  <Text className="text-sm text-muted-foreground ml-1">Premium</Text>
+                  <Text className="text-sm text-muted-foreground ml-1">{t('history.premiumBadge')}</Text>
                 </View>
               )}
             </View>
@@ -260,18 +262,18 @@ const RegionDetailScreen = () => {
                     {/* Score */}
                     <View
                       className={`w-12 h-12 rounded-full items-center justify-center mr-4 ${analysis.overall_score >= 7
-                          ? 'bg-green-100'
-                          : analysis.overall_score >= 4
-                            ? 'bg-yellow-100'
-                            : 'bg-red-100'
+                        ? 'bg-green-100'
+                        : analysis.overall_score >= 4
+                          ? 'bg-yellow-100'
+                          : 'bg-red-100'
                         }`}
                     >
                       <Text
                         className={`text-lg font-bold ${analysis.overall_score >= 7
-                            ? 'text-green-800'
-                            : analysis.overall_score >= 4
-                              ? 'text-yellow-800'
-                              : 'text-red-800'
+                          ? 'text-green-800'
+                          : analysis.overall_score >= 4
+                            ? 'text-yellow-800'
+                            : 'text-red-800'
                           }`}
                       >
                         {analysis.overall_score}
@@ -281,7 +283,7 @@ const RegionDetailScreen = () => {
                     {/* Info */}
                     <View className="flex-1">
                       <Text className="font-semibold text-foreground">
-                        Analiz #{analyses.length - index}
+                        {t('history.analysisNumber', { number: analyses.length - index })}
                       </Text>
                       <Text className="text-sm text-muted-foreground">
                         {new Date(analysis.created_at).toLocaleDateString(
@@ -316,7 +318,7 @@ const RegionDetailScreen = () => {
                     <View className="flex-row items-center">
                       <Ionicons name="diamond-outline" size={18} color="#8B5CF6" />
                       <Text className="text-primary font-semibold ml-2">
-                        +{analyses.length - 1} analiz daha görmek için Premium&apos;a geç
+                        {t('history.upgradeMessage', { count: analyses.length - 1 })}
                       </Text>
                     </View>
                   </Card>
@@ -331,18 +333,17 @@ const RegionDetailScreen = () => {
           <Card className="p-6 bg-muted/50 border-0 items-center">
             <Text className="text-5xl mb-4">{icon}</Text>
             <Text className="text-lg font-bold text-center mb-2">
-              Henüz Analiz Yok
+              {t('emptyState.title')}
             </Text>
             <Text className="text-muted-foreground text-center mb-4">
-              Bu bölge için henüz bir analiz yapmadınız. Analiz sayfasına
-              giderek başlayabilirsiniz.
+              {t('emptyState.description')}
             </Text>
             <Pressable
               onPress={() => router.push('/(tabs)/analysis')}
               className="bg-primary px-6 py-3 rounded-lg"
             >
               <Text className="text-primary-foreground font-semibold">
-                Analiz Yap
+                {t('emptyState.button')}
               </Text>
             </Pressable>
           </Card>
@@ -365,7 +366,7 @@ const RegionDetailScreen = () => {
                 <Text className="text-2xl">←</Text>
               </Pressable>
               <View>
-                <Text className="text-2xl font-bold">{title} Analizi</Text>
+                <Text className="text-2xl font-bold">{t('detailModal.title', { region: title })}</Text>
                 <Text className="text-muted-foreground">
                   {new Date(selectedAnalysis.created_at).toLocaleDateString(
                     'tr-TR',
@@ -386,10 +387,10 @@ const RegionDetailScreen = () => {
               <View className="w-24 h-24 rounded-full bg-white shadow-lg items-center justify-center border-4 border-primary/20">
                 <Text
                   className={`text-4xl font-bold ${selectedAnalysis.overall_score >= 7
-                      ? 'text-green-600'
-                      : selectedAnalysis.overall_score >= 4
-                        ? 'text-yellow-600'
-                        : 'text-red-600'
+                    ? 'text-green-600'
+                    : selectedAnalysis.overall_score >= 4
+                      ? 'text-yellow-600'
+                      : 'text-red-600'
                     }`}
                 >
                   {selectedAnalysis.overall_score}
@@ -401,7 +402,7 @@ const RegionDetailScreen = () => {
             {/* Full Analysis */}
             {selectedAnalysis.raw_response && (
               <Card className="p-5 bg-card border border-border">
-                <Text className="text-lg font-bold mb-4">Detaylı Analiz</Text>
+                <Text className="text-lg font-bold mb-4">{t('detailModal.detailedAnalysis')}</Text>
                 <JsonRenderer
                   data={selectedAnalysis.raw_response}
                   excludeKeys={['metadata']}
@@ -418,7 +419,7 @@ const RegionDetailScreen = () => {
       <PremiumModal
         visible={showPremiumModal}
         onClose={() => setShowPremiumModal(false)}
-        feature="Analiz Geçmişi"
+        feature={t('premiumModal.feature')}
         featureIconName="stats-chart-outline"
       />
     </View>

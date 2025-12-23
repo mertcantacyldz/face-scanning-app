@@ -162,8 +162,8 @@ function CoordinateDisplay({ value }: { value: Record<string, number> }) {
   return (
     <View className="flex-row gap-2 flex-wrap">
       {Object.entries(value).map(([key, val]) => (
-        <View key={key} className="bg-gray-100 px-2 py-1 rounded">
-          <Text className="text-xs">
+        <View key={key} className="bg-muted px-2 py-1 rounded">
+          <Text className="text-xs text-foreground">
             <Text className="font-semibold">{key.toUpperCase()}:</Text>{' '}
             {typeof val === 'number' ? val.toFixed(2) : String(val)}
           </Text>

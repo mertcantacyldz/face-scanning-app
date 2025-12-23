@@ -1,0 +1,71 @@
+{
+  "header": {
+    "title": "Yüz Analizi",
+    "subtitle": "Analizini yapmak istediğiniz bölgeyi seçin"
+  },
+  "regions": {
+    "eyebrows": {
+      "title": "Kaşlar",
+      "description": "Kaş şekli ve simetri analizi"
+    },
+    "eyes": {
+      "title": "Gözler",
+      "description": "Göz yapısı ve mesafe analizi"
+    },
+    "nose": {
+      "title": "Burun",
+      "description": "Burun oranları ve simetri"
+    },
+    "lips": {
+      "title": "Dudaklar",
+      "description": "Dudak şekli ve dolgunluk analizi"
+    },
+    "jawline": {
+      "title": "Çene",
+      "description": "Çene yapısı ve tanımı"
+    },
+    "faceShape": {
+      "title": "Yüz Şekli",
+      "description": "Genel yüz oranları"
+    }
+  },
+  "score": {
+    "overall": "Genel Çekicilik Puanı",
+    "outOf": "/ 100",
+    "detailsTitle": "Detaylı Puan Dökümü",
+    "upgradePremium": "Detaylı puan dökümü için Premium'a geçin"
+  },
+  "freeAnalysis": {
+    "title": "Ücretsiz Analiz Hakkın Var!",
+    "subtitle": "Çarkı çevir, 1 bölge analizi kazan",
+    "button": "Şans Çarkı"
+  },
+  "result": {
+    "title": "Analiz Sonucu",
+    "analyzing": "Analiz ediliyor...",
+    "noData": "Analiz verisi bulunamadı"
+  },
+  "noScanFound": {
+    "title": "Yüz Taraması Bulunamadı",
+    "message": "Henüz yüz taraması yapmadınız.",
+    "button": "Tarayıcıya Git"
+  },
+  "errors": {
+    "analysisFailed": "Analiz başarısız oldu. Lütfen tekrar deneyin.",
+    "noLandmarks": "Yüz işaretleri tespit edilemedi"
+  },
+  "lastScan": "Son tarama",
+  "spinWheel": {
+    "title": "Şans Çarkı",
+    "close": "Kapat"
+  },
+  "freeAnalysisUsed": "{{region}} bölgesi için ücretsiz analiz hakkınız kullanıldı",
+  "freeBadge": "Ücretsiz",
+  "infoCard": {
+    "tip": "İpucu:",
+    "description": "Her bölge için yapay zeka destekli detaylı analiz alacaksınız. Analiz sonuçları MediaPipe tarafından tespit edilen 468 yüz noktası verisi üzerinden hazırlanmaktadır."
+  },
+  "closeButton": "Kapat",
+  "aiDisclaimer": "Bu analiz yapay zeka tarafından MediaPipe Face Mesh verisi kullanılarak oluşturulmuştur. Sonuçlar bilgilendirme amaçlıdır.",
+  "thisFeature": "Bu özellik"
+}

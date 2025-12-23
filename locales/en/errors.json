@@ -1,0 +1,20 @@
+{
+  "title": "Error",
+  "auth": {
+    "fillAllFields": "Please fill in all fields",
+    "passwordMismatch": "Passwords do not match",
+    "passwordTooShort": "Password must be at least 6 characters",
+    "invalidEmail": "Invalid email address",
+    "loginFailed": "Login failed. Please check your credentials.",
+    "registrationFailed": "Registration failed. Please try again.",
+    "emailInUse": "This email is already in use",
+    "weakPassword": "Password is too weak",
+    "unauthorized": "Please sign in to continue"
+  },
+  "general": {
+    "somethingWentWrong": "Something went wrong",
+    "networkError": "Network error. Please check your connection.",
+    "tryAgainLater": "Please try again later",
+    "noPermission": "Permission denied"
+  }
+}
