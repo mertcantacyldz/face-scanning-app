@@ -456,32 +456,52 @@ export default function HomeScreen() {
                   </Text>
                 </View>
 
-                {/* Validation Sonucu */}
-                {meshValidation.isValid ? (
+                {/* Validation Sonucu - Quality-based */}
+                {meshValidation.quality === 'excellent' ? (
+                  // 🟢 Mükemmel Kalite (Confidence >= 95%)
                   <Card className="bg-green-500/10 border-green-500/40 p-4 mb-4">
                     <View className="flex-row items-center">
                       <Ionicons name="checkmark-circle" size={24} color="#10B981" />
                       <View className="ml-3 flex-1">
                         <Text className="text-foreground font-semibold">
-                          {t('validation.excellent.title')}
+                          Mükemmel Kalite!
                         </Text>
                         <Text className="text-muted-foreground text-xs mt-1">
-                          {t('validation.excellent.details')}
+                          • Tüm yüz bölgeleri tespit edildi{'\n'}
+                          • Noktalar doğru konumlanmış{'\n'}
+                          • Analiz için hazır
+                        </Text>
+                      </View>
+                    </View>
+                  </Card>
+                ) : meshValidation.quality === 'good' ? (
+                  // 🔵 İyi Kalite (Confidence 80-94%)
+                  <Card className="bg-blue-500/10 border-blue-500/40 p-4 mb-4">
+                    <View className="flex-row items-center">
+                      <Ionicons name="checkmark-circle-outline" size={24} color="#3B82F6" />
+                      <View className="ml-3 flex-1">
+                        <Text className="text-foreground font-semibold">
+                          İyi Kalite
+                        </Text>
+                        <Text className="text-muted-foreground text-xs mt-1">
+                          {meshValidation.message}{'\n'}
+                          Devam edebilirsiniz.
                         </Text>
                       </View>
                     </View>
                   </Card>
                 ) : (
+                  // 🟡 Düşük Kalite / Uyarı (Confidence < 80%)
                   <Card className="bg-yellow-500/10 border-yellow-500/40 p-4 mb-4">
                     <View className="flex-row items-center">
                       <Ionicons name="warning" size={24} color="#F59E0B" />
                       <View className="ml-3 flex-1">
                         <Text className="text-foreground font-semibold">
-                          {t('validation.acceptable.title')}
+                          {meshValidation.quality === 'warning' ? 'Dikkat!' : 'Düşük Kalite'}
                         </Text>
                         <Text className="text-muted-foreground text-xs mt-1">
-                          {t('validation.acceptable.issue', { message: meshValidation.message })}
-                          {t('validation.acceptable.note')}
+                          {meshValidation.message}{'\n\n'}
+                          Daha iyi sonuç için "Tekrar Çek" yapabilirsiniz.
                         </Text>
                       </View>
                     </View>

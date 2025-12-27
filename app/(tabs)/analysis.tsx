@@ -2,6 +2,7 @@ import { HeroCard } from '@/components/analysis/HeroCard';
 import { JsonRenderer } from '@/components/analysis/JsonRenderer';
 import { MetadataSection } from '@/components/analysis/MetadataSection';
 import { RecommendationsList } from '@/components/analysis/RecommendationsList';
+import { UserFriendlySummary } from '@/components/analysis/UserFriendlySummary';
 import { PremiumModal } from '@/components/PremiumModal';
 import { SpinWheel } from '@/components/SpinWheel';
 import { Card } from '@/components/ui/card';
@@ -562,12 +563,18 @@ const AnalysisScreen = () => {
                       <HeroCard data={analysisResult.analysis_result} />
                     )}
 
-                    {/* SECTION 2-3-4: Generic sections (detailed_analysis, 3d_analysis, etc.) */}
+                    {/* SECTION 2: User-Friendly Summary (NEW) */}
+                    {analysisResult.user_friendly_summary && (
+                      <UserFriendlySummary data={analysisResult.user_friendly_summary} />
+                    )}
+
+                    {/* SECTION 3-4: Generic sections (detailed_analysis, 3d_analysis, etc.) */}
                     {Object.entries(analysisResult).map(([key, value]) => {
                       // Skip special sections handled separately
                       if (
                         [
                           'analysis_result',
+                          'user_friendly_summary',
                           'recommendations',
                           'metadata',
                         ].includes(key)

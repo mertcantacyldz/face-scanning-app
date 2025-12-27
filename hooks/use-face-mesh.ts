@@ -45,12 +45,16 @@ export interface FaceLandmarks {
 }
 
 // Mesh validation fonksiyonu
-const validateMesh = (faceLandmarks: any) => {
+const validateMesh = (faceData: any) => {
+  const landmarks = faceData.landmarks;
+
   // 1. 468 landmark var mı?
-  if (!faceLandmarks || faceLandmarks.length !== 468) {
+  if (!landmarks || landmarks.length !== 468) {
     return {
       isValid: false,
-      message: '468 nokta tespit edilemedi. Lütfen daha net bir fotoğraf çekin.'
+      quality: 'poor' as const,
+      message: '468 nokta tespit edilemedi. Lütfen daha net bir fotoğraf çekin.',
+      confidence: 0
     };
   }
 
@@ -71,21 +75,56 @@ const validateMesh = (faceLandmarks: any) => {
   ];
 
   for (const idx of criticalIndices) {
-    const point = faceLandmarks[idx];
+    const point = landmarks[idx];
     // Koordinatlar fotoğraf içinde mi? (512x512 piksel)
     if (!point || point.x < 0 || point.x > 512 || point.y < 0 || point.y > 512) {
       return {
         isValid: false,
-        message: 'Bazı önemli yüz noktaları tespit edilemedi. Yüzünüzün tamamı görünür olmalı.'
+        quality: 'poor' as const,
+        message: 'Bazı önemli yüz noktaları tespit edilemedi. Yüzünüzün tamamı görünür olmalı.',
+        confidence: 0
       };
     }
   }
 
-  // ✅ Her şey tamam
-  return {
-    isValid: true,
-    message: 'Tarama başarılı!'
-  };
+  // ✅ 3. YENİ: Confidence-based quality assessment
+  // Confidence değeri faceData objesinin içinde (landmarks array'inde DEĞİL!)
+  const confidence = faceData.confidence || 0.99;
+  const confidencePercent = Math.round(confidence * 100);
+
+  if (confidence >= 0.95) {
+    // Optimal yüz boyutu
+    return {
+      isValid: true,
+      quality: 'excellent' as const,
+      message: 'Mükemmel kalite!',
+      confidence: confidencePercent
+    };
+  } else if (confidence >= 0.80) {
+    // Kabul edilebilir boyut
+    return {
+      isValid: true,
+      quality: 'good' as const,
+      message: 'İyi kalite',
+      confidence: confidencePercent
+    };
+  } else if (confidence >= 0.73) {
+    // Yüz çok büyük (75%)
+    return {
+      isValid: true,
+      quality: 'warning' as const,
+      message: 'Yüz çok yakın - Kamerayı biraz uzaklaştırın',
+      confidence: confidencePercent
+    };
+  } else {
+    // Yüz çok küçük (70%)
+    return {
+      isValid: true,
+      quality: 'poor' as const,
+      message: 'Yüz küçük - Kamerayı yaklaştırın veya yüzünüzü merkezleyin',
+      confidence: confidencePercent
+    };
+  }
 };
 
 export function useFaceMesh() {
@@ -96,10 +135,18 @@ export function useFaceMesh() {
   const [mediaPipeReady, setMediaPipeReady] = useState(false);
   const [meshImageUri, setMeshImageUri] = useState<string | null>(null);
   const [showMeshPreview, setShowMeshPreview] = useState(false);
-  const [meshValidation, setMeshValidation] = useState<{ isValid: boolean; message: string }>({
+  const [meshValidation, setMeshValidation] = useState<{
+    isValid: boolean;
+    quality: 'excellent' | 'good' | 'warning' | 'poor';
+    message: string;
+    confidence: number;
+  }>({
     isValid: true,
-    message: ''
+    quality: 'excellent',
+    message: '',
+    confidence: 0
   });
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const webViewRef = useRef<WebView>(null);
 
@@ -107,6 +154,11 @@ export function useFaceMesh() {
   const handleWebViewMessage = async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
+
+      console.log('📥 [WEBVIEW MESAJI]', {
+        type: data.type,
+        timestamp: Date.now()
+      });
 
       switch (data.type) {
         case 'READY':
@@ -117,41 +169,46 @@ export function useFaceMesh() {
           break;
 
         case 'LANDMARKS':
-          if (__DEV__) {
-            console.log('[WebView] LANDMARKS mesajı alındı:', {
-              totalPoints: data.data.totalPoints,
-              showMeshPreview,
-              hasMeshImageUri: !!meshImageUri,
-              hasSelectedImage: !!selectedImage,
-            });
-          }
+          console.log('🎯 [LANDMARKS GELDİ]', {
+            noktaSayisi: data.data.totalPoints,
+            guvenilirlik: data.data.confidence,
+            timestamp: data.data.timestamp,
+            hangiResim: selectedImage?.substring(0, 50)
+          });
 
           setFaceLandmarks(data.data);
 
-          // Mesh validation yap
-          const validation = validateMesh(data.data.landmarks);
+          // Mesh validation yap - TÜM data.data objesini gönder (confidence içeriyor)
+          const validation = validateMesh(data.data);
           setMeshValidation(validation);
 
           setIsAnalyzing(false);
+          setIsProcessing(false);
+          console.log('🔓 [KUYRUK] İşlem kilidi açıldı (LANDMARKS)');
           break;
 
         case 'MESH_IMAGE':
-          if (__DEV__) {
-            console.log('[WebView] MESH_IMAGE mesajı alındı:', {
-              prevShowMeshPreview: showMeshPreview,
-              prevHasMeshImageUri: !!meshImageUri,
-              hasSelectedImage: !!selectedImage,
-            });
-          }
+          console.log('🖼️ [MESH GÖRÜNTÜSÜ GELDİ]', {
+            meshUzunluk: data.data.meshImage?.length,
+            timestamp: Date.now(),
+            hangiResim: selectedImage?.substring(0, 50)
+          });
+
           setMeshImageUri(data.data.meshImage);
           setShowMeshPreview(true);
           break;
 
         case 'NO_FACE':
-          if (__DEV__) {
-            console.log('[WebView] NO_FACE mesajı alındı, analiz iptal ediliyor');
-          }
+          console.log('❌ [ANALİZ BAŞARISIZ]', {
+            type: 'NO_FACE',
+            message: 'Yüz bulunamadı',
+            timestamp: Date.now()
+          });
+
           setIsAnalyzing(false);
+          setIsProcessing(false);
+          console.log('🔓 [KUYRUK] İşlem kilidi açıldı (NO_FACE)');
+
           Alert.alert(
             'Yüz Bulunamadı',
             'Fotoğrafta yüz tespit edilemedi. Lütfen:\n• Yüzünüz net görünsün\n• İyi ışıkta çekin\n• Kameraya düz bakın'
@@ -159,15 +216,16 @@ export function useFaceMesh() {
           break;
 
         case 'ERROR':
-          if (__DEV__) {
-            console.error('[WebView] ERROR mesajı alındı:', {
-              error: data.error,
-              showMeshPreview,
-              hasMeshImageUri: !!meshImageUri,
-              hasSelectedImage: !!selectedImage,
-            });
-          }
+          console.log('❌ [ANALİZ BAŞARISIZ]', {
+            type: 'ERROR',
+            message: data.error,
+            timestamp: Date.now()
+          });
+
           setIsAnalyzing(false);
+          setIsProcessing(false);
+          console.log('🔓 [KUYRUK] İşlem kilidi açıldı (ERROR)');
+
           Alert.alert('Analiz Hatası', data.error);
           break;
       }
@@ -241,18 +299,21 @@ export function useFaceMesh() {
 
   // Tekrar çek handler
   const handleRetake = () => {
-    if (__DEV__) {
-      console.log('[Mesh] handleRetake çağrıldı:', {
-        showMeshPreview,
-        hasMeshImageUri: !!meshImageUri,
-        hasSelectedImage: !!selectedImage,
-        hasFaceLandmarks: !!faceLandmarks,
-      });
-    }
     setShowMeshPreview(false);
     setMeshImageUri(null);
     setFaceLandmarks(null);
     setSelectedImage(null);
+
+    // MediaPipe force reset
+    webViewRef.current?.injectJavaScript(`
+      if (typeof window.forceReset === 'function') {
+        window.forceReset();
+      }
+      true;
+    `);
+
+    // Direkt foto seçme modalını aç (AI Rehberi atlayarak)
+    setShowImagePicker(true);
   };
 
   // Kamera iznini kontrol et
@@ -296,9 +357,8 @@ export function useFaceMesh() {
     if (!hasPermission) return;
 
     try {
-      if (__DEV__) {
-        console.log('[Camera] takePhoto başlıyor');
-      }
+      console.log('📷 [FOTOĞRAF ÇEKİLİYOR]', { timestamp: Date.now() });
+
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -307,12 +367,11 @@ export function useFaceMesh() {
       });
 
       if (!result.canceled && result.assets[0]) {
-        if (__DEV__) {
-          console.log('[Camera] takePhoto sonucu:', {
-            canceled: result.canceled,
-            uri: result.assets[0].uri,
-          });
-        }
+        console.log('📷 [FOTOĞRAF ÇEKİLDİ]', {
+          uri: result.assets[0].uri,
+          timestamp: Date.now()
+        });
+
         setShowImagePicker(false);
         await processImageWithMediaPipe(result.assets[0].uri);
       }
@@ -330,9 +389,8 @@ export function useFaceMesh() {
     if (!hasPermission) return;
 
     try {
-      if (__DEV__) {
-        console.log('[Gallery] pickImage başlıyor');
-      }
+      console.log('🖼️ [GALERİ AÇILIYOR]', { timestamp: Date.now() });
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -341,12 +399,11 @@ export function useFaceMesh() {
       });
 
       if (!result.canceled && result.assets[0]) {
-        if (__DEV__) {
-          console.log('[Gallery] pickImage sonucu:', {
-            canceled: result.canceled,
-            uri: result.assets[0].uri,
-          });
-        }
+        console.log('🖼️ [RESİM SEÇİLDİ]', {
+          uri: result.assets[0].uri,
+          timestamp: Date.now()
+        });
+
         setShowImagePicker(false);
         await processImageWithMediaPipe(result.assets[0].uri);
       }
@@ -365,21 +422,34 @@ export function useFaceMesh() {
       return;
     }
 
-    if (__DEV__) {
-      console.log('[MediaPipe] processImageWithMediaPipe başlıyor:', {
-        imageUri,
-        mediaPipeReady,
-      });
+    console.log('🔵 [İŞLEM BAŞLADI]', {
+      timestamp: Date.now(),
+      imageUri: imageUri.substring(0, 50),
+      mevcutLandmarks: faceLandmarks ? 'VAR' : 'YOK',
+      mevcutMeshUri: meshImageUri ? 'VAR' : 'YOK'
+    });
+
+    // İşlem kuyruğu kontrolü
+    if (isProcessing) {
+      console.warn('⚠️ [KUYRUK] Zaten işleniyor, atlıyorum');
+      return;
     }
 
+    console.log('🧹 [STATE TEMİZLENİYOR]');
+
+    // ÖNCELİKLE tüm eski state'i temizle
+    setFaceLandmarks(null);
+    setMeshImageUri(null);
+    setMeshValidation({ isValid: true, quality: 'excellent', message: '', confidence: 0 });
+    setShowMeshPreview(false);
+
+    // SONRA yeni state'i ayarla
     setSelectedImage(imageUri);
     setIsAnalyzing(true);
-    setFaceLandmarks(null);
+    setIsProcessing(true);
 
     try {
-      if (__DEV__) {
-        console.log('[MediaPipe] Face Mesh analizi başlatılıyor');
-      }
+      console.log('🔒 [KUYRUK] İşlem kilitlendi');
 
       // Resmi optimize et (512x512 - MediaPipe için optimal)
       const manipulatedImage = await (async () => {
@@ -394,31 +464,41 @@ export function useFaceMesh() {
         return result;
       })();
 
-      if (__DEV__) {
-        console.log('[MediaPipe] Resim MediaPipe için hazırlandı:', {
-          hasBase64: !!manipulatedImage.base64,
-          base64Length: manipulatedImage.base64?.length,
-        });
-      }
+      console.log('✅ [RESİM İŞLENDİ]', {
+        width: manipulatedImage.width,
+        height: manipulatedImage.height,
+        base64Uzunluk: manipulatedImage.base64?.length,
+        timestamp: Date.now()
+      });
 
-      // WebView'e base64 image gönder
+      console.log('📤 [WEBVIEW\'A GÖNDERİLİYOR]', {
+        mediaPipeReady,
+        timestamp: Date.now()
+      });
+
+      // WebView'e base64 image gönder ve canvas'ı temizle
       const injectedJS = `
-        if (window.processImage && typeof window.processImage === 'function') {
-          window.processImage('${manipulatedImage.base64}');
-        } else {
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            type: 'ERROR',
-            error: 'MediaPipe fonksiyonu bulunamadı'
-          }));
-        }
+        (function() {
+          // Canvas'ı HEMEN temizle
+          const canvas = document.getElementById('output_canvas');
+          if (canvas) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            console.log('[WEBVIEW] Canvas enjeksiyon sırasında temizlendi');
+          }
+
+          if (window.processImage && typeof window.processImage === 'function') {
+            window.processImage('${manipulatedImage.base64}');
+          } else {
+            window.ReactNativeWebView.postMessage(JSON.stringify({
+              type: 'ERROR',
+              error: 'MediaPipe fonksiyonu bulunamadı'
+            }));
+          }
+        })();
         true;
       `;
 
-      if (__DEV__) {
-        console.log("[MediaPipe] WebView'e JS enjekte ediliyor, webViewRef mevcut mu?", {
-          hasWebView: !!webViewRef.current,
-        });
-      }
       webViewRef.current?.injectJavaScript(injectedJS);
 
     } catch (error) {
@@ -426,6 +506,8 @@ export function useFaceMesh() {
         console.error('[MediaPipe] process hatası:', error);
       }
       setIsAnalyzing(false);
+      setIsProcessing(false);
+      console.log('🔓 [KUYRUK] İşlem kilidi açıldı (ERROR)');
       Alert.alert('İşlem Hatası', 'Resim MediaPipe ile işlenemedi. Lütfen tekrar deneyin.');
     }
   };

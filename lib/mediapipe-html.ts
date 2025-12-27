@@ -50,6 +50,7 @@ export const mediaPipeHTML = `
 
         let faceMesh;
         let isReady = false;
+        let currentImage = null;
 
         // TÜM YÜZ BÖLGELERİ - MediaPipe 468 nokta indeksleri
         const faceRegions = {
@@ -99,8 +100,8 @@ export const mediaPipeHTML = `
                 statusDiv.innerHTML = '🔄 MediaPipe Face Mesh başlatılıyor...';
                 
                 faceMesh = new FaceMesh({
-                    locateFile: (file) => {
-                        return \`https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/\${file}\`;
+                    locateFile: function(file) {
+                        return 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/' + file;
                     }
                 });
 
@@ -140,18 +141,36 @@ export const mediaPipeHTML = `
 
         // Face Mesh sonuçlarını işle
         function onResults(results) {
+            // Eski image'i GÜVENLİ bir zamanda temizle (canvas işleminden ÖNCE DEĞİL!)
+            // Canvas toDataURL() 100ms sonra çağrılacak, o yüzden 2 saniye bekleyelim
+            if (currentImage) {
+                const oldImage = currentImage;
+                setTimeout(function() {
+                    if (oldImage) {
+                        oldImage.onload = null;
+                        oldImage.onerror = null;
+                        oldImage.src = '';
+                    }
+                }, 2000);  // Canvas işlemleri için BOL süre
+                currentImage = null;
+            }
+
+            // Canvas aggressive clear
+            canvasCtx.save();
+            canvasCtx.setTransform(1, 0, 0, 1, 0, 0);
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-            
+            canvasCtx.restore();
+
             if (results.image) {
                 canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
             }
 
             if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
                 const landmarks = results.multiFaceLandmarks[0];
-                
+
                 // Manuel olarak bağlantı noktalarını çiz - MediaPipe sabitleri yerine
                 drawFaceConnections(canvasCtx, landmarks);
-                
+
                 // Yüz bounding box hesapla
                 let minX = 1, minY = 1, maxX = 0, maxY = 0;
                 landmarks.forEach(point => {
@@ -160,6 +179,8 @@ export const mediaPipeHTML = `
                     maxX = Math.max(maxX, point.x);
                     maxY = Math.max(maxY, point.y);
                 });
+
+                const boxArea = (maxX - minX) * (maxY - minY);
 
                 // Tüm yüz bölgelerini hazırla
                 const processedRegions = {};
@@ -174,19 +195,64 @@ export const mediaPipeHTML = `
                         }));
                 });
 
-                // Kalite bazlı confidence skoru hesapla
-                let detectionConfidence = 0;
-                const boxArea = (maxX - minX) * (maxY - minY);
+                // Multi-factor confidence hesaplama
+                // Size dominant (base score), diğer faktörler penalty olarak
 
+                // 1. Yüz boyutu faktörü (BASE SCORE)
+                let sizeScore = 1.0;
                 if (boxArea < 0.10) {
-                    detectionConfidence = 0.70; // Çok küçük yüz (uzaktan)
+                    sizeScore = 0.70; // Çok küçük yüz
                 } else if (boxArea > 0.85) {
-                    detectionConfidence = 0.75; // Çok büyük yüz (çok yakın)
+                    sizeScore = 0.75; // Çok büyük yüz
                 } else if (boxArea > 0.15 && boxArea < 0.80) {
-                    detectionConfidence = 0.99; // Optimal boyut
+                    sizeScore = 1.0; // Optimal boyut
                 } else {
-                    detectionConfidence = 0.85; // Kabul edilebilir
+                    sizeScore = 0.85; // Kabul edilebilir
                 }
+
+                // 2. Z-depth kalitesi (penalty maks -0.05)
+                const zValues = landmarks.map(function(lm) { return Math.abs(lm.z); });
+                const avgZ = zValues.reduce(function(a, b) { return a + b; }, 0) / zValues.length;
+                const maxZ = Math.max.apply(null, zValues);
+
+                let depthPenalty = 0;
+                if (maxZ > 0.25) {
+                    depthPenalty = 0.05; // Yüz çok açılı
+                } else if (avgZ > 0.08 || maxZ > 0.20) {
+                    depthPenalty = 0.02; // Az açılı
+                }
+
+                // 3. Yüz simetrisi (penalty maks -0.03)
+                const leftEye = landmarks[159];
+                const rightEye = landmarks[386];
+                const noseTip = landmarks[1];
+                let symmetryPenalty = 0;
+
+                if (leftEye && rightEye && noseTip) {
+                    const leftDist = Math.abs(leftEye.x - noseTip.x);
+                    const rightDist = Math.abs(rightEye.x - noseTip.x);
+                    const asymmetry = Math.abs(leftDist - rightDist);
+
+                    if (asymmetry > 0.15) {
+                        symmetryPenalty = 0.03; // Çok asimetrik
+                    } else if (asymmetry > 0.08) {
+                        symmetryPenalty = 0.01; // Az asimetrik
+                    }
+                }
+
+                // 4. Landmark coverage (penalty maks -0.02)
+                const criticalPoints = [159, 145, 133, 386, 374, 263, 1, 2, 61, 291, 152, 10];
+                const validPoints = criticalPoints.filter(function(idx) {
+                    const p = landmarks[idx];
+                    return p && p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1;
+                }).length;
+                const coverageRatio = validPoints / criticalPoints.length;
+                const coveragePenalty = coverageRatio < 1.0 ? (1.0 - coverageRatio) * 0.10 : 0;
+
+                // Final confidence = Base score - penalties
+                const detectionConfidence = Math.max(0.5,
+                    sizeScore - depthPenalty - symmetryPenalty - coveragePenalty
+                );
 
                 // React Native'e TÜM VERİYİ gönder
                 const result = {
@@ -223,11 +289,28 @@ export const mediaPipeHTML = `
                     }
                 };
 
+                console.log('[WEBVIEW] 📤 LANDMARKS gönderiliyor', {
+                    faceBoxX: result.data.faceBox.x.toFixed(0),
+                    faceBoxY: result.data.faceBox.y.toFixed(0),
+                    faceBoxWidth: result.data.faceBox.width.toFixed(0),
+                    faceBoxHeight: result.data.faceBox.height.toFixed(0),
+                    confidence: result.data.confidence.toFixed(2),
+                    canvasSize: canvasElement.width + 'x' + canvasElement.height,
+                    timestamp: result.data.timestamp
+                });
+
                 window.ReactNativeWebView.postMessage(JSON.stringify(result));
 
                 // Canvas'ı base64 PNG olarak gönder (mesh görselleştirme için)
                 setTimeout(() => {
                     const canvasDataUrl = canvasElement.toDataURL('image/png');
+
+                    console.log('[WEBVIEW] 🖼️ MESH_IMAGE gönderiliyor', {
+                        meshImageLength: canvasDataUrl.length,
+                        canvasSize: canvasElement.width + 'x' + canvasElement.height,
+                        timestamp: Date.now()
+                    });
+
                     window.ReactNativeWebView.postMessage(JSON.stringify({
                         type: 'MESH_IMAGE',
                         data: { meshImage: canvasDataUrl }
@@ -336,6 +419,38 @@ export const mediaPipeHTML = `
             });
         }
 
+        // MediaPipe instance'ını tamamen reset et
+        window.forceReset = function() {
+            if (faceMesh) {
+                faceMesh.close().catch(function() {});
+            }
+
+            if (currentImage) {
+                currentImage.onload = null;
+                currentImage.src = '';
+                currentImage = null;
+            }
+
+            faceMesh = new FaceMesh({
+                locateFile: function(file) {
+                    return 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/' + file;
+                }
+            });
+
+            faceMesh.setOptions({
+                maxNumFaces: 1,
+                refineLandmarks: false,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.0,
+                selfieMode: false,
+                staticImageMode: true,
+                modelComplexity: 1
+            });
+
+            faceMesh.onResults(onResults);
+            isReady = true;
+        };
+
         // Base64 image'ı işle
         window.processImage = function(base64Image) {
             if (!isReady) {
@@ -346,35 +461,43 @@ export const mediaPipeHTML = `
                 return;
             }
 
+            // Eski image'i temizle
+            if (currentImage) {
+                currentImage.onload = null;
+                currentImage.src = '';
+                currentImage = null;
+            }
+
             try {
                 statusDiv.innerHTML = '🔄 Tüm yüz bölgeleri analiz ediliyor...';
                 statusDiv.className = 'loading';
-                
+
                 const img = new Image();
+                currentImage = img;
+
                 img.onload = async function() {
                     try {
                         await faceMesh.send({image: img});
+                        // CLEANUP KALDIRILDI - bir sonraki processImage çağrısında temizlenecek
                     } catch (error) {
-                        console.error('Process error:', error);
                         window.ReactNativeWebView.postMessage(JSON.stringify({
                             type: 'ERROR',
                             error: 'Analiz sırasında hata: ' + error.message
                         }));
                     }
                 };
-                
-                img.onerror = function(error) {
-                    console.error('Image load error:', error);
+
+                img.onerror = function() {
                     window.ReactNativeWebView.postMessage(JSON.stringify({
                         type: 'ERROR',
                         error: 'Resim yüklenemedi'
                     }));
                 };
-                
-                img.src = 'data:image/jpeg;base64,' + base64Image;
-                
+
+                // Cache bypass için unique URI
+                img.src = 'data:image/jpeg;base64,' + base64Image + '#' + Date.now();
+
             } catch (error) {
-                console.error('processImage error:', error);
                 window.ReactNativeWebView.postMessage(JSON.stringify({
                     type: 'ERROR',
                     error: error.message

@@ -179,6 +179,15 @@ function renderValue(
   value: any,
   depth: number
 ): React.ReactElement | null {
+  // SPECIAL CASE: user_explanation (display prominently before scores)
+  if (key === 'user_explanation' && typeof value === 'string') {
+    return (
+      <Text className="text-sm italic text-muted-foreground mb-2 leading-relaxed">
+        {value}
+      </Text>
+    );
+  }
+
   const type = detectValueType(value);
 
   // Null/undefined

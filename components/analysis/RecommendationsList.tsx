@@ -43,11 +43,11 @@ export function RecommendationsList({ data }: RecommendationsListProps) {
   }
 
   return (
-    <Card className="p-5 mb-6 bg-blue-50/50 border-2 border-blue-200/50">
+    <Card className="p-5 mb-6 bg-primary/10 border-2 border-primary/20">
       {/* Header */}
       <View className="flex-row items-center gap-2 mb-4">
-        <Ionicons name="bulb-outline" size={24} color="#3B82F6" />
-        <Text className="text-xl font-bold text-foreground">
+        <Ionicons name="bulb-outline" size={24} color="#8B5CF6" />
+        <Text className="text-xl font-bold text-primary">
           Recommendations
         </Text>
       </View>
@@ -58,7 +58,7 @@ export function RecommendationsList({ data }: RecommendationsListProps) {
           <View key={key}>
             {/* Section title with icon */}
             <View className="flex-row items-center gap-2 mb-2">
-              <Ionicons name={getRecommendationIcon(key) as any} size={20} color="#3B82F6" />
+              <Ionicons name={getRecommendationIcon(key) as any} size={20} color="#8B5CF6" />
               <Text className="font-bold text-base text-foreground">
                 {formatKeyName(key)}
               </Text>
@@ -71,7 +71,7 @@ export function RecommendationsList({ data }: RecommendationsListProps) {
                 <View className="gap-1.5">
                   {value.map((item, idx) => (
                     <View key={idx} className="flex-row gap-2">
-                      <Text className="text-blue-600 font-bold">•</Text>
+                      <Text className="text-primary font-bold">•</Text>
                       <Text className="flex-1 text-sm leading-relaxed text-foreground">
                         {item}
                       </Text>

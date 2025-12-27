@@ -1,0 +1,13 @@
+{
+    "task": "generate_app_icon",
+    "app_name": "FaceLoom",
+    "description": "Face analysis and exercise guidance mobile application",
+    "prompt": "Design a square app icon (1024x1024px) for FaceLoom mobile app with these specifications:\n\nCONCEPT: Merge facial analysis technology with weaving/loom pattern symbolism\n\nVISUAL ELEMENTS:\n- Central focus: Stylized geometric face outline or face mesh (abstract, not realistic)\n- Background pattern: Subtle weaving/loom grid or interlaced lines\n- Symmetry: Perfect bilateral symmetry to represent facial analysis\n- Layering: Use opacity variations to create depth without additional colors\n\n🎨 COLOR SCHEME (MONOCHROMATIC - CRITICAL):\n- ONLY ONE COLOR: Deep Indigo #6366F1 (RGB: 99, 102, 241 | HSL: 243° 75% 59%)\n- NO other colors allowed (no teal, green, gold, yellow, or any other hue)\n- Create depth using:\n  * Different opacity levels: 100% (solid), 80%, 60%, 40%, 20%\n  * Lighter shades: #8B8DF5, #B3B5F9, #DBDCFD\n  * Darker shades: #4F52C9, #3B3EA1\n- Monochromatic aesthetic for ultra-minimalist, sophisticated look\n\nSTYLE REQUIREMENTS:\n- Modern, minimalist, geometric\n- Clean, sharp edges\n- Professional and trustworthy appearance\n- Premium quality feel\n- Tech-forward aesthetic\n- Single-color sophistication\n\nTECHNICAL:\n- Format: PNG with transparent background\n- Size: 1024x1024 pixels\n- Must be recognizable at 60x60px (test scalability)\n- No text or letters\n- No realistic human features\n- Avoid cliché AI symbols (brain, robot)\n- Ensure icon works on both light and dark backgrounds\n\nMOOD: Scientific, innovative, trustworthy, minimalist, premium, focused\n\nINSPIRATION: Face mesh technology, textile weaving patterns, sacred geometry, modern tech branding, Apple's minimalist design language",
+    "technical_specs": {
+        "format": "PNG",
+        "size": "1024x1024px",
+        "background": "transparent",
+        "color_mode": "RGB",
+        "primary_color": "#6366F1"
+    }
+}

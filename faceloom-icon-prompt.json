@@ -1,0 +1,190 @@
+{
+    "project_name": "FaceLoom",
+    "project_description": "Yüz analizi ve egzersiz rehberliği sunan yapay zeka destekli mobil uygulama",
+    "technical_requirements": {
+        "format": "PNG",
+        "color_mode": "RGB",
+        "bit_depth": "32-bit (8-bit per channel + alpha)",
+        "background": "Transparent (alpha channel)",
+        "dimensions": {
+            "ios_app_store": {
+                "size": "1024x1024 pixels",
+                "dpi": "72 DPI minimum",
+                "aspect_ratio": "1:1 (square)",
+                "notes": "Köşeler yuvarlatılmamalı, iOS otomatik olarak yuvarlatır"
+            },
+            "android_play_store": {
+                "adaptive_icon": {
+                    "foreground": "1024x1024 pixels",
+                    "background": "1024x1024 pixels",
+                    "safe_zone": "432x432 pixels (merkez bölge, kesilmeyecek alan)",
+                    "notes": "Foreground katmanı için şeffaf PNG, arka plan için solid renk veya gradient"
+                },
+                "legacy_icon": "512x512 pixels"
+            }
+        },
+        "file_optimization": {
+            "compression": "PNG-8 veya PNG-24 (kalite kaybı olmadan)",
+            "max_file_size": "1MB altında (tercihen 500KB)",
+            "color_profile": "sRGB IEC61966-2.1"
+        }
+    },
+    "design_requirements": {
+        "brand_colors": {
+            "primary": {
+                "name": "Deep Indigo",
+                "hex": "#6366F1",
+                "hsl": "243° 75% 59%",
+                "rgb": "99, 102, 241",
+                "usage": "Ana ve tek marka rengi - tüm icon bu rengin tonları ile oluşturulacak"
+            },
+            "design_approach": {
+                "style": "Monochromatic (tek renk)",
+                "variations": "Farklı opacity değerleri (100%, 80%, 60%, 40%) ile derinlik",
+                "shading": "Aynı rengin açık ve koyu tonları ile 3D efekt",
+                "background": "Şeffaf (transparent) veya beyaz"
+}
+        },
+        "visual_concept": {
+            "main_theme": "Yüz analizi ve dokuma (loom) kavramlarının birleşimi",
+            "symbolism": [
+                "Yüz hatları ve simetri",
+                "Dokuma desenleri (loom pattern)",
+                "AI ve teknoloji",
+                "Kişisel gelişim ve dönüşüm"
+            ],
+            "style": "Modern, minimalist, geometrik, profesyonel",
+            "mood": "Güvenilir, bilimsel, ilgi çekici, premium"
+        },
+        "design_elements": {
+            "must_include": [
+                "Yüz veya yüz hatlarını temsil eden geometrik şekiller",
+                "Dokuma (weaving/loom) desenini çağrıştıran çizgiler veya grid pattern",
+                "Simetri vurgusu (yüz simetrisini yansıtacak şekilde)",
+                "Modern ve temiz görünüm"
+            ],
+            "style_preferences": [
+                "Monokromatik tasarım - sadece Deep Indigo (#6366F1) ve tonları",
+                "Farklı opacity seviyeleri ile derinlik (100%, 80%, 60%, 40%)",
+                "Geometrik ve keskin hatlar",
+                "Minimal 3D depth (aynı rengin açık-koyu tonları ile)",
+                "Subtle gölge ve highlight (indigo'nun açık/koyu versiyonları)",
+                "İkon merkezi net ve tanınabilir olmalı",
+                "Minimalist ve ultra-profesyonel görünüm"
+            ],
+            "avoid": [
+                "Gerçekçi yüz fotoğrafları",
+                "Çok karmaşık detaylar (küçük boyutlarda kaybolur)",
+                "Birden fazla renk (SADECE Deep Indigo kullan)",
+                "Teal, yeşil, mavi-yeşil tonlar (sadece hover'da kullanılıyor)",
+                "Altın, sarı veya sıcak tonlar",
+                "Metin veya yazı (sadece sembol/ikon)",
+                "Klişe AI sembolleri (beyin, robot vb.)"
+            ]
+        },
+        "creative_direction": {
+            "concept_ideas": [
+                {
+                    "idea_1": "Layered face silhouette",
+                    "description": "Üst üste binmiş yüz siluetleri, her biri farklı opacity'de Deep Indigo (100%, 70%, 40%). Derinlik ve katman hissi veren minimalist tasarım."
+                },
+                {
+                    "idea_2": "Geometric face mesh",
+                    "description": "MediaPipe face mesh'i andıran geometrik nokta ve çizgi ağı. Solid Deep Indigo çizgiler, arka planda %30 opacity ile aynı renk. Teknolojik ve bilimsel."
+                },
+                {
+                    "idea_3": "Weaving pattern face",
+                    "description": "Dokuma desenini anımsatan dikey ve yatay çizgilerden oluşan yüz formu. Çizgiler solid indigo, aralar açık indigo (%40 opacity). Loom konseptini yansıtır."
+                },
+                {
+                    "idea_4": "Symmetrical face mandala",
+                    "description": "Yüz landmark noktalarından oluşan simetrik mandala. Merkez koyu indigo (100%), dışa doğru açılan tonlar (%80, %60, %40). Simetri vurgusu güçlü."
+                },
+                {
+                    "idea_5": "Minimalist F monogram + face",
+                    "description": "Stilize 'F' harfi içinde gizlenmiş yüz hatları. Negatif space kullanımı ile akıllı tasarım. Tek renk, farklı kalınlıklarda çizgiler."
+                }
+            ],
+            "target_emotion": "İlk bakışta 'profesyonel, güvenilir, modern teknoloji' hissi vermeli. Kullanıcı uygulamayı indirmek için heyecanlanmalı."
+        }
+    },
+    "ai_generation_prompt": {
+        "main_prompt": "Create a modern, minimalist app icon for 'FaceLoom', a face analysis and exercise guidance mobile application. The icon should combine facial symmetry/analysis with weaving/loom patterns. CRITICAL: Use ONLY Deep Indigo color (#6366F1, RGB: 99,102,241) - this is a MONOCHROMATIC design. Create depth and dimension using different opacity levels (100%, 80%, 60%, 40%) and lighter/darker shades of the same indigo color. Geometric style with clean, sharp lines. Perfectly symmetrical design. Professional and eye-catching. Transparent background. Must work at both small (60x60px) and large (1024x1024px) sizes. Style: ultra-minimalist, modern tech, scientific, premium quality, single-color sophistication.",
+        "detailed_prompt": "Design a square app icon (1024x1024px) for FaceLoom mobile app with these specifications:\n\nCONCEPT: Merge facial analysis technology with weaving/loom pattern symbolism\n\nVISUAL ELEMENTS:\n- Central focus: Stylized geometric face outline or face mesh (abstract, not realistic)\n- Background pattern: Subtle weaving/loom grid or interlaced lines\n- Symmetry: Perfect bilateral symmetry to represent facial analysis\n- Layering: Use opacity variations to create depth without additional colors\n\n🎨 COLOR SCHEME (MONOCHROMATIC - CRITICAL):\n- ONLY ONE COLOR: Deep Indigo #6366F1 (RGB: 99, 102, 241 | HSL: 243° 75% 59%)\n- NO other colors allowed (no teal, green, gold, yellow, or any other hue)\n- Create depth using:\n  * Different opacity levels: 100% (solid), 80%, 60%, 40%, 20%\n  * Lighter shades: #8B8DF5, #B3B5F9, #DBDCFD\n  * Darker shades: #4F52C9, #3B3EA1\n- Monochromatic aesthetic for ultra-minimalist, sophisticated look\n\nSTYLE REQUIREMENTS:\n- Modern, minimalist, geometric\n- Clean, sharp edges\n- Professional and trustworthy appearance\n- Premium quality feel\n- Tech-forward aesthetic\n- Single-color sophistication\n\nTECHNICAL:\n- Format: PNG with transparent background\n- Size: 1024x1024 pixels\n- Must be recognizable at 60x60px (test scalability)\n- No text or letters\n- No realistic human features\n- Avoid cliché AI symbols (brain, robot)\n- Ensure icon works on both light and dark backgrounds\n\nMOOD: Scientific, innovative, trustworthy, minimalist, premium, focused\n\nINSPIRATION: Face mesh technology, textile weaving patterns, sacred geometry, modern tech branding, Apple's minimalist design language",
+        "alternative_short_prompt": "Monochromatic app icon: geometric face mesh + weaving pattern, ONLY deep indigo #6366F1 with opacity variations (100%, 80%, 60%, 40%), symmetrical, minimalist, clean lines, professional tech aesthetic, 1024x1024px PNG transparent, no text, single color design"
+    },
+    "post_generation_checklist": {
+        "visual_check": [
+            "İkon 60x60px boyutunda küçültüldüğünde hala tanınabilir mi?",
+            "Renk paleti proje teması ile uyumlu mu?",
+            "Simetri dengeli mi?",
+            "Arka plan şeffaf mı?",
+            "Gradient geçişleri düzgün mü?"
+        ],
+        "technical_check": [
+            "Dosya formatı PNG mi?",
+            "Boyut 1024x1024 piksel mi?",
+            "Dosya boyutu 1MB'ın altında mı?",
+            "Alpha channel (transparency) var mı?",
+            "Köşeler yuvarlatılmamış mı? (iOS için)"
+        ],
+        "brand_check": [
+            "FaceLoom projesini yansıtıyor mu?",
+            "Yüz analizi konsepti anlaşılıyor mu?",
+            "Profesyonel ve premium görünüyor mu?",
+            "Rakiplerden farklılaşıyor mu?",
+            "App Store'da dikkat çekici mi?"
+        ]
+    },
+    "usage_instructions": {
+        "for_ai_generation": [
+            "1. 'ai_generation_prompt.detailed_prompt' kısmını AI image generator'a (DALL-E, Midjourney, Stable Diffusion vb.) kopyalayın",
+            "2. Eğer AI çok fazla detay istiyorsa 'alternative_short_prompt' kullanın",
+            "3. Birden fazla varyasyon oluşturun (en az 3-5 farklı tasarım)",
+            "4. En iyi sonucu seçin ve 'post_generation_checklist' ile kontrol edin"
+        ],
+        "for_implementation": [
+            "1. Oluşturulan ikonu 1024x1024px PNG olarak kaydedin",
+            "2. iOS için: ./assets/images/icon.png olarak kaydedin",
+            "3. Android için: Adaptive icon oluşturun (foreground + background layers)",
+            "4. Favicon için: 512x512px versiyonu ./assets/images/favicon.png olarak kaydedin",
+            "5. Splash screen için: İkonu merkeze yerleştirin"
+        ]
+    },
+    "recommended_ai_tools": [
+        {
+            "tool": "DALL-E 3 (ChatGPT Plus / OpenAI API)",
+            "pros": "Yüksek kalite, prompt'a iyi uyum, detaylı kontrol",
+            "cons": "Ücretli"
+        },
+        {
+            "tool": "Midjourney",
+            "pros": "Profesyonel sonuçlar, stil çeşitliliği",
+            "cons": "Discord üzerinden kullanım, öğrenme eğrisi"
+        },
+        {
+            "tool": "Adobe Firefly",
+            "pros": "Ticari kullanım güvenli, Adobe entegrasyonu",
+            "cons": "Sınırlı ücretsiz kullanım"
+        },
+        {
+            "tool": "Ideogram",
+            "pros": "Geometrik tasarımlarda başarılı, ücretsiz seçenekler",
+            "cons": "Bazen renk kontrolü zor"
+        }
+    ],
+    "notes": {
+        "important": [
+            "App Store ve Play Store'un icon guideline'larına uygun olmalı",
+            "Küçük boyutlarda test edilmeli (60x60, 120x120, 180x180px)",
+            "Hem açık hem koyu tema arka planlarında test edilmeli",
+            "Marka kimliği ile tutarlı olmalı"
+        ],
+        "tips": [
+            "Birden fazla varyasyon oluşturup A/B test yapabilirsiniz",
+            "Icon'u potansiyel kullanıcılara gösterip feedback alın",
+            "Rakip uygulamaların iconlarını inceleyin ama kopyalamayın",
+            "Basit ve temiz tasarımlar genellikle daha iyi çalışır"
+        ]
+    }
+}

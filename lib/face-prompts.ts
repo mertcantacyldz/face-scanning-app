@@ -235,6 +235,23 @@ ASYMMETRY_LEVEL =
   OVERALL_SCORE >= 3 ? "MODERATE" : "SEVERE"
 
 ═════════════════════════════════════════════
+USER-FRIENDLY EXPLANATION REQUIREMENTS
+═════════════════════════════════════════════
+
+For EVERY "user_explanation" field, you MUST:
+1. Reference specific measurements from that category
+2. Explain what those numbers mean in context
+3. Be 2-3 sentences long
+4. Use plain language (no jargon)
+5. CRITICAL: Write in the SAME LANGUAGE specified in the system prompt (Turkish/English)
+
+EXAMPLE (for thickness_analysis):
+❌ BAD: "Your eyebrows thickness is good"
+✅ GOOD: "Left eyebrow has 18% thickness ratio, right has 19%. Only 1 point difference, showing excellent symmetry. Your eyebrows are in MEDIUM category and well-balanced."
+
+Apply this pattern to ALL "user_explanation" fields below.
+
+═════════════════════════════════════════════
 OUTPUT FORMAT (JSON)
 ═════════════════════════════════════════════
 
@@ -245,65 +262,83 @@ OUTPUT FORMAT (JSON)
     "overall_score": 0-10,
     "dominant_issue": "string"
   },
+  
+  "user_friendly_summary": {
+    "assessment": "string (max 10 words)",
+    "explanation": "string (2-3 sentences)",
+    "key_findings": [
+      "string (3-5 bullets)",
+      "string (text only, no emojis)"
+    ]
+  },
+
   "shape_analysis": {
     "left_brow_shape": "UPWARD_SLANT/SOFT_ARCH/HIGH_ARCH/LOW_ARCH/STRAIGHT",
     "right_brow_shape": "UPWARD_SLANT/SOFT_ARCH/HIGH_ARCH/LOW_ARCH/STRAIGHT",
     "shape_harmony": "MATCHED/MISMATCHED",
-    "left_brow_angle": number,
-    "right_brow_angle": number,
-    "angle_difference": number,
-    "angle_score": 0-10
+    "angle_difference": "number°",
+    "angle_score": 0-10,
+    "user_explanation": "string (plain language)"
   },
+  
   "thickness_analysis": {
-    "left_brow_thickness_ratio": number,
-    "right_brow_thickness_ratio": number,
-    "thickness_difference": number,
+    "thickness_difference": "number px",
     "thickness_score": 0-10,
-    "thickness_assessment": "THIN/MEDIUM/THICK"
+    "thickness_assessment": "THIN/MEDIUM/THICK",
+    "left_thickness_ratio": "number%",
+    "right_thickness_ratio": "number%",
+    "user_explanation": "string (plain language)"
   },
+  
   "position_analysis": {
-    "inter_brow_distance": number,
-    "inter_brow_ratio": number,
+    "inter_brow_distance": "number px",
+    "inter_brow_ratio": "number%",
     "idealness": "NARROW/IDEAL/WIDE",
-    "left_brow_height": number,
-    "right_brow_height": number,
-    "height_difference": number,
-    "height_score": 0-10
+    "height_difference": "number px",
+    "height_score": 0-10,
+    "user_explanation": "string (plain language)"
   },
+  
   "eye_distance": {
-    "left_brow_to_eye": number,
-    "right_brow_to_eye": number,
-    "distance_difference": number,
-    "idealness": "string"
+    "left_brow_to_eye": "number px",
+    "right_brow_to_eye": "number px",
+    "distance_difference": "number px",
+    "idealness": "string",
+    "user_explanation": "string (plain language)"
   },
+  
   "symmetry_analysis": {
     "horizontal_symmetry": "GOOD/FAIR/POOR",
     "vertical_symmetry": "GOOD/FAIR/POOR",
     "shape_symmetry": "GOOD/FAIR/POOR",
-    "overall_symmetry_score": 0-10
+    "overall_symmetry_score": 0-10,
+    "user_explanation": "string (plain language)"
   },
+  
   "3d_analysis": {
-    "left_brow_depth": number,
-    "right_brow_depth": number,
-    "depth_difference": number,
-    "interpretation": "string"
+    "depth_difference": "number mm",
+    "interpretation": "string",
+    "user_explanation": "string (plain language)"
   },
+  
   "facial_harmony": {
-    "face_width_ratio": number,
+    "face_width_ratio": "number%",
     "harmonic_balance": "string",
-    "golden_ratio_compliance": "GOOD/FAIR/POOR"
+    "golden_ratio_compliance": "GOOD/FAIR/POOR",
+    "user_explanation": "string (plain language)"
   },
+
   "recommendations": {
-    "aesthetic_advice": "string",
-    "symmetry_suggestions": ["string"],
-    "shape_suggestions": ["string"],
+    "medical_advice": "string",
+    "priority_intervention": "string",
     "attention_points": ["string"]
   },
+
   "metadata": {
-    "analysis_date": "timestamp",
+    "analysis_date": "ISO timestamp",
     "points_used": number,
-    "reliability": "HIGH/MEDIUM",
-    "hybrid_control_used": boolean
+    "reliability": "HIGH/MEDIUM/LOW",
+    "model_version": "V4"
   }
 }
 
@@ -633,6 +668,23 @@ ASYMMETRY_LEVEL =
   OVERALL_SCORE >= 3 ? "MODERATE" : "SEVERE"
 
 ═════════════════════════════════════════════
+USER-FRIENDLY EXPLANATION REQUIREMENTS
+═════════════════════════════════════════════
+
+For EVERY "user_explanation" field, you MUST:
+1. Reference specific measurements from that category
+2. Explain what those numbers mean in context
+3. Be 2-3 sentences long
+4. Use plain language (no jargon)
+5. CRITICAL: Write in the SAME LANGUAGE specified in the system prompt (Turkish/English)
+
+EXAMPLE (for size_analysis):
+❌ BAD: "Your eyes are fine"
+✅ GOOD: "Left eye is 31.23px wide, right eye is 30.98px. Only 0.25px difference between them, showing excellent symmetry. The area difference of 1.3% is within ideal range."
+
+Apply this pattern to ALL "user_explanation" fields below.
+
+═════════════════════════════════════════════
 OUTPUT FORMAT (JSON)
 ═════════════════════════════════════════════
 
@@ -643,86 +695,91 @@ OUTPUT FORMAT (JSON)
     "overall_score": 0-10,
     "dominant_issue": "string"
   },
-  "size_analysis": {
-    "left_eye": {
-      "width": number,
-      "height": number,
-      "area": number,
-      "ratio": number
-    },
-    "right_eye": {
-      "width": number,
-      "height": number,
-      "area": number,
-      "ratio": number
-    },
-    "width_difference": number,
-    "height_difference": number,
-    "area_difference_ratio": number,
-    "size_score": 0-10
+  
+  "user_friendly_summary": {
+    "assessment": "string (max 10 words)",
+    "explanation": "string (2-3 sentences)",
+    "key_findings": [
+      "string (3-5 bullets)",
+      "string (text only, no emojis)"
+    ]
   },
+
+  "size_analysis": {
+    "width_difference": "number px",
+    "height_difference": "number px",
+    "area_difference_ratio": "number%",
+    "size_score": 0-10,
+    "user_explanation": "string (plain language)"
+  },
+  
   "shape_analysis": {
     "left_eye_shape": "ROUND/ALMOND/OVAL/NARROW",
     "right_eye_shape": "ROUND/ALMOND/OVAL/NARROW",
-    "left_eye_tilt": number,
-    "right_eye_tilt": number,
-    "tilt_difference": number,
+    "tilt_difference": "number°",
     "shape_harmony": "MATCHED/MISMATCHED",
-    "shape_score": 0-10
+    "shape_score": 0-10,
+    "user_explanation": "string (plain language)"
   },
+  
   "inter_eye_analysis": {
-    "distance": number,
-    "face_width_ratio": number,
-    "eye_width_ratio": number,
+    "distance": "number px",
+    "face_width_ratio": "number%",
+    "eye_width_ratio": "number%",
     "idealness": "NARROW/IDEAL/WIDE",
-    "score": 0-10
+    "score": 0-10,
+    "user_explanation": "string (plain language)"
   },
+  
   "position_analysis": {
-    "left_eye_y": number,
-    "right_eye_y": number,
-    "y_difference": number,
-    "x_distance_difference": number,
-    "position_score": 0-10
+    "y_difference": "number px",
+    "x_distance_difference": "number px",
+    "position_score": 0-10,
+    "user_explanation": "string (plain language)"
   },
+  
   "eyelid_analysis": {
-    "left_upper_lid_visibility": number,
-    "right_upper_lid_visibility": number,
-    "lid_visibility_difference": number,
-    "left_lower_lid": number,
-    "right_lower_lid": number,
-    "lower_lid_difference": number,
+    "lid_visibility_difference": "number px",
+    "lower_lid_difference": "number px",
     "lid_score": 0-10,
-    "lid_type": "NORMAL/HOODED/DEEP_SET"
+    "lid_type": "NORMAL/HOODED/DEEP_SET",
+    "user_explanation": "string (plain language)"
   },
+  
   "symmetry_analysis": {
     "horizontal_symmetry": "GOOD/FAIR/POOR",
     "vertical_symmetry": "GOOD/FAIR/POOR",
     "size_symmetry": "GOOD/FAIR/POOR",
     "shape_symmetry": "GOOD/FAIR/POOR",
-    "overall_symmetry_score": 0-10
+    "overall_symmetry_score": 0-10,
+    "user_explanation": "string (plain language)"
   },
+  
   "3d_analysis": {
-    "left_eye_depth": number,
-    "right_eye_depth": number,
-    "depth_difference": number,
-    "interpretation": "string"
+    "depth_difference": "number mm",
+    "interpretation": "string",
+    "user_explanation": "string (plain language)"
   },
+  
   "facial_harmony": {
     "golden_ratio_compliance": "GOOD/FAIR/POOR",
     "facial_balance": "string",
-    "harmonic_assessment": "string"
+    "harmonic_assessment": "string",
+    "user_explanation": "string (plain language)"
   },
+
   "recommendations": {
+    "medical_advice": "string",
     "aesthetic_advice": "string",
-    "symmetry_suggestions": ["string"],
     "makeup_suggestions": ["string"],
     "attention_points": ["string"]
   },
+
   "metadata": {
-    "analysis_date": "timestamp",
+    "analysis_date": "ISO timestamp",
     "points_used": number,
-    "reliability": "HIGH/MEDIUM",
-    "hybrid_control_used": boolean
+    "reliability": "HIGH/MEDIUM/LOW",
+    "model_version": "V4"
   }
 }
 
@@ -845,6 +902,23 @@ ASYMMETRY_LEVEL =
   OVERALL_SCORE >= 3 ? "MODERATE" : "SEVERE"
 
 ═════════════════════════════════════════════
+USER-FRIENDLY EXPLANATION REQUIREMENTS
+═════════════════════════════════════════════
+
+For EVERY "user_explanation" field, you MUST:
+1. Reference specific measurements from that category
+2. Explain what those numbers mean in context
+3. Be 2-3 sentences long
+4. Use plain language (no jargon)
+5. CRITICAL: Write in the SAME LANGUAGE specified in the system prompt (Turkish/English)
+
+EXAMPLE (for nose_tip_analysis):
+❌ BAD: "Your nose tip is centered"
+✅ GOOD: "Your nose tip shows 0.01px deviation from face center. This 0.01% ratio means perfect symmetry. Your nose tip is in CENTER position."
+
+Apply this pattern to ALL "user_explanation" fields below.
+
+═════════════════════════════════════════════
 OUTPUT FORMAT (JSON)
 ═════════════════════════════════════════════
 
@@ -855,54 +929,62 @@ OUTPUT FORMAT (JSON)
     "overall_score": 0-10,
     "asymmetry_type": "string"
   },
-  "detailed_analysis": {
-    "reference_points": {
-      "center_x": number,
-      "face_width": number
-    },
-    "nostrils": {
-      "left_nostril": {"x": number, "y": number, "z": number},
-      "right_nostril": {"x": number, "y": number, "z": number},
-      "horizontal_difference": number,
-      "ratio": number,
-      "score": 0-10
-    },
-    "nose_tip": {
-      "nose_tip": {"x": number, "y": number, "z": number},
-      "face_center": number,
-      "deviation": number,
-      "ratio": number,
-      "direction": "LEFT/RIGHT/CENTER",
-      "score": 0-10
-    },
-    "rotation_analysis": {
-      "nasion": {"x": number, "y": number, "z": number},
-      "rotation_angle_degree": number,
-      "direction": "TILTED_LEFT/TILTED_RIGHT/STRAIGHT",
-      "score": 0-10
-    }
+  
+  "user_friendly_summary": {
+    "assessment": "string (max 10 words)",
+    "explanation": "string (2-3 sentences)",
+    "key_findings": [
+      "string (3-5 bullets)",
+      "string (text only, no emojis)"
+    ]
   },
+
+  "nose_tip_analysis": {
+    "deviation": "number px",
+    "deviation_ratio": "number%",
+    "direction": "LEFT/RIGHT/CENTER",
+    "score": 0-10,
+    "user_explanation": "string (plain language)"
+  },
+
+  "nostril_analysis": {
+    "horizontal_difference": "number px",
+    "asymmetry_ratio": "number%",
+    "score": 0-10,
+    "user_explanation": "string (plain language)"
+  },
+
+  "rotation_analysis": {
+    "rotation_angle": "number°",
+    "direction": "TILTED_LEFT/TILTED_RIGHT/STRAIGHT",
+    "score": 0-10,
+    "user_explanation": "string (plain language)"
+  },
+
   "3d_analysis": {
-    "left_nostril_z": number,
-    "right_nostril_z": number,
-    "depth_difference": number,
-    "interpretation": "string"
+    "depth_difference": "number mm",
+    "interpretation": "string",
+    "user_explanation": "string (plain language)"
   },
+
   "visual_assessment": {
     "prominent_asymmetry_areas": ["string"],
     "visual_appearance": "string",
-    "photo_effect": "string"
+    "photo_effect": "string",
+    "user_explanation": "string (plain language)"
   },
+
   "recommendations": {
     "medical_advice": "string",
     "priority_intervention": "string",
     "attention_points": ["string"]
   },
+
   "metadata": {
-    "analysis_date": "timestamp",
+    "analysis_date": "ISO timestamp",
     "points_used": number,
-    "reliability": "HIGH/MEDIUM",
-    "hybrid_control_used": boolean
+    "reliability": "HIGH/MEDIUM/LOW",
+    "model_version": "V4"
   }
 }
 
@@ -1241,6 +1323,23 @@ ASYMMETRY_LEVEL =
   OVERALL_SCORE >= 3 ? "MODERATE" : "SEVERE"
 
 ═════════════════════════════════════════════
+USER-FRIENDLY EXPLANATION REQUIREMENTS
+═════════════════════════════════════════════
+
+For EVERY "user_explanation" field, you MUST:
+1. Reference specific measurements from that category
+2. Explain what those numbers mean in context
+3. Be 2-3 sentences long
+4. Use plain language (no jargon)
+5. CRITICAL: Write in the SAME LANGUAGE specified in the system prompt (Turkish/English)
+
+EXAMPLE (for 3d_analysis):
+❌ BAD: "Your lips thickness is good"
+✅ GOOD: "Upper lip is 10.23mm thick, lower lip is 12.56mm. Difference between them is 2.33mm (12.56 - 10.23). This difference is minimal and normal. Your lips volume appears balanced."
+
+Apply this pattern to ALL "user_explanation" fields below.
+
+═════════════════════════════════════════════
 OUTPUT FORMAT (JSON)
 ═════════════════════════════════════════════
 
@@ -1251,79 +1350,83 @@ OUTPUT FORMAT (JSON)
     "overall_score": 0-10,
     "dominant_issue": "string"
   },
+  
+  "user_friendly_summary": {
+    "assessment": "string (max 10 words)",
+    "explanation": "string (2-3 sentences)",
+    "key_findings": [
+      "string (3-5 bullets)",
+      "string (text only, no emojis)"
+    ]
+  },
+
   "size_analysis": {
-    "lip_width": number,
-    "lip_width_ratio": number,
-    "total_height": number,
-    "upper_lip_height": number,
-    "lower_lip_height": number,
+    "lip_width": "number px",
+    "lip_width_ratio": "number%",
+    "total_height": "number px",
+    "upper_lip_height": "number px",
+    "lower_lip_height": "number px",
     "upper_lower_ratio": number,
     "upper_lower_ratio_score": 0-10,
-    "ratio_idealness": "IDEAL/LOWER_FULLER/UPPER_FULLER"
+    "ratio_idealness": "IDEAL/LOWER_FULLER/UPPER_FULLER",
+    "user_explanation": "string (plain language)"
   },
+
   "shape_analysis": {
-    "cupid_bow_presence": number,
-    "cupid_bow_symmetry": number,
-    "bow_difference": number,
-    "lip_line_tilt": number,
-    "shape_type": "FULL/MEDIUM/THIN"
+    "cupid_bow_presence": "number px",
+    "cupid_bow_symmetry": "number px",
+    "bow_difference": "number px",
+    "lip_line_tilt": "number°",
+    "shape_type": "FULL/MEDIUM/THIN",
+    "user_explanation": "string (plain language)"
   },
+
   "symmetry_analysis": {
-    "upper_lip": {
-      "left_height": number,
-      "right_height": number,
-      "difference": number,
-      "score": 0-10
-    },
-    "lower_lip": {
-      "left_height": number,
-      "right_height": number,
-      "difference": number,
-      "score": 0-10
-    },
-    "lip_corners": {
-      "left_corner": {"x": number, "y": number, "z": number},
-      "right_corner": {"x": number, "y": number, "z": number},
-      "distance_difference": number,
-      "y_difference": number,
-      "score": 0-10
-    },
-    "line_symmetry": {
-      "y_difference": number,
-      "tilt": number,
-      "score": 0-10
-    },
-    "overall_symmetry_score": 0-10
+    "upper_lip_difference": "number px",
+    "upper_lip_score": 0-10,
+    "lower_lip_difference": "number px",
+    "lower_lip_score": 0-10,
+    "corner_distance_difference": "number px",
+    "corner_y_difference": "number px",
+    "corner_score": 0-10,
+    "line_tilt": "number°",
+    "line_score": 0-10,
+    "overall_symmetry_score": 0-10,
+    "user_explanation": "string (plain language)"
   },
+
   "3d_analysis": {
-    "upper_lip_thickness": number,
-    "lower_lip_thickness": number,
-    "left_side_thickness": number,
-    "right_side_thickness": number,
-    "thickness_difference": number,
-    "volume_assessment": "string"
+    "upper_lip_thickness": "number mm",
+    "lower_lip_thickness": "number mm",
+    "side_thickness_difference": "number mm",
+    "volume_assessment": "string",
+    "user_explanation": "string (plain language)"
   },
+
   "facial_harmony": {
-    "lip_width_ratio": number,
-    "philtrum_length": number,
-    "lip_to_chin_distance": number,
-    "face_ratio": number,
+    "lip_width_ratio": "number%",
+    "philtrum_length": "number px",
+    "lip_to_chin_distance": "number px",
+    "face_ratio": "number%",
     "golden_ratio_compliance": "GOOD/FAIR/POOR",
     "facial_balance": "string",
-    "harmony_score": 0-10
+    "harmony_score": 0-10,
+    "user_explanation": "string (plain language)"
   },
+
   "recommendations": {
+    "medical_advice": "string",
     "aesthetic_advice": "string",
-    "symmetry_suggestions": ["string"],
-    "makeup_suggestions": ["string"],
     "filler_suggestions": ["string"],
+    "makeup_suggestions": ["string"],
     "attention_points": ["string"]
   },
+
   "metadata": {
-    "analysis_date": "timestamp",
+    "analysis_date": "ISO timestamp",
     "points_used": number,
-    "reliability": "HIGH/MEDIUM",
-    "hybrid_control_used": boolean
+    "reliability": "HIGH/MEDIUM/LOW",
+    "model_version": "V4"
   }
 }
 
@@ -1608,6 +1711,23 @@ ASYMMETRY_LEVEL =
   OVERALL_SCORE >= 3 ? "MODERATE" : "SEVERE"
 
 ═════════════════════════════════════════════
+USER-FRIENDLY EXPLANATION REQUIREMENTS
+═════════════════════════════════════════════
+
+For EVERY "user_explanation" field, you MUST:
+1. Reference specific measurements from that category
+2. Explain what those numbers mean in context
+3. Be 2-3 sentences long
+4. Use plain language (no jargon)
+5. CRITICAL: Write in the SAME LANGUAGE specified in the system prompt (Turkish/English)
+
+EXAMPLE (for chin_tip_analysis):
+❌ BAD: "Your chin is centered"
+✅ GOOD: "Your chin tip shows 1.5px deviation from face center. This is 1.2% of your face width. This minimal deviation indicates excellent symmetry in your chin position."
+
+Apply this pattern to ALL "user_explanation" fields below.
+
+═════════════════════════════════════════════
 OUTPUT FORMAT (JSON)
 ═════════════════════════════════════════════
 
@@ -1619,80 +1739,89 @@ OUTPUT FORMAT (JSON)
     "overall_score": 0-10,
     "dominant_asymmetry": "string"
   },
-  "detailed_analysis": {
-    "chin_tip": {
-      "coordinates": {"x": number, "y": number, "z": number},
-      "face_center": number,
-      "deviation": number,
-      "deviation_ratio": number,
-      "direction": "LEFT/RIGHT/CENTER",
-      "score": 0-10
-    },
-    "jaw_corners": {
-      "left_corner": {"x": number, "y": number, "z": number},
-      "right_corner": {"x": number, "y": number, "z": number},
-      "width": number,
-      "face_width_ratio": number,
-      "y_level_difference": number,
-      "distance_difference": number,
-      "distance_ratio": number,
-      "symmetry_score": 0-10,
-      "level_score": 0-10
-    },
-    "jawline": {
-      "left_length": number,
-      "right_length": number,
-      "difference": number,
-      "difference_ratio": number,
-      "left_angle": number,
-      "right_angle": number,
-      "angle_difference": number,
-      "avg_angle": number,
-      "length_score": 0-10,
-      "angle_score": 0-10
-    },
-    "jaw_dimensions": {
-      "jaw_width": number,
-      "jaw_height": number,
-      "face_height": number,
-      "width_to_height_ratio": number,
-      "jaw_to_face_ratio": number
-    }
+  
+  "user_friendly_summary": {
+    "assessment": "string (max 10 words)",
+    "explanation": "string (2-3 sentences)",
+    "key_findings": [
+      "string (3-5 bullets)",
+      "string (text only, no emojis)"
+    ]
   },
-  "3d_analysis": {
-    "left_corner_z": number,
-    "right_corner_z": number,
-    "chin_tip_z": number,
-    "corner_z_difference": number,
-    "depth_asymmetry": number,
+
+  "chin_tip_analysis": {
+    "deviation": "number px",
+    "deviation_ratio": "number%",
+    "direction": "LEFT/RIGHT/CENTER",
     "score": 0-10,
-    "interpretation": "string"
+    "user_explanation": "string (plain language)"
   },
+
+  "jaw_corner_analysis": {
+    "width": "number px",
+    "face_width_ratio": "number%",
+    "y_level_difference": "number px",
+    "distance_difference": "number px",
+    "distance_ratio": "number%",
+    "symmetry_score": 0-10,
+    "level_score": 0-10,
+    "user_explanation": "string (plain language)"
+  },
+
+  "jawline_analysis": {
+    "length_difference": "number px",
+    "length_difference_ratio": "number%",
+    "angle_difference": "number°",
+    "average_angle": "number°",
+    "length_score": 0-10,
+    "angle_score": 0-10,
+    "user_explanation": "string (plain language)"
+  },
+
+  "jaw_dimensions": {
+    "jaw_width": "number px",
+    "jaw_height": "number px",
+    "face_height": "number px",
+    "width_to_height_ratio": number,
+    "jaw_to_face_ratio": "number%",
+    "user_explanation": "string (plain language)"
+  },
+
+  "3d_analysis": {
+    "corner_depth_difference": "number mm",
+    "depth_asymmetry": "number mm",
+    "score": 0-10,
+    "interpretation": "string",
+    "user_explanation": "string (plain language)"
+  },
+
   "visual_assessment": {
     "prominent_asymmetry_areas": ["string"],
     "jawline_definition": "SHARP/MODERATE/UNDEFINED",
     "visual_appearance": "string",
-    "photo_effect": "string"
+    "photo_effect": "string",
+    "user_explanation": "string (plain language)"
   },
+
   "comparative_analysis": {
     "most_symmetric_region": "string",
     "most_asymmetric_region": "string",
     "proportional_balance": "string",
-    "points_used_count": number
+    "user_explanation": "string (plain language)"
   },
+
   "recommendations": {
     "medical_advice": "string",
     "priority_intervention": "string",
-    "attention_points": ["string"],
-    "aesthetic_intervention_need": "NONE/LOW/MODERATE/HIGH"
+    "aesthetic_intervention_need": "NONE/LOW/MODERATE/HIGH",
+    "attention_points": ["string"]
   },
+
   "metadata": {
-    "analysis_date": "timestamp",
+    "analysis_date": "ISO timestamp",
     "landmarks_used": number,
-    "filtered_points": number,
-    "reliability": "HIGH/MEDIUM",
-    "hybrid_control_used": boolean,
-    "calculation_method": "Geometric analysis + Statistical approach"
+    "reliability": "HIGH/MEDIUM/LOW",
+    "model_version": "V4"
   }
 }
 
@@ -1991,6 +2120,23 @@ if (JAW_TO_CHEEKBONE_RATIO < 0.75 && FOREHEAD_TO_JAW_RATIO < 0.90) {
 }
 
 ═════════════════════════════════════════════
+USER-FRIENDLY EXPLANATION REQUIREMENTS
+═════════════════════════════════════════════
+
+For EVERY "user_explanation" field, you MUST:
+1. Reference specific measurements from that category
+2. Explain what those numbers mean in context
+3. Be 2-3 sentences long
+4. Use plain language (no jargon)
+5. CRITICAL: Write in the SAME LANGUAGE specified in the system prompt (Turkish/English)
+
+EXAMPLE (for dimension_measurements):
+❌ BAD: "Your face measurements are good"
+✅ GOOD: "Your forehead is 145px wide, cheekbones are 152px, and jaw is 138px. This creates a face length-to-width ratio of 1.32, indicating an OVAL shape. Your widest point is at the cheekbones, which is typical for oval faces."
+
+Apply this pattern to ALL "user_explanation" fields below.
+
+═════════════════════════════════════════════
 OUTPUT FORMAT (JSON)
 ═════════════════════════════════════════════
 
@@ -2001,23 +2147,28 @@ OUTPUT FORMAT (JSON)
     "alternative_shapes": ["string"],
     "general_assessment": "string"
   },
-  "dimension_measurements": {
-    "widths": {
-      "forehead_width": number,
-      "cheekbone_width": number,
-      "jaw_width": number,
-      "eye_level_width": number,
-      "lip_level_width": number,
-      "widest_point": "FOREHEAD/CHEEKBONE/JAW/EYE_LEVEL"
-    },
-    "heights": {
-      "total_face_height": number,
-      "upper_face": number,
-      "mid_face": number,
-      "lower_face": number,
-      "face_section_ratio": "string"
-    }
+  
+  "user_friendly_summary": {
+    "assessment": "string (max 10 words)",
+    "explanation": "string (2-3 sentences explaining face shape characteristics)",
+    "key_findings": [
+      "string (3-5 bullets)",
+      "string (text only, no emojis)"
+    ]
   },
+
+  "dimension_measurements": {
+    "forehead_width": "number px",
+    "cheekbone_width": "number px",
+    "jaw_width": "number px",
+    "total_face_height": "number px",
+    "upper_face_height": "number px",
+    "mid_face_height": "number px",
+    "lower_face_height": "number px",
+    "widest_point": "FOREHEAD/CHEEKBONE/JAW/EYE_LEVEL",
+    "user_explanation": "string (plain language)"
+  },
+
   "critical_ratios": {
     "face_length_to_width": number,
     "forehead_to_cheekbone": number,
@@ -2025,57 +2176,65 @@ OUTPUT FORMAT (JSON)
     "forehead_to_jaw": number,
     "upper_to_mid_face": number,
     "mid_to_lower_face": number,
-    "ratio_assessment": "string"
+    "ratio_assessment": "string",
+    "user_explanation": "string (plain language)"
   },
+
   "jaw_analysis": {
-    "left_jaw_angle": number,
-    "right_jaw_angle": number,
-    "avg_angle": number,
+    "average_angle": "number°",
+    "angle_difference": "number°",
     "jaw_type": "SHARP/MODERATE/WIDE",
-    "jaw_symmetry": {
-      "left_length": number,
-      "right_length": number,
-      "asymmetry_ratio": number
-    }
+    "asymmetry_ratio": "number%",
+    "user_explanation": "string (plain language)"
   },
+
   "symmetry_analysis": {
-    "face_width_asymmetry": number,
-    "face_width_asymmetry_ratio": number,
-    "jaw_asymmetry": number,
-    "jaw_asymmetry_ratio": number,
-    "overall_symmetry": "GOOD/FAIR/POOR"
+    "face_width_asymmetry": "number px",
+    "face_width_asymmetry_ratio": "number%",
+    "jaw_asymmetry": "number px",
+    "jaw_asymmetry_ratio": "number%",
+    "overall_symmetry": "GOOD/FAIR/POOR",
+    "user_explanation": "string (plain language)"
   },
+
   "3d_analysis": {
-    "forehead_depth": number,
-    "cheekbone_depth": number,
-    "chin_depth": number,
-    "face_contour_curve": number,
-    "contour_type": "SMOOTH/DEFINED/FLAT"
+    "forehead_depth": "number mm",
+    "cheekbone_depth": "number mm",
+    "chin_depth": "number mm",
+    "face_contour_curve": "number°",
+    "contour_type": "SMOOTH/DEFINED/FLAT",
+    "user_explanation": "string (plain language)"
   },
+
   "face_shape_details": {
     "dominant_features": ["string"],
     "characteristic_points": ["string"],
-    "shape_description": "string"
+    "shape_description": "string",
+    "user_explanation": "string (plain language)"
   },
+
   "aesthetic_analysis": {
     "golden_ratio_compliance": "GOOD/FAIR/POOR",
     "harmonic_balance": "string",
-    "beauty_standards": "string"
+    "beauty_standards": "string",
+    "user_explanation": "string (plain language)"
   },
+
   "recommendations": {
     "hairstyle_suggestions": ["string"],
     "makeup_suggestions": ["string"],
     "accessory_suggestions": ["string"],
     "attractiveness_tips": ["string"]
   },
+
   "metadata": {
-    "analysis_date": "timestamp",
+    "analysis_date": "ISO timestamp",
     "points_used": number,
-    "reliability": "HIGH/MEDIUM",
-    "hybrid_control_used": boolean,
-    "algorithm_version": "V4"
+    "reliability": "HIGH/MEDIUM/LOW",
+    "model_version": "V4"
   }
 }
+
 
 CRITICAL APPLICATION NOTES:
 * Return ONLY JSON - No additional explanations
