@@ -7,6 +7,7 @@ import {
   Alert,
   Pressable,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/ui/text';
@@ -19,6 +20,10 @@ import { ComparisonBadge } from '@/components/progress/ComparisonBadge';
 import { getAllRegions, getRegionTitle, type RegionId } from '@/lib/exercises';
 import { compareAnalysis, calculateOverallProgress, getStreakMessage } from '@/lib/comparison';
 import { usePremium } from '@/hooks/use-premium';
+import { format } from 'date-fns';
+import { getAvailableMonths } from '@/lib/exercise-tracking';
+import { MonthSelector } from '@/components/progress/MonthSelector';
+import { ExerciseRegionStatsCard } from '@/components/progress/ExerciseRegionStatsCard';
 
 interface RegionSummary {
   regionId: RegionId;
@@ -41,6 +46,10 @@ interface RegionAnalysisRow {
   created_at: string;
 }
 
+interface Profile {
+  is_premium: boolean;
+}
+
 const ProgressScreen = () => {
   const { t } = useTranslation('progress');
   const [loading, setLoading] = useState(true);
@@ -49,9 +58,14 @@ const ProgressScreen = () => {
   const [overallChartData, setOverallChartData] = useState<ChartDataPoint[]>([]);
   const [overallProgress, setOverallProgress] = useState(0);
   const [totalAnalyses, setTotalAnalyses] = useState(0);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
-  // Premium check
-  const { isPremium } = usePremium();
+  // Exercise tracking state
+  const [exerciseMonths, setExerciseMonths] = useState<string[]>([]);
+  const [selectedExerciseMonth, setSelectedExerciseMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
+
+  // Premium check - check both RevenueCat and Supabase
+  const { isPremium: isRevenueCatPremium } = usePremium();
 
   // Load data when screen focuses
   useFocusEffect(
@@ -71,6 +85,17 @@ const ProgressScreen = () => {
         Alert.alert(t('errors.title', { ns: 'errors' }), t('errors.pleaseLogin', { ns: 'errors' }));
         router.replace('/(auth)/login');
         return;
+      }
+
+      // Fetch user profile for Supabase premium check
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('is_premium')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileData) {
+        setProfile(profileData);
       }
 
       // Fetch all region analyses for this user
@@ -155,6 +180,10 @@ const ProgressScreen = () => {
       setOverallChartData(chartData);
       setOverallProgress(progress);
       setTotalAnalyses(analyses?.length || 0);
+
+      // Load available exercise months
+      const months = await getAvailableMonths();
+      setExerciseMonths(months);
     } catch (error) {
       console.error('Error loading progress data:', error);
       Alert.alert(t('errors.title', { ns: 'errors' }), t('errors.loadingError', { ns: 'errors' }));
@@ -182,8 +211,11 @@ const ProgressScreen = () => {
     );
   }
 
+  // Combine both premium checks: RevenueCat OR Supabase
+  const isPremiumUser = isRevenueCatPremium || (profile?.is_premium ?? false);
+
   // Premium wall for non-premium users
-  if (!isPremium) {
+  if (!isPremiumUser) {
     return (
       <View className="flex-1 bg-background">
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
@@ -244,7 +276,7 @@ const ProgressScreen = () => {
   }
 
   return (
-    <View className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 16 }}
@@ -261,44 +293,37 @@ const ProgressScreen = () => {
         </View>
 
         {/* Overall Stats Card */}
-        <Card className="p-5 mb-6 bg-primary/10 border-2 border-primary/20">
-          <View className="flex-row items-center justify-between mb-4">
-            <View>
-              <Text className="text-lg font-bold text-foreground">
-                {t('overallProgress.title')}
-              </Text>
-              <Text className="text-sm text-muted-foreground">
-                {t('overallProgress.subtitle')}
-              </Text>
-            </View>
-            <View className="items-center">
-              <Text
-                className={`text-4xl font-bold ${
-                  overallProgress >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}
-              >
-                {overallProgress >= 0 ? '+' : ''}
-                {overallProgress}%
-              </Text>
-              <Text className="text-xs text-muted-foreground">{t('overallProgress.label')}</Text>
-            </View>
+        <Card className="p-4 mb-4 bg-primary/10 border-2 border-primary/20">
+          {/* Header - tek satır */}
+          <View className="flex-row items-center justify-between mb-3">
+            <Text className="text-base font-bold text-foreground">
+              {t('overallProgress.title')}
+            </Text>
+            <Text
+              className={`text-3xl font-bold ${
+                overallProgress >= 0 ? 'text-green-600' : 'text-red-600'
+              }`}
+            >
+              {overallProgress >= 0 ? '+' : ''}
+              {overallProgress}%
+            </Text>
           </View>
 
-          {/* Stats row */}
-          <View className="flex-row">
-            <View className="flex-1 bg-white/50 p-3 rounded-lg mr-2">
+          {/* Stats row - daha kompakt */}
+          <View className="flex-row gap-2">
+            <View className="flex-1 bg-white/50 p-2 rounded-lg">
               <Text className="text-xs text-muted-foreground">
                 {t('stats.totalAnalyses')}
               </Text>
-              <Text className="text-xl font-bold text-foreground">
+              <Text className="text-lg font-bold text-foreground">
                 {totalAnalyses}
               </Text>
             </View>
-            <View className="flex-1 bg-white/50 p-3 rounded-lg ml-2">
+            <View className="flex-1 bg-white/50 p-2 rounded-lg">
               <Text className="text-xs text-muted-foreground">
                 {t('stats.activeRegions')}
               </Text>
-              <Text className="text-xl font-bold text-foreground">
+              <Text className="text-lg font-bold text-foreground">
                 {regionSummaries.filter((r) => r.analysisCount > 0).length}/6
               </Text>
             </View>
@@ -307,33 +332,66 @@ const ProgressScreen = () => {
 
         {/* Overall Progress Chart */}
         {overallChartData.length >= 2 && (
-          <View className="mb-6">
+          <View className="mb-4">
             <ProgressChart
               data={overallChartData}
               titleTr={t('chartTitle')}
               color="#007AFF"
-              height={180}
+              height={120}
             />
           </View>
         )}
 
         {/* Region Cards */}
         <View className="mb-4">
-          <Text className="text-xl font-bold mb-4">{t('regionsTitle')}</Text>
-          <View className="gap-3">
+          <Text className="text-xl font-bold mb-3">{t('regionsTitle')}</Text>
+          <View className="flex-row flex-wrap gap-2">
             {regionSummaries.map((summary) => (
-              <RegionProgressCard
-                key={summary.regionId}
-                regionId={summary.regionId}
-                latestScore={summary.latestScore}
-                previousScore={summary.previousScore}
-                analysisCount={summary.analysisCount}
-                lastAnalysisDate={summary.lastAnalysisDate}
-                onPress={() => handleRegionPress(summary.regionId)}
-              />
+              <View key={summary.regionId} style={{ width: '48.5%' }}>
+                <RegionProgressCard
+                  regionId={summary.regionId}
+                  latestScore={summary.latestScore}
+                  previousScore={summary.previousScore}
+                  analysisCount={summary.analysisCount}
+                  lastAnalysisDate={summary.lastAnalysisDate}
+                  onPress={() => handleRegionPress(summary.regionId)}
+                />
+              </View>
             ))}
           </View>
         </View>
+
+        {/* Exercise Statistics Section */}
+        {exerciseMonths.length > 0 && (
+          <View className="mb-6">
+            {/* Title */}
+            <Text className="text-xl font-bold mb-3">{t('exerciseStats.title')}</Text>
+
+            {/* Month Selector */}
+            <View className="mb-4">
+              <MonthSelector
+                availableMonths={exerciseMonths}
+                selectedMonth={selectedExerciseMonth}
+                onMonthChange={setSelectedExerciseMonth}
+              />
+            </View>
+
+            {/* Region exercise stats cards */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 12, paddingRight: 16 }}
+            >
+              {getAllRegions().map((regionId) => (
+                <ExerciseRegionStatsCard
+                  key={regionId}
+                  regionId={regionId}
+                  monthYear={selectedExerciseMonth}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         {/* Empty State */}
         {totalAnalyses === 0 && (
@@ -361,7 +419,7 @@ const ProgressScreen = () => {
         {/* Bottom spacing */}
         <View className="h-8" />
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 

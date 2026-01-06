@@ -35,7 +35,7 @@ export function ExerciseGuideCard() {
     };
 
     return (
-        <View className="mx-4 mb-4 mt-2 bg-blue-50 border border-blue-200 rounded-xl overflow-hidden">
+        <View className="mx-4 mb-4 mt-2 bg-muted border border-border rounded-xl overflow-hidden">
             {/* Header - Always Visible */}
             <TouchableOpacity
                 onPress={toggleCollapsed}
@@ -43,15 +43,15 @@ export function ExerciseGuideCard() {
                 activeOpacity={0.7}
             >
                 <View className="flex-row items-center flex-1">
-                    <Ionicons name="book-outline" size={20} color="#2563eb" />
-                    <Text className="text-base font-semibold text-blue-900 ml-2">
+                    <Ionicons name="book-outline" size={20} color="#8B5CF6" />
+                    <Text className="text-base font-semibold text-foreground ml-2">
                         Egzersiz Rehberi
                     </Text>
                 </View>
                 {isCollapsed ? (
-                    <Ionicons name="chevron-down-outline" size={20} color="#2563eb" />
+                    <Ionicons name="chevron-down-outline" size={20} color="#8B5CF6" />
                 ) : (
-                    <Ionicons name="chevron-up-outline" size={20} color="#2563eb" />
+                    <Ionicons name="chevron-up-outline" size={20} color="#8B5CF6" />
                 )}
             </TouchableOpacity>
 
@@ -63,10 +63,10 @@ export function ExerciseGuideCard() {
                         <View className="flex-row items-start mb-2">
                             <Text className="text-2xl mr-2">💡</Text>
                             <View className="flex-1">
-                                <Text className="text-sm font-semibold text-blue-900 mb-1">
+                                <Text className="text-sm font-semibold text-foreground mb-1">
                                     Bilimsel Araştırma
                                 </Text>
-                                <Text className="text-xs text-blue-800 leading-relaxed">
+                                <Text className="text-xs text-muted-foreground leading-relaxed">
                                     2018 yılında JAMA Dermatology dergisinde yayınlanan araştırmada,
                                     yüz egzersizlerinin yüz dolgunluğunu artırdığı gözlemlenmiştir.
                                     Bu egzersizler benzer kas tonusu ve cilt dolgunluğu artırma
@@ -77,39 +77,39 @@ export function ExerciseGuideCard() {
                     </View>
 
                     {/* Recommended Practice */}
-                    <View className="bg-white rounded-lg p-3 mb-4">
+                    <View className="bg-card rounded-lg p-3 mb-4 border border-border">
                         <View className="flex-row items-center mb-2">
-                            <Ionicons name="calendar-outline" size={16} color="#2563eb" />
-                            <Text className="text-sm font-semibold text-gray-900 ml-2">
+                            <Ionicons name="calendar-outline" size={16} color="#8B5CF6" />
+                            <Text className="text-sm font-semibold text-foreground ml-2">
                                 Önerilen Uygulama
                             </Text>
                         </View>
 
                         <View className="gap-1.5">
                             <View className="flex-row items-start">
-                                <Text className="text-green-600 mr-2">•</Text>
-                                <Text className="text-xs text-gray-700 flex-1">
+                                <Text className="text-success mr-2">•</Text>
+                                <Text className="text-xs text-muted-foreground flex-1">
                                     Günde 30 dakika, haftada 5-6 gün düzenli uygulama
                                 </Text>
                             </View>
 
                             <View className="flex-row items-start">
-                                <Text className="text-green-600 mr-2">•</Text>
-                                <Text className="text-xs text-gray-700 flex-1">
+                                <Text className="text-success mr-2">•</Text>
+                                <Text className="text-xs text-muted-foreground flex-1">
                                     Cildi fazla çekmemeye ve kırıştırmamaya dikkat edin
                                 </Text>
                             </View>
 
                             <View className="flex-row items-start">
-                                <Text className="text-green-600 mr-2">•</Text>
-                                <Text className="text-xs text-gray-700 flex-1">
+                                <Text className="text-success mr-2">•</Text>
+                                <Text className="text-xs text-muted-foreground flex-1">
                                     Her zaman kasları hareket ettirmeye odaklanın, cildi değil
                                 </Text>
                             </View>
 
                             <View className="flex-row items-start">
-                                <Text className="text-green-600 mr-2">•</Text>
-                                <Text className="text-xs text-gray-700 flex-1">
+                                <Text className="text-success mr-2">•</Text>
+                                <Text className="text-xs text-muted-foreground flex-1">
                                     Düzenli ve tutarlı uygulama esastır
                                 </Text>
                             </View>
@@ -117,14 +117,14 @@ export function ExerciseGuideCard() {
                     </View>
 
                     {/* Important Warning */}
-                    <View className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <View className="bg-warning/10 border border-warning/30 rounded-lg p-3">
                         <View className="flex-row items-start">
-                            <Ionicons name="alert-circle-outline" size={16} color="#d97706" style={{ marginTop: 2 }} />
+                            <Ionicons name="alert-circle-outline" size={16} color="#F59E0B" style={{ marginTop: 2 }} />
                             <View className="flex-1 ml-2">
-                                <Text className="text-xs font-semibold text-amber-900 mb-1">
+                                <Text className="text-xs font-semibold text-foreground mb-1">
                                     ⚠️ Önemli Uyarı
                                 </Text>
-                                <Text className="text-xs text-amber-800 leading-relaxed">
+                                <Text className="text-xs text-muted-foreground leading-relaxed">
                                     Bu egzersizler ve bilgiler, tıbbi tavsiye veya tedavi yerine
                                     geçmez. Araştırma sonuçları bireysel deneyimleri garanti etmez.
                                     Sonuçlar kişiden kişiye değişir. Herhangi bir sağlık veya estetik

@@ -9,10 +9,10 @@ import { usePremium } from '@/hooks/use-premium';
 import { compareAnalysis } from '@/lib/comparison';
 import {
   getExercisesByRegion,
-  getRegionIcon,
   getRegionTitle,
   type RegionId,
 } from '@/lib/exercises';
+import { FACE_REGIONS } from '@/lib/face-prompts';
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -21,10 +21,12 @@ import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   ScrollView,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface AnalysisRecord {
   id: string;
@@ -37,7 +39,7 @@ interface AnalysisRecord {
 const RegionDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const regionId = id as RegionId;
-  const { t } = useTranslation('region');
+  const { t, i18n } = useTranslation('region');
 
   const [loading, setLoading] = useState(true);
   const [analyses, setAnalyses] = useState<AnalysisRecord[]>([]);
@@ -52,7 +54,7 @@ const RegionDetailScreen = () => {
   const isAccessible = isPremium || freeAnalysisRegion === regionId;
 
   const title = getRegionTitle(regionId);
-  const icon = getRegionIcon(regionId);
+  const region = FACE_REGIONS.find((r) => r.id === regionId);
   const exercises = getExercisesByRegion(regionId);
 
   useEffect(() => {
@@ -144,7 +146,7 @@ const RegionDetailScreen = () => {
   }
 
   return (
-    <View className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
         {/* Header */}
         <View className="flex-row items-center mb-6">
@@ -155,7 +157,13 @@ const RegionDetailScreen = () => {
             <Text className="text-2xl">←</Text>
           </Pressable>
           <View className="w-16 h-16 bg-primary/10 rounded-full items-center justify-center mr-4">
-            <Text className="text-4xl">{icon}</Text>
+            {region?.icon && (
+              <Image
+                source={region.icon}
+                style={{ width: 48, height: 48 }}
+                resizeMode="contain"
+              />
+            )}
           </View>
           <View>
             <Text className="text-2xl font-bold">{title}</Text>
@@ -168,20 +176,20 @@ const RegionDetailScreen = () => {
         {/* Comparison Badge */}
         {comparison && (
           <View className="mb-6">
-            <ComparisonBadge comparison={comparison} size="large" />
+            <ComparisonBadge comparison={comparison} size="medium" />
           </View>
         )}
 
         {/* Latest Score Card */}
         {latestAnalysis && (
-          <Card className="p-6 mb-6 bg-primary/10 border-2 border-primary/20">
+          <Card className="p-4 mb-4 bg-primary/10 border-2 border-primary/20">
             <View className="items-center">
               <Text className="text-sm text-muted-foreground mb-2">
                 {t('latestScore.title')}
               </Text>
-              <View className="w-28 h-28 rounded-full bg-white shadow-lg items-center justify-center border-4 border-primary/20">
+              <View className="w-20 h-20 rounded-full bg-white shadow-md items-center justify-center border-2 border-primary/20">
                 <Text
-                  className={`text-5xl font-bold ${latestAnalysis.overall_score >= 7
+                  className={`text-3xl font-bold ${latestAnalysis.overall_score >= 7
                     ? 'text-green-600'
                     : latestAnalysis.overall_score >= 4
                       ? 'text-yellow-600'
@@ -190,11 +198,11 @@ const RegionDetailScreen = () => {
                 >
                   {latestAnalysis.overall_score}
                 </Text>
-                <Text className="text-sm text-muted-foreground">{t('latestScore.outOf')}</Text>
+                <Text className="text-xs text-muted-foreground">{t('latestScore.outOf')}</Text>
               </View>
-              <Text className="text-xs text-muted-foreground mt-3">
+              <Text className="text-xs text-muted-foreground mt-2">
                 {new Date(latestAnalysis.created_at).toLocaleDateString(
-                  'tr-TR',
+                  i18n.language === 'tr' ? 'tr-TR' : 'en-US',
                   {
                     day: 'numeric',
                     month: 'long',
@@ -287,7 +295,7 @@ const RegionDetailScreen = () => {
                       </Text>
                       <Text className="text-sm text-muted-foreground">
                         {new Date(analysis.created_at).toLocaleDateString(
-                          'tr-TR',
+                          i18n.language === 'tr' ? 'tr-TR' : 'en-US',
                           {
                             day: 'numeric',
                             month: 'long',
@@ -331,7 +339,13 @@ const RegionDetailScreen = () => {
         {/* Empty State */}
         {analyses.length === 0 && (
           <Card className="p-6 bg-muted/50 border-0 items-center">
-            <Text className="text-5xl mb-4">{icon}</Text>
+            {region?.icon && (
+              <Image
+                source={region.icon}
+                style={{ width: 64, height: 64, marginBottom: 16 }}
+                resizeMode="contain"
+              />
+            )}
             <Text className="text-lg font-bold text-center mb-2">
               {t('emptyState.title')}
             </Text>
@@ -369,7 +383,7 @@ const RegionDetailScreen = () => {
                 <Text className="text-2xl font-bold">{t('detailModal.title', { region: title })}</Text>
                 <Text className="text-muted-foreground">
                   {new Date(selectedAnalysis.created_at).toLocaleDateString(
-                    'tr-TR',
+                    i18n.language === 'tr' ? 'tr-TR' : 'en-US',
                     {
                       day: 'numeric',
                       month: 'long',
@@ -422,7 +436,7 @@ const RegionDetailScreen = () => {
         feature={t('premiumModal.feature')}
         featureIconName="stats-chart-outline"
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

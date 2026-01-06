@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -25,6 +26,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/hooks/use-auth';
 import { useFaceMesh } from '@/hooks/use-face-mesh';
+import { usePremium } from '@/hooks/use-premium';
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -40,6 +42,7 @@ export default function HomeScreen() {
   const { t } = useTranslation('home');
   const [profile, setProfile] = useState<Profile | null>(null);
   const { session } = useAuth();
+  const { isPremium: isRevenueCatPremium } = usePremium();
 
   // Face mesh analiz hook'u
   const {
@@ -193,7 +196,7 @@ export default function HomeScreen() {
 
 
   return (
-    <View className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       {/* Hidden WebView for FaceAnalyzer AI */}
       <View style={{
         width: 0,
@@ -236,7 +239,7 @@ export default function HomeScreen() {
               </View>
               <Text className="text-muted-foreground">
                 {t('welcome.subtitle', {
-                  membership: profile.is_premium ? t('welcome.premium') : t('welcome.free')
+                  membership: (isRevenueCatPremium || profile.is_premium) ? t('welcome.premium') : t('welcome.free')
                 })}
               </Text>
             </View>
@@ -559,7 +562,7 @@ export default function HomeScreen() {
         )}
 
         {/* Premium Tanıtımı */}
-        {!profile.is_premium && (
+        {!isRevenueCatPremium && !profile.is_premium && (
           <Card className="p-6">
             <CardContent className="items-center p-0">
               <Text className="text-foreground font-bold text-lg mb-3 text-center">
@@ -651,6 +654,6 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </Modal>
 
-    </View>
+    </SafeAreaView>
   );
 }

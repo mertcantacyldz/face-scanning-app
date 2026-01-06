@@ -9,7 +9,8 @@
       "Bash(npm uninstall:*)",
       "Bash(taskkill:*)",
       "Bash(awk:*)",
-      "Bash(npx expo install:*)"
+      "Bash(npx expo install:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []

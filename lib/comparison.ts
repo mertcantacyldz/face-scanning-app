@@ -68,8 +68,8 @@ function getEncouragingResult(
         scoreChange,
         percentageChange,
         isFirstAnalysis: false,
-        message: `Amazing progress! Your score improved by ${scoreChange} points!`,
-        messageTr: `Harika ilerleme! Skorunuz ${scoreChange} puan arttı!`,
+        message: `Amazing progress! Your score improved by ${scoreChange.toFixed(1)} points!`,
+        messageTr: `Harika ilerleme! Skorunuz ${scoreChange.toFixed(1)} puan arttı!`,
         iconName: 'rocket-outline',
       };
     }
@@ -120,8 +120,8 @@ function getNeutralResult(
       scoreChange,
       percentageChange,
       isFirstAnalysis: false,
-      message: `Your score improved by ${scoreChange} points.`,
-      messageTr: `Skorunuz ${scoreChange} puan arttı.`,
+      message: `Your score improved by ${scoreChange.toFixed(1)} points.`,
+      messageTr: `Skorunuz ${scoreChange.toFixed(1)} puan arttı.`,
       iconName: 'trending-up-outline',
     };
   }
@@ -143,8 +143,8 @@ function getNeutralResult(
     scoreChange,
     percentageChange,
     isFirstAnalysis: false,
-    message: `Score decreased by ${Math.abs(scoreChange)} points. Exercises can help!`,
-    messageTr: `Skor ${Math.abs(scoreChange)} puan düştü. Egzersizler yardımcı olabilir!`,
+    message: `Score decreased by ${Math.abs(scoreChange).toFixed(1)} points. Exercises can help!`,
+    messageTr: `Skor ${Math.abs(scoreChange).toFixed(1)} puan düştü. Egzersizler yardımcı olabilir!`,
     iconName: 'trending-down-outline',
   };
 }

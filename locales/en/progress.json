@@ -25,6 +25,25 @@
   },
   "chartTitle": "Overall Score Chart",
   "regionsTitle": "Regions",
+  "exerciseStats": {
+    "title": "Exercise Statistics",
+    "exercises": "Exercise",
+    "exercisesPlural": "Exercises",
+    "completed": "Completed",
+    "notCompleted": "Not Done",
+    "today": "Today",
+    "average": "Average",
+    "daysCompleted": "days completed",
+    "monthCompletion": "This Month Completion",
+    "modalTitle": "Exercises",
+    "averageLabel": "Average:",
+    "summaryText": "Average completion rate for all exercises in this region",
+    "calendar": {
+      "completed": "Completed",
+      "today": "Today",
+      "notDone": "Not Done"
+    }
+  },
   "emptyState": {
     "title": "No Analyses Yet",
     "description": "Go to the analysis page to analyze your facial regions and start tracking your progress."

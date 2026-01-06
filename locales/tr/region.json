@@ -3,6 +3,18 @@
     "header": {
         "analysisCount": "{{count}} analiz"
     },
+    "names": {
+        "eyebrows": "Kaşlar",
+        "eyes": "Gözler",
+        "nose": "Burun",
+        "lips": "Dudaklar",
+        "jawline": "Çene Hattı",
+        "face_shape": "Yüz Şekli"
+    },
+    "card": {
+        "noAnalysis": "Henüz analiz yok",
+        "lastDate": "Son: {{date}}"
+    },
     "latestScore": {
         "title": "Son Skor",
         "outOf": "/10"

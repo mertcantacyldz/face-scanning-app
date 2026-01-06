@@ -25,6 +25,25 @@
   },
   "chartTitle": "Genel Skor Grafiği",
   "regionsTitle": "Bölgeler",
+  "exerciseStats": {
+    "title": "Egzersiz İstatistikleri",
+    "exercises": "Egzersiz",
+    "exercisesPlural": "Egzersiz",
+    "completed": "Tamamlandı",
+    "notCompleted": "Yapılmadı",
+    "today": "Bugün",
+    "average": "Ortalama",
+    "daysCompleted": "gün tamamlandı",
+    "monthCompletion": "Bu Ay Tamamlama",
+    "modalTitle": "Egzersizleri",
+    "averageLabel": "Ortalama:",
+    "summaryText": "Bu bölgedeki tüm egzersizlerin ortalama tamamlanma oranı",
+    "calendar": {
+      "completed": "Tamamlandı",
+      "today": "Bugün",
+      "notDone": "Yapılmadı"
+    }
+  },
   "emptyState": {
     "title": "Henüz Analiz Yok",
     "description": "Analiz sayfasına giderek yüz bölgelerinizi analiz edin ve gelişiminizi takip etmeye başlayın."

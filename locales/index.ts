@@ -1,30 +1,35 @@
+import { languageStorage, type SupportedLanguage } from '@/lib/language-storage';
+import * as Localization from 'expo-localization';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import * as Localization from 'expo-localization';
-import { languageStorage, type SupportedLanguage } from '@/lib/language-storage';
 
 // Import all translation files
-import enCommon from './en/common.json';
-import enAuth from './en/auth.json';
-import enTabs from './en/tabs.json';
-import enProfile from './en/profile.json';
 import enAnalysis from './en/analysis.json';
-import enProgress from './en/progress.json';
-import enHome from './en/home.json';
-import enPremium from './en/premium.json';
-import enExercises from './en/exercises.json';
+import enAuth from './en/auth.json';
+import enCommon from './en/common.json';
 import enErrors from './en/errors.json';
+import enExercises from './en/exercises.json';
+import enHome from './en/home.json';
+import enOnboarding from './en/onboarding.json';
+import enPremium from './en/premium.json';
+import enProfile from './en/profile.json';
+import enProgress from './en/progress.json';
+import enTabs from './en/tabs.json';
 
-import trCommon from './tr/common.json';
-import trAuth from './tr/auth.json';
-import trTabs from './tr/tabs.json';
-import trProfile from './tr/profile.json';
+import enRegion from './en/region.json';
+
 import trAnalysis from './tr/analysis.json';
-import trProgress from './tr/progress.json';
-import trHome from './tr/home.json';
-import trPremium from './tr/premium.json';
-import trExercises from './tr/exercises.json';
+import trAuth from './tr/auth.json';
+import trCommon from './tr/common.json';
 import trErrors from './tr/errors.json';
+import trExercises from './tr/exercises.json';
+import trHome from './tr/home.json';
+import trOnboarding from './tr/onboarding.json';
+import trPremium from './tr/premium.json';
+import trProfile from './tr/profile.json';
+import trProgress from './tr/progress.json';
+import trRegion from './tr/region.json';
+import trTabs from './tr/tabs.json';
 
 const resources = {
   en: {
@@ -38,6 +43,8 @@ const resources = {
     premium: enPremium,
     exercises: enExercises,
     errors: enErrors,
+    onboarding: enOnboarding,
+    region: enRegion,
   },
   tr: {
     common: trCommon,
@@ -50,6 +57,8 @@ const resources = {
     premium: trPremium,
     exercises: trExercises,
     errors: trErrors,
+    onboarding: trOnboarding,
+    region: trRegion,
   },
 };
 
@@ -80,7 +89,7 @@ export async function initializeI18n() {
       lng: initialLanguage,
       fallbackLng: 'en',
       defaultNS: 'common',
-      ns: ['common', 'auth', 'tabs', 'profile', 'analysis', 'progress', 'home', 'premium', 'exercises', 'errors'],
+      ns: ['common', 'auth', 'tabs', 'profile', 'analysis', 'progress', 'home', 'premium', 'exercises', 'errors', 'onboarding', 'region'],
       interpolation: {
         escapeValue: false, // React already escapes
       },

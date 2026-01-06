@@ -913,6 +913,18 @@ export function getRegionTitle(regionId: RegionId): string {
   return titles[regionId];
 }
 
+export function getRegionTitleEn(regionId: RegionId): string {
+  const titles: Record<RegionId, string> = {
+    eyebrows: 'Eyebrows',
+    eyes: 'Eyes',
+    nose: 'Nose',
+    lips: 'Lips',
+    jawline: 'Jawline',
+    face_shape: 'Face Shape',
+  };
+  return titles[regionId];
+}
+
 export function getRegionIcon(regionId: RegionId): string {
   const icons: Record<RegionId, string> = {
     eyebrows: 'git-branch-outline',

@@ -47,6 +47,7 @@ export default function RootLayout() {
       <AuthProvider>
         <PremiumProvider>
           <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+            <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />

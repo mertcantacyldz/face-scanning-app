@@ -1,9 +1,11 @@
-import React from 'react';
-import { View, Pressable } from 'react-native';
-import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
+import { Text } from '@/components/ui/text';
 import type { RegionId } from '@/lib/exercises';
-import { getRegionTitle, getRegionIcon } from '@/lib/exercises';
+import { getRegionTitle, getRegionTitleEn } from '@/lib/exercises';
+import { FACE_REGIONS } from '@/lib/face-prompts';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Image, Pressable, View } from 'react-native';
 
 interface RegionProgressCardProps {
   regionId: RegionId;
@@ -22,8 +24,9 @@ export function RegionProgressCard({
   lastAnalysisDate,
   onPress,
 }: RegionProgressCardProps) {
-  const title = getRegionTitle(regionId);
-  const icon = getRegionIcon(regionId);
+  const { t, i18n } = useTranslation('region');
+  const title = i18n.language === 'tr' ? getRegionTitle(regionId) : getRegionTitleEn(regionId);
+  const region = FACE_REGIONS.find((r) => r.id === regionId);
 
   // Calculate change
   const hasChange = latestScore !== null && previousScore !== null;
@@ -48,69 +51,63 @@ export function RegionProgressCard({
 
   // Format last analysis date
   const formattedDate = lastAnalysisDate
-    ? new Date(lastAnalysisDate).toLocaleDateString('tr-TR', {
-        day: 'numeric',
-        month: 'short',
-      })
+    ? new Date(lastAnalysisDate).toLocaleDateString(i18n.language, {
+      day: 'numeric',
+      month: 'short',
+    })
     : null;
 
   return (
     <Pressable onPress={onPress} className="active:opacity-70">
-      <Card className="p-4 bg-card border border-border">
-        <View className="flex-row items-center">
+      <Card className="p-3 bg-card border border-border" style={{ minHeight: 216 }}>
+        <View className="flex-col">
+          {/* Title */}
+          <Text className="text-sm font-bold text-foreground mb-2">{title}</Text>
+
           {/* Icon */}
-          <View className="w-14 h-14 bg-primary/10 rounded-full items-center justify-center mr-4">
-            <Text className="text-3xl">{icon}</Text>
+          <View className="items-center mb-2">
+            {region?.icon && (
+              <Image
+                source={region.icon}
+                style={{ width: 40, height: 40 }}
+                resizeMode="contain"
+              />
+            )}
           </View>
 
-          {/* Content */}
-          <View className="flex-1">
-            <Text className="text-lg font-bold text-foreground">{title}</Text>
-
-            {/* Stats row */}
-            <View className="flex-row items-center mt-1">
-              {latestScore !== null ? (
-                <>
-                  <Text className={`text-2xl font-bold ${scoreColor}`}>
-                    {latestScore}
-                  </Text>
-                  <Text className="text-sm text-muted-foreground">/10</Text>
-
-                  {/* Change indicator */}
-                  {hasChange && change !== 0 && (
-                    <View className="flex-row items-center ml-3">
-                      <Text className={`text-sm font-semibold ${changeColor}`}>
-                        {change > 0 ? '↑' : '↓'} {Math.abs(change)}
-                      </Text>
-                    </View>
-                  )}
-                </>
-              ) : (
-                <Text className="text-sm text-muted-foreground">
-                  Henüz analiz yok
+          {/* Score */}
+          <View className="items-center mb-2">
+            {latestScore !== null ? (
+              <View className="flex-row items-center">
+                <Text className={`text-2xl font-bold ${scoreColor}`}>
+                  {latestScore}
                 </Text>
-              )}
-            </View>
+                <Text className="text-sm text-muted-foreground">/10</Text>
 
-            {/* Meta info */}
-            <View className="flex-row items-center mt-1">
-              <Text className="text-xs text-muted-foreground">
-                {analysisCount} analiz
-              </Text>
-              {formattedDate && (
-                <>
-                  <Text className="text-xs text-muted-foreground mx-1">•</Text>
-                  <Text className="text-xs text-muted-foreground">
-                    Son: {formattedDate}
+                {/* Change indicator */}
+                {hasChange && change !== 0 && (
+                  <Text className={`text-sm font-semibold ml-2 ${changeColor}`}>
+                    {change > 0 ? '↑' : '↓'} {Math.abs(change).toFixed(1)}
                   </Text>
-                </>
-              )}
-            </View>
+                )}
+              </View>
+            ) : (
+              <Text className="text-sm text-muted-foreground">
+                {t('card.noAnalysis')}
+              </Text>
+            )}
           </View>
 
-          {/* Arrow */}
-          <View className="ml-2">
-            <Text className="text-2xl text-muted-foreground">›</Text>
+          {/* Meta info */}
+          <View className="items-center">
+            <Text className="text-xs text-muted-foreground text-center">
+              {t('header.analysisCount', { count: analysisCount })}
+            </Text>
+            {formattedDate && (
+              <Text className="text-xs text-muted-foreground text-center">
+                {t('card.lastDate', { date: formattedDate })}
+              </Text>
+            )}
           </View>
         </View>
 
@@ -119,13 +116,12 @@ export function RegionProgressCard({
           <View className="mt-3">
             <View className="h-2 bg-muted rounded-full overflow-hidden">
               <View
-                className={`h-full ${
-                  latestScore >= 7
-                    ? 'bg-green-500'
-                    : latestScore >= 4
-                      ? 'bg-yellow-500'
-                      : 'bg-red-500'
-                }`}
+                className={`h-full ${latestScore >= 7
+                  ? 'bg-green-500'
+                  : latestScore >= 4
+                    ? 'bg-yellow-500'
+                    : 'bg-red-500'
+                  }`}
                 style={{ width: `${latestScore * 10}%` }}
               />
             </View>

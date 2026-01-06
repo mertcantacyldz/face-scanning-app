@@ -244,6 +244,7 @@ async function createProfile(userId: string, email: string | null) {
         user_id: userId,
         email: email,
         full_name: 'Kullanıcı',
+        onboarding_completed: false,
       })
       .select()
       .single();

@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Text } from '@/components/ui/text';
@@ -85,14 +86,14 @@ const PaywallScreen = () => {
   }
 
   return (
-    <View className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header */}
-        <View className="bg-primary/10 pt-16 pb-8 px-6">
+        <View className="bg-primary/10 pb-8 px-6">
           {/* Close button */}
           <Pressable
             onPress={() => router.back()}
-            className="absolute top-12 right-4 w-10 h-10 rounded-full bg-black/10 items-center justify-center"
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/10 items-center justify-center"
           >
             <Text className="text-2xl">×</Text>
           </Pressable>
@@ -266,7 +267,7 @@ const PaywallScreen = () => {
           )}
         </Pressable>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 

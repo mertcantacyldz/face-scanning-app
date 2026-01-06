@@ -1,0 +1,29 @@
+{
+  "welcome": {
+    "title": "Hoş geldin 👋",
+    "subtitle": "FaceLoom ile yüz analizi deneyimine başla",
+    "description": "Yapay zeka destekli teknolojimiz ile yüz özelliklerini analiz et, egzersizler yap ve gelişimini takip et.",
+    "button": "Başla"
+  },
+  "name": {
+    "title": "Sana nasıl hitap edelim?",
+    "subtitle": "İsmini bilmek deneyimini kişiselleştirmemize yardımcı olur",
+    "placeholder": "İsmin",
+    "skip": "Atla",
+    "continue": "Devam Et"
+  },
+  "gender": {
+    "title": "Cinsiyetin nedir?",
+    "subtitle": "Bu bilgi ileride sana özel içerikler sunmamıza yardımcı olacak",
+    "female": "Kadın",
+    "male": "Erkek",
+    "other": "Belirtmek istemiyorum",
+    "skip": "Atla",
+    "finish": "Tamamla"
+  },
+  "banner": {
+    "title": "Profilini tamamla",
+    "description": "Daha iyi bir deneyim için profilini tamamla",
+    "dismiss": "Kapat"
+  }
+}

@@ -3,6 +3,18 @@
     "header": {
         "analysisCount": "{{count}} analyses"
     },
+    "names": {
+        "eyebrows": "Eyebrows",
+        "eyes": "Eyes",
+        "nose": "Nose",
+        "lips": "Lips",
+        "jawline": "Jawline",
+        "face_shape": "Face Shape"
+    },
+    "card": {
+        "noAnalysis": "No analysis yet",
+        "lastDate": "Last: {{date}}"
+    },
     "latestScore": {
         "title": "Latest Score",
         "outOf": "/10"

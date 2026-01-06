@@ -44,7 +44,7 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-gray-50" edges={['top', 'bottom', 'left', 'right']}>
       <ScrollView 
         contentContainerStyle={{ flexGrow: 1 }}
         className="flex-1 px-6"

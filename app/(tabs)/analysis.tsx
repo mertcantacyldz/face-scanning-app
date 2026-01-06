@@ -27,6 +27,7 @@ import {
   ScrollView,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface FaceAnalysisData {
   id: string;
@@ -134,7 +135,9 @@ const AnalysisScreen = () => {
     if (!isPremium && !bypassPremiumCheck) {
       // Check if this is the free analysis region they won
       if (freeAnalysisUsed && freeAnalysisRegion === region.id) {
-        // Allow access to their won region
+        // They already analyzed this region - navigate to exercises instead
+        router.push(`/exercises/${region.id}`);
+        return;
       } else if (!freeAnalysisUsed) {
         // Show spin wheel
         setShowSpinWheel(true);
@@ -321,7 +324,7 @@ const AnalysisScreen = () => {
   }
 
   return (
-    <View className="flex-1 bg-background">
+    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
         {/* Header */}
         <View className="mb-6">
@@ -484,9 +487,9 @@ const AnalysisScreen = () => {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowSpinWheel(false)}
       >
-        <View className="flex-1 bg-background">
+        <SafeAreaView className="flex-1 bg-background" edges={['top']}>
           {/* Modal Header */}
-          <View className="flex-row items-center justify-between p-4 pt-12 border-b border-border">
+          <View className="flex-row items-center justify-between p-4 border-b border-border">
             <Text className="text-xl font-bold">{t('spinWheel.title')}</Text>
             <Pressable
               onPress={() => setShowSpinWheel(false)}
@@ -503,7 +506,7 @@ const AnalysisScreen = () => {
               disabled={freeAnalysisUsed}
             />
           </ScrollView>
-        </View>
+        </SafeAreaView>
       </Modal>
 
       {/* Premium Modal */}
@@ -521,9 +524,9 @@ const AnalysisScreen = () => {
         presentationStyle="pageSheet"
         onRequestClose={closeResultModal}
       >
-        <View className="flex-1 bg-background">
+        <SafeAreaView className="flex-1 bg-background" edges={['top']}>
           {/* Modal Header */}
-          <View className="bg-primary p-4 pt-12 pb-6">
+          <View className="bg-primary p-4 pb-6">
             <View className="flex-row items-center justify-between">
               <View className="flex-row items-center">
                 {selectedRegion?.icon && (
@@ -640,20 +643,37 @@ const AnalysisScreen = () => {
             <View className="h-8" />
           </ScrollView>
 
-          {/* Close Button */}
+          {/* Close Button / Navigate to Exercises */}
           <View className="p-6 border-t border-border">
-            <Pressable
-              onPress={closeResultModal}
-              className="bg-primary py-4 rounded-lg items-center active:opacity-80"
-            >
-              <Text className="text-primary-foreground font-semibold text-base">
-                {t('closeButton')}
-              </Text>
-            </Pressable>
+            {!isPremium && selectedRegion && freeAnalysisUsed && freeAnalysisRegion === selectedRegion.id ? (
+              <Pressable
+                onPress={() => {
+                  closeResultModal();
+                  router.push(`/exercises/${selectedRegion.id}`);
+                }}
+                className="bg-green-600 py-4 rounded-lg items-center active:opacity-80"
+              >
+                <View className="flex-row items-center">
+                  <Ionicons name="barbell-outline" size={20} color="#FFFFFF" />
+                  <Text className="text-white font-semibold text-base ml-2">
+                    Egzersizlere Git
+                  </Text>
+                </View>
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={closeResultModal}
+                className="bg-primary py-4 rounded-lg items-center active:opacity-80"
+              >
+                <Text className="text-primary-foreground font-semibold text-base">
+                  {t('closeButton')}
+                </Text>
+              </Pressable>
+            )}
           </View>
-        </View>
+        </SafeAreaView>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

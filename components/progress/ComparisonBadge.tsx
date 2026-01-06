@@ -1,8 +1,9 @@
-import React from 'react';
-import { View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import type { ComparisonResult } from '@/lib/comparison';
 import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { View } from 'react-native';
 
 interface ComparisonBadgeProps {
   comparison: ComparisonResult;
@@ -13,7 +14,8 @@ export function ComparisonBadge({
   comparison,
   size = 'medium',
 }: ComparisonBadgeProps) {
-  const { hasImproved, scoreChange, isFirstAnalysis, iconName, messageTr } = comparison;
+  const { i18n } = useTranslation();
+  const { hasImproved, scoreChange, isFirstAnalysis, iconName, message, messageTr } = comparison;
 
   // Size variants
   const sizeClasses = {
@@ -78,17 +80,17 @@ export function ComparisonBadge({
           {!isFirstAnalysis && scoreChange !== 0 && (
             <View className="flex-row items-center mb-0.5">
               <Text className={`font-bold ${textColor} ${classes.change}`}>
-                {scoreChange > 0 ? '+' : ''}{scoreChange} puan
+                {scoreChange > 0 ? '+' : ''}{scoreChange.toFixed(1)} {i18n.language === 'tr' ? 'puan' : 'points'}
               </Text>
-              <Text className={`${classes.text} text-muted-foreground ml-1`}>
-                ({hasImproved ? 'artış' : 'düşüş'})
+              <Text className={`${classes.text} ${textColor} ml-1`}>
+                ({i18n.language === 'tr' ? (hasImproved ? 'artış' : 'düşüş') : (hasImproved ? 'increase' : 'decrease')})
               </Text>
             </View>
           )}
 
           {/* Message */}
           <Text className={`${textColor} ${classes.text}`} numberOfLines={2}>
-            {messageTr}
+            {i18n.language === 'tr' ? messageTr : message}
           </Text>
         </View>
       </View>
@@ -102,13 +104,16 @@ export function InlineComparisonBadge({
 }: {
   comparison: ComparisonResult;
 }) {
+  const { i18n } = useTranslation();
   const { hasImproved, scoreChange, isFirstAnalysis, iconName } = comparison;
 
   if (isFirstAnalysis) {
     return (
       <View className="flex-row items-center bg-blue-100 px-2 py-1 rounded-full">
         <Ionicons name={iconName as any} size={14} color="#1E40AF" />
-        <Text className="text-xs text-blue-800 ml-1">İlk Analiz</Text>
+        <Text className="text-xs text-blue-800 ml-1">
+          {i18n.language === 'tr' ? 'İlk Analiz' : 'First Analysis'}
+        </Text>
       </View>
     );
   }
@@ -117,7 +122,9 @@ export function InlineComparisonBadge({
     return (
       <View className="flex-row items-center bg-gray-100 px-2 py-1 rounded-full">
         <Ionicons name="arrow-forward-outline" size={14} color="#1F2937" />
-        <Text className="text-xs text-gray-800 ml-1">Stabil</Text>
+        <Text className="text-xs text-gray-800 ml-1">
+          {i18n.language === 'tr' ? 'Stabil' : 'Stable'}
+        </Text>
       </View>
     );
   }
@@ -138,7 +145,7 @@ export function InlineComparisonBadge({
           hasImproved ? 'text-green-800' : 'text-red-800'
         }`}
       >
-        {Math.abs(scoreChange)}
+        {Math.abs(scoreChange).toFixed(1)}
       </Text>
     </View>
   );

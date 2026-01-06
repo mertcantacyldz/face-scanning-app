@@ -2,7 +2,9 @@ import React from 'react';
 import { View, Pressable } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
+import { useTranslation } from 'react-i18next';
 import type { Exercise } from '@/lib/exercises';
+import { ExerciseCompletionBadge } from './ExerciseCompletionBadge';
 
 interface ExerciseCardProps {
   exercise: Exercise;
@@ -10,6 +12,7 @@ interface ExerciseCardProps {
   isCompleted?: boolean;
   compact?: boolean;
   showOnlyPreview?: boolean; // Show only first 2 steps for free users
+  completionPercentage?: number; // Optional: show completion badge (0-100)
 }
 
 export function ExerciseCard({
@@ -18,7 +21,9 @@ export function ExerciseCard({
   isCompleted = false,
   compact = false,
   showOnlyPreview = false,
+  completionPercentage,
 }: ExerciseCardProps) {
+  const { i18n } = useTranslation();
   // Difficulty colors
   const difficultyColors = {
     easy: { bg: 'bg-green-100', text: 'text-green-800', label: 'Kolay' },
@@ -47,7 +52,7 @@ export function ExerciseCard({
             {/* Content */}
             <View className="flex-1">
               <Text className="font-semibold text-foreground">
-                {exercise.titleTr}
+                {i18n.language === 'tr' ? exercise.titleTr : exercise.title}
               </Text>
               <View className="flex-row items-center mt-0.5">
                 <Text className="text-xs text-muted-foreground">
@@ -61,7 +66,9 @@ export function ExerciseCard({
             </View>
 
             {/* Status */}
-            {isCompleted ? (
+            {completionPercentage !== undefined ? (
+              <ExerciseCompletionBadge completionPercentage={completionPercentage} compact />
+            ) : isCompleted ? (
               <View className="w-8 h-8 bg-green-500 rounded-full items-center justify-center">
                 <Text className="text-white text-lg">✓</Text>
               </View>
@@ -85,7 +92,7 @@ export function ExerciseCard({
       <Card
         className={`p-5 border ${
           isCompleted
-            ? 'bg-green-50 border-green-200'
+            ? 'bg-success/10 border-success/30'
             : 'bg-card border-border'
         }`}
       >
@@ -97,7 +104,7 @@ export function ExerciseCard({
             </View>
             <View className="flex-1">
               <Text className="text-lg font-bold text-foreground">
-                {exercise.titleTr}
+                {i18n.language === 'tr' ? exercise.titleTr : exercise.title}
               </Text>
               <View className="flex-row items-center mt-1">
                 <View className={`${difficulty.bg} px-2 py-0.5 rounded-full mr-2`}>
@@ -110,8 +117,8 @@ export function ExerciseCard({
           </View>
 
           {isCompleted && (
-            <View className="w-8 h-8 bg-green-500 rounded-full items-center justify-center">
-              <Text className="text-white text-lg">✓</Text>
+            <View className="w-8 h-8 bg-success rounded-full items-center justify-center">
+              <Text className="text-success-foreground text-lg">✓</Text>
             </View>
           )}
         </View>
@@ -122,14 +129,14 @@ export function ExerciseCard({
         </Text>
 
         {/* Purpose - Why this exercise */}
-        <View className="mb-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
+        <View className="mb-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
           <View className="flex-row items-start">
             <Text className="text-base mr-2">🎯</Text>
             <View className="flex-1">
-              <Text className="text-xs font-semibold text-purple-900 mb-1">
+              <Text className="text-xs font-semibold text-foreground mb-1">
                 Neden Bu Egzersiz?
               </Text>
-              <Text className="text-xs text-purple-800 leading-relaxed">
+              <Text className="text-xs text-muted-foreground leading-relaxed">
                 {exercise.purposeTr}
               </Text>
             </View>

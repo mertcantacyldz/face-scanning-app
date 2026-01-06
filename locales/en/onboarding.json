@@ -1,0 +1,29 @@
+{
+  "welcome": {
+    "title": "Welcome 👋",
+    "subtitle": "Start your face analysis journey with FaceLoom",
+    "description": "Analyze your facial features, perform exercises, and track your progress with our AI-powered technology.",
+    "button": "Get Started"
+  },
+  "name": {
+    "title": "What should we call you?",
+    "subtitle": "Knowing your name helps us personalize your experience",
+    "placeholder": "Your name",
+    "skip": "Skip",
+    "continue": "Continue"
+  },
+  "gender": {
+    "title": "What's your gender?",
+    "subtitle": "This information helps us provide personalized content",
+    "female": "Female",
+    "male": "Male",
+    "other": "Prefer not to say",
+    "skip": "Skip",
+    "finish": "Finish"
+  },
+  "banner": {
+    "title": "Complete your profile",
+    "description": "Complete your profile for a better experience",
+    "dismiss": "Dismiss"
+  }
+}
