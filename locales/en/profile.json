@@ -31,6 +31,10 @@
   "editProfile": {
     "title": "Edit Profile",
     "fullNameLabel": "Full Name",
+    "genderLabel": "Gender",
+    "genderFemale": "Female",
+    "genderMale": "Male",
+    "genderOther": "Other",
     "saveButton": "Save Changes",
     "cancelButton": "Cancel"
   },

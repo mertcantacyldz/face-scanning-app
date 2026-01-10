@@ -1,29 +1,28 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { ExerciseRegionStatsCard } from '@/components/progress/ExerciseRegionStatsCard';
+import { MonthSelector } from '@/components/progress/MonthSelector';
+import { ProgressChart } from '@/components/progress/ProgressChart';
+import { RegionProgressCard } from '@/components/progress/RegionProgressCard';
+import { Card } from '@/components/ui/card';
+import { Text } from '@/components/ui/text';
+import { usePremium } from '@/hooks/use-premium';
+import { calculateOverallProgress } from '@/lib/comparison';
+import { getAvailableMonths } from '@/lib/exercise-tracking';
+import { getAllRegions, type RegionId } from '@/lib/exercises';
+import { supabase } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
+import { format } from 'date-fns';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
-  View,
-  ScrollView,
   ActivityIndicator,
-  RefreshControl,
   Alert,
   Pressable,
+  RefreshControl,
+  ScrollView,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router, useFocusEffect } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { Text } from '@/components/ui/text';
-import { Card } from '@/components/ui/card';
-import { Ionicons } from '@expo/vector-icons';
-import { supabase } from '@/lib/supabase';
-import { RegionProgressCard } from '@/components/progress/RegionProgressCard';
-import { ProgressChart } from '@/components/progress/ProgressChart';
-import { ComparisonBadge } from '@/components/progress/ComparisonBadge';
-import { getAllRegions, getRegionTitle, type RegionId } from '@/lib/exercises';
-import { compareAnalysis, calculateOverallProgress, getStreakMessage } from '@/lib/comparison';
-import { usePremium } from '@/hooks/use-premium';
-import { format } from 'date-fns';
-import { getAvailableMonths } from '@/lib/exercise-tracking';
-import { MonthSelector } from '@/components/progress/MonthSelector';
-import { ExerciseRegionStatsCard } from '@/components/progress/ExerciseRegionStatsCard';
 
 interface RegionSummary {
   regionId: RegionId;
@@ -64,8 +63,8 @@ const ProgressScreen = () => {
   const [exerciseMonths, setExerciseMonths] = useState<string[]>([]);
   const [selectedExerciseMonth, setSelectedExerciseMonth] = useState<string>(format(new Date(), 'yyyy-MM'));
 
-  // Premium check - check both RevenueCat and Supabase
-  const { isPremium: isRevenueCatPremium } = usePremium();
+  // Premium check from context (handles both RevenueCat and database)
+  const { isPremium } = usePremium();
 
   // Load data when screen focuses
   useFocusEffect(
@@ -211,11 +210,8 @@ const ProgressScreen = () => {
     );
   }
 
-  // Combine both premium checks: RevenueCat OR Supabase
-  const isPremiumUser = isRevenueCatPremium || (profile?.is_premium ?? false);
-
   // Premium wall for non-premium users
-  if (!isPremiumUser) {
+  if (!isPremium) {
     return (
       <View className="flex-1 bg-background">
         <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
@@ -300,9 +296,8 @@ const ProgressScreen = () => {
               {t('overallProgress.title')}
             </Text>
             <Text
-              className={`text-3xl font-bold ${
-                overallProgress >= 0 ? 'text-green-600' : 'text-red-600'
-              }`}
+              className={`text-3xl font-bold ${overallProgress >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}
             >
               {overallProgress >= 0 ? '+' : ''}
               {overallProgress}%
@@ -332,7 +327,7 @@ const ProgressScreen = () => {
 
         {/* Overall Progress Chart */}
         {overallChartData.length >= 2 && (
-          <View className="mb-4">
+          <View className="mb-4 bg-red-500">
             <ProgressChart
               data={overallChartData}
               titleTr={t('chartTitle')}

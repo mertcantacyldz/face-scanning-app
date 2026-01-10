@@ -1,40 +1,44 @@
 // Month Selector Component
 // Allows users to select different months to view exercise history
 
-import React from 'react';
-import { View, Pressable } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Ionicons } from '@expo/vector-icons';
-import { parse, format } from 'date-fns';
-import { tr } from 'date-fns/locale';
+import { format, parse } from 'date-fns';
+import { enUS, tr } from 'date-fns/locale';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Pressable, View } from 'react-native';
 
 interface MonthSelectorProps {
   availableMonths: string[]; // ['2026-01', '2025-12', ...] in descending order
   selectedMonth: string; // 'YYYY-MM'
   onMonthChange: (monthYear: string) => void;
+  // Optional completion stats to display
+  completionPercentage?: number;
+  daysCompleted?: number;
+  totalDays?: number;
 }
 
-// Turkish month names
-const MONTH_NAMES_TR = [
-  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'
-];
-
 /**
- * Format month-year string to Turkish display format
- * '2026-01' -> 'Ocak 2026'
+ * Format month-year string to display format based on language
+ * '2026-01' -> 'January 2026' (en) or 'Ocak 2026' (tr)
  */
-function formatMonthYearTr(monthYear: string): string {
-  const [year, month] = monthYear.split('-');
-  const monthIndex = parseInt(month, 10) - 1;
-  return `${MONTH_NAMES_TR[monthIndex]} ${year}`;
+function formatMonthYear(monthYear: string, language: string): string {
+  const date = parse(monthYear, 'yyyy-MM', new Date());
+  const locale = language === 'tr' ? tr : enUS;
+  return format(date, 'MMMM yyyy', { locale });
 }
 
 export function MonthSelector({
   availableMonths,
   selectedMonth,
   onMonthChange,
+  completionPercentage,
+  daysCompleted,
+  totalDays,
 }: MonthSelectorProps) {
+  const { i18n } = useTranslation();
+
   // Find current index in available months
   const currentIndex = availableMonths.indexOf(selectedMonth);
   const hasPrevious = currentIndex < availableMonths.length - 1;
@@ -67,11 +71,26 @@ export function MonthSelector({
         />
       </Pressable>
 
-      {/* Current Month Display */}
+      {/* Current Month Display with Stats */}
       <View className="flex-1 items-center px-2">
         <Text className="text-sm font-semibold text-foreground">
-          {formatMonthYearTr(selectedMonth)}
+          {formatMonthYear(selectedMonth, i18n.language)}
         </Text>
+        {/* Show completion stats if provided */}
+        {(completionPercentage !== undefined || (daysCompleted !== undefined && totalDays !== undefined)) && (
+          <View className="flex-row items-center gap-2 mt-0.5">
+            {completionPercentage !== undefined && (
+              <Text className="text-xs font-bold text-primary">
+                {completionPercentage}%
+              </Text>
+            )}
+            {daysCompleted !== undefined && totalDays !== undefined && (
+              <Text className="text-xs text-muted-foreground">
+                {daysCompleted}/{totalDays}
+              </Text>
+            )}
+          </View>
+        )}
       </View>
 
       {/* Next Month Button */}

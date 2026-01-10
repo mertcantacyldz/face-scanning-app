@@ -37,7 +37,16 @@
     "premiumBadge": "+ {{count}} More",
     "locked": "Premium",
     "complete": "Complete",
-    "completed": "Completed"
+    "completed": "Completed",
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard"
+    },
+    "stepsLabel": "Steps:",
+    "moreSteps": "+ {{count}} more steps...",
+    "viewDetails": "View Details",
+    "clickToView": "Click to view details"
   },
   "completion": {
     "title": "Congratulations!",
@@ -48,9 +57,38 @@
   "detail": {
     "subtitle": "{{region}}",
     "complete": "Complete Exercise",
-    "completed": "Marked as Completed"
+    "completed": "Marked as Completed",
+    "completedToday": "✓ Completed Today",
+    "dailyRecommendation": "It's recommended to do this exercise <bold>{{reps}}</bold> per day.",
+    "monthlyProgress": "Monthly Progress",
+    "monthlyCompletion": "This Month Completion",
+    "daysCompleted": "{{completed}} / {{total}} days",
+    "premiumOnly": "This exercise is for Premium members only",
+    "unlockAll": "Unlock all {{count}} exercises",
+    "alreadyCompleted": "You've already completed this exercise today. Try again tomorrow!"
   },
   "premiumModal": {
     "feature": "All Exercises"
+  },
+  "guide": {
+    "title": "Exercise Guide",
+    "modalTitle": "Welcome to Exercises!",
+    "modalDontShowAgain": "Got it, don't show again",
+    "modalClose": "Close",
+    "research": {
+      "title": "Scientific Research",
+      "text": "In a study published in JAMA Dermatology in 2018, it was observed that facial exercises increased facial fullness. These exercises are based on similar principles of increasing muscle tone and skin fullness."
+    },
+    "recommended": {
+      "title": "Recommended Practice",
+      "point1": "30 minutes daily, 5-6 days per week of regular practice",
+      "point2": "Be careful not to pull or wrinkle the skin excessively",
+      "point3": "Always focus on moving the muscles, not the skin",
+      "point4": "Regular and consistent practice is essential"
+    },
+    "warning": {
+      "title": "⚠️ Important Warning",
+      "text": "These exercises and information do not replace medical advice or treatment. Research results do not guarantee individual experiences. Results vary from person to person. A doctor or specialist should be consulted for any health or aesthetic decisions. These exercises are for general muscle awareness and entertainment purposes."
+    }
   }
 }

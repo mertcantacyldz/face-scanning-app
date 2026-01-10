@@ -409,7 +409,7 @@ const AnalysisScreen = () => {
         )}
 
         {/* Face Region Buttons */}
-        <View className="gap-4">
+        <View className="flex-row flex-wrap justify-between">
           {FACE_REGIONS.map((region) => {
             // Check if this region is accessible for free users
             const isUnlocked = isPremium || (freeAnalysisUsed && freeAnalysisRegion === region.id);
@@ -421,44 +421,44 @@ const AnalysisScreen = () => {
                 onPress={() => handleRegionAnalysis(region)}
                 disabled={analyzingRegion !== null}
                 className="active:opacity-70"
+                style={{ width: '48%', marginBottom: 16 }}
               >
-                <Card className={`p-4 flex-row items-center border bg-card ${isLocked ? 'border-border/50 opacity-80' : 'border-border'}`}>
+                <Card className={`p-3 border bg-card ${isLocked ? 'border-border/50 opacity-80' : 'border-border'}`} style={{ minHeight: 180 }}>
                   {/* Icon */}
-                  <View className={`w-16 h-16 rounded-full items-center justify-center mr-4 ${isLocked ? 'bg-muted' : 'bg-primary/10'}`}>
+                  <View className={`w-14 h-14 rounded-full items-center justify-center mb-2 ${isLocked ? 'bg-muted' : 'bg-primary/10'}`}>
                     {typeof region.icon === 'string' ? (
-                      <Text className="text-4xl">{region.icon}</Text>
+                      <Text className="text-3xl">{region.icon}</Text>
                     ) : (
-                      <Image source={region.icon} style={{ width: 40, height: 40 }} resizeMode="contain" />
+                      <Image source={region.icon} style={{ width: 32, height: 32 }} resizeMode="contain" />
                     )}
                   </View>
 
                   {/* Content */}
                   <View className="flex-1">
-                    <View className="flex-row items-center">
-                      <Text className="text-lg font-bold mb-1">{t(`regions.${region.id}.title`)}</Text>
-                      {isLocked && (
-                        <Ionicons name="lock-closed" size={14} color="#9CA3AF" style={{ marginLeft: 8, marginBottom: 4 }} />
-                      )}
-                      {isUnlocked && !isPremium && (
-                        <View className="ml-2 mb-1 bg-green-100 px-2 py-0.5 rounded-full">
-                          <Text className="text-xs text-green-700 font-medium">{t('freeBadge')}</Text>
-                        </View>
+                    <View className="flex-row items-center justify-between mb-1">
+                      <Text className="text-base font-bold flex-shrink" numberOfLines={1}>{t(`regions.${region.id}.title`)}</Text>
+                      {analyzingRegion === region.id ? (
+                        <ActivityIndicator size="small" color="#007AFF" />
+                      ) : isLocked ? (
+                        <Ionicons name="diamond-outline" size={18} color="#9CA3AF" />
+                      ) : (
+                        <Ionicons name="scan" size={20} color="#8B5CF6" />
                       )}
                     </View>
-                    <Text className="text-sm text-muted-foreground">
+                    {isLocked && (
+                      <View className="flex-row items-center mb-1">
+                        <Ionicons name="lock-closed" size={10} color="#9CA3AF" style={{ marginRight: 4 }} />
+                        <Text className="text-xs text-muted-foreground">{t('locked', { ns: 'common', defaultValue: 'Locked' })}</Text>
+                      </View>
+                    )}
+                    {isUnlocked && !isPremium && (
+                      <View className="bg-green-100 px-2 py-0.5 rounded-full self-start mb-1">
+                        <Text className="text-xs text-green-700 font-medium">{t('freeBadge')}</Text>
+                      </View>
+                    )}
+                    <Text className="text-xs text-muted-foreground" numberOfLines={2}>
                       {t(`regions.${region.id}.description`)}
                     </Text>
-                  </View>
-
-                  {/* Loading or Arrow or Lock */}
-                  <View className="ml-2">
-                    {analyzingRegion === region.id ? (
-                      <ActivityIndicator size="small" color="#007AFF" />
-                    ) : isLocked ? (
-                      <Ionicons name="diamond-outline" size={24} color="#9CA3AF" />
-                    ) : (
-                      <Ionicons name="chevron-forward" size={24} color="#9CA3AF" />
-                    )}
                   </View>
                 </Card>
               </Pressable>

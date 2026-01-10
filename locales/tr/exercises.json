@@ -37,7 +37,16 @@
     "premiumBadge": "+ {{count}} Daha",
     "locked": "Premium",
     "complete": "Tamamla",
-    "completed": "Tamamlandı"
+    "completed": "Tamamlandı",
+    "difficulty": {
+      "easy": "Kolay",
+      "medium": "Orta",
+      "hard": "Zor"
+    },
+    "stepsLabel": "Adımlar:",
+    "moreSteps": "+ {{count}} adım daha...",
+    "viewDetails": "Detayları Gör",
+    "clickToView": "Detayları görmek için tıklayın"
   },
   "completion": {
     "title": "Tebrikler!",
@@ -48,9 +57,38 @@
   "detail": {
     "subtitle": "{{region}}",
     "complete": "Egzersizi Tamamla",
-    "completed": "Tamamlandı Olarak İşaretlendi"
+    "completed": "Tamamlandı Olarak İşaretlendi",
+    "completedToday": "✓ Bugün Tamamlandı",
+    "dailyRecommendation": "Bu egzersizi günde <bold>{{reps}}</bold> yapmanız önerilir.",
+    "monthlyProgress": "Aylık İlerleme",
+    "monthlyCompletion": "Bu Ay Tamamlama",
+    "daysCompleted": "{{completed}} / {{total}} gün",
+    "premiumOnly": "Bu egzersiz Premium kullanıcılara özeldir",
+    "unlockAll": "Tüm {{count}} egzersizi açın",
+    "alreadyCompleted": "Bu egzersizi bugün zaten tamamladınız. Yarın tekrar yapabilirsiniz!"
   },
   "premiumModal": {
     "feature": "Tüm Egzersizler"
+  },
+  "guide": {
+    "title": "Egzersiz Rehberi",
+    "modalTitle": "Egzersizlere Hoş Geldiniz!",
+    "modalDontShowAgain": "Anladım, bir daha gösterme",
+    "modalClose": "Kapat",
+    "research": {
+      "title": "Bilimsel Araştırma",
+      "text": "2018 yılında JAMA Dermatology dergisinde yayınlanan araştırmada, yüz egzersizlerinin yüz dolgunluğunu artırdığı gözlemlenmiştir. Bu egzersizler benzer kas tonusu ve cilt dolgunluğu artırma prensiplerine dayanır."
+    },
+    "recommended": {
+      "title": "Önerilen Uygulama",
+      "point1": "Günde 30 dakika, haftada 5-6 gün düzenli uygulama",
+      "point2": "Cildi fazla çekmemeye ve kırıştırmamaya dikkat edin",
+      "point3": "Her zaman kasları hareket ettirmeye odaklanın, cildi değil",
+      "point4": "Düzenli ve tutarlı uygulama esastır"
+    },
+    "warning": {
+      "title": "⚠️ Önemli Uyarı",
+      "text": "Bu egzersizler ve bilgiler, tıbbi tavsiye veya tedavi yerine geçmez. Araştırma sonuçları bireysel deneyimleri garanti etmez. Sonuçlar kişiden kişiye değişir. Herhangi bir sağlık veya estetik kararı için bir doktora veya uzmana danışılmalıdır. Bu egzersizler genel kas farkındalığı ve eğlence amaçlıdır."
+    }
   }
 }

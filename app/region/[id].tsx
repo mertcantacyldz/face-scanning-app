@@ -182,25 +182,18 @@ const RegionDetailScreen = () => {
 
         {/* Latest Score Card */}
         {latestAnalysis && (
-          <Card className="p-4 mb-4 bg-primary/10 border-2 border-primary/20">
+          <Card className="p-3 mb-4 bg-primary/5 border border-primary/20">
             <View className="items-center">
-              <Text className="text-sm text-muted-foreground mb-2">
+              <Text className="text-xs text-muted-foreground mb-1.5">
                 {t('latestScore.title')}
               </Text>
-              <View className="w-20 h-20 rounded-full bg-white shadow-md items-center justify-center border-2 border-primary/20">
-                <Text
-                  className={`text-3xl font-bold ${latestAnalysis.overall_score >= 7
-                    ? 'text-green-600'
-                    : latestAnalysis.overall_score >= 4
-                      ? 'text-yellow-600'
-                      : 'text-red-600'
-                    }`}
-                >
+              <View className="w-16 h-16 rounded-full bg-background items-center justify-center border border-primary/30">
+                <Text className="text-2xl font-bold text-primary">
                   {latestAnalysis.overall_score}
                 </Text>
                 <Text className="text-xs text-muted-foreground">{t('latestScore.outOf')}</Text>
               </View>
-              <Text className="text-xs text-muted-foreground mt-2">
+              <Text className="text-xs text-muted-foreground mt-1.5">
                 {new Date(latestAnalysis.created_at).toLocaleDateString(
                   i18n.language === 'tr' ? 'tr-TR' : 'en-US',
                   {

@@ -25,6 +25,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface Profile {
   id: string;
+  user_id: string;
   email: string;
   full_name: string;
   is_premium: boolean;
@@ -36,7 +37,7 @@ interface Profile {
 export default function ProfileScreen() {
   const { t } = useTranslation('profile');
   const { isAnonymous } = useAuth();
-  const { isPremium: isRevenueCatPremium } = usePremium();
+  const { isPremium } = usePremium();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -81,7 +82,7 @@ export default function ProfileScreen() {
           gender: gender,
           updated_at: new Date().toISOString()
         })
-        .eq('id', profile.id);
+        .eq('user_id', profile.user_id);
 
       if (error) throw error;
 
@@ -89,6 +90,7 @@ export default function ProfileScreen() {
       setEditMode(false);
       Alert.alert(t('states.success', { ns: 'common' }), t('alerts.profileUpdateSuccess'));
     } catch (error) {
+      console.error('Profile update error:', error);
       Alert.alert(t('errors.title', { ns: 'errors' }), t('alerts.profileUpdateError'));
     }
   };
@@ -191,20 +193,20 @@ export default function ProfileScreen() {
           </View>
 
           {editMode ? (
-            <View className="w-full max-w-xs space-y-4">
+            <View className="w-full max-w-xs">
               <Input
                 value={fullName}
                 onChangeText={setFullName}
                 placeholder={t('editProfile.fullNameLabel')}
-                className="text-center text-lg text-foreground"
+                className="text-center text-[20px] text-foreground mb-2"
                 placeholderTextColor="hsl(220, 9%, 46%)"
                 autoFocus
               />
 
               {/* Gender Selector */}
-              <View className="space-y-2">
-                <Text className="text-sm font-medium text-muted-foreground text-center">
-                  Cinsiyet
+              <View className="mb-5">
+                <Text className="text-sm font-medium text-muted-foreground text-center mb-3">
+                  {t('editProfile.genderLabel')}
                 </Text>
                 <View className="flex-row gap-2">
                   <Button
@@ -213,7 +215,7 @@ export default function ProfileScreen() {
                     className="flex-1"
                   >
                     <Text className={gender === 'female' ? 'text-primary-foreground' : 'text-foreground'}>
-                      Kadın
+                      {t('editProfile.genderFemale')}
                     </Text>
                   </Button>
                   <Button
@@ -222,7 +224,7 @@ export default function ProfileScreen() {
                     className="flex-1"
                   >
                     <Text className={gender === 'male' ? 'text-primary-foreground' : 'text-foreground'}>
-                      Erkek
+                      {t('editProfile.genderMale')}
                     </Text>
                   </Button>
                   <Button
@@ -231,13 +233,13 @@ export default function ProfileScreen() {
                     className="flex-1"
                   >
                     <Text className={gender === 'other' ? 'text-primary-foreground' : 'text-foreground'}>
-                      Diğer
+                      {t('editProfile.genderOther')}
                     </Text>
                   </Button>
                 </View>
               </View>
 
-              <View className="flex-row gap-3">
+              <View className="flex-row gap-3 mt-2">
                 <Button
                   onPress={updateProfile}
                   className="flex-1 bg-success"
@@ -265,20 +267,20 @@ export default function ProfileScreen() {
               </Text>
               <Text className="text-muted-foreground mb-3">{profile.email}</Text>
               <Badge
-                variant={(isRevenueCatPremium || profile.is_premium) ? "default" : "secondary"}
-                className={(isRevenueCatPremium || profile.is_premium) ?
+                variant={isPremium ? "default" : "secondary"}
+                className={isPremium ?
                   "bg-warning" :
                   "bg-secondary"
                 }
               >
                 <Ionicons
-                  name={(isRevenueCatPremium || profile.is_premium) ? "star" : "person"}
+                  name={isPremium ? "star" : "person"}
                   size={14}
                   color="white"
                   className="mr-1"
                 />
                 <Text className="text-white font-semibold">
-                  {(isRevenueCatPremium || profile.is_premium) ? t('membership.premium') : t('membership.standard')}
+                  {isPremium ? t('membership.premium') : t('membership.standard')}
                 </Text>
               </Badge>
             </>
@@ -286,7 +288,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Premium Status Card */}
-        {(isRevenueCatPremium || profile.is_premium) && profile.premium_expires_at && (
+        {isPremium && profile.premium_expires_at && (
           <Card className="p-5 mb-6 bg-warning/10 border-2 border-warning/30">
             <View className="flex-row items-center">
               <View className="w-12 h-12 bg-warning rounded-full items-center justify-center mr-3">
@@ -338,7 +340,7 @@ export default function ProfileScreen() {
               </Text>
             </View>
 
-            {!isRevenueCatPremium && !profile.is_premium && (
+            {!isPremium && (
               <View className="flex-row justify-between items-center py-3">
                 <View className="flex-row items-center">
                   <View className="w-8 h-8 bg-warning/10 rounded-full items-center justify-center mr-3">
@@ -363,7 +365,7 @@ export default function ProfileScreen() {
         </View>
 
         <View className="flex flex-col gap-4 mb-6">
-          {!isRevenueCatPremium && !profile.is_premium && (
+          {!isPremium && (
             <Button
               onPress={() => router.push('/premium/subscribe')}
               className="h-16 bg-warning"

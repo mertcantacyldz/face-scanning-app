@@ -31,6 +31,10 @@
   "editProfile": {
     "title": "Profili Düzenle",
     "fullNameLabel": "Ad Soyad",
+    "genderLabel": "Cinsiyet",
+    "genderFemale": "Kadın",
+    "genderMale": "Erkek",
+    "genderOther": "Diğer",
     "saveButton": "Değişiklikleri Kaydet",
     "cancelButton": "İptal"
   },

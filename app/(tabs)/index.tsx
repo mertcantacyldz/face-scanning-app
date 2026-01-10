@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -19,6 +18,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import Carousel from 'react-native-reanimated-carousel';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 
 import { Button } from '@/components/ui/button';
@@ -42,7 +42,7 @@ export default function HomeScreen() {
   const { t } = useTranslation('home');
   const [profile, setProfile] = useState<Profile | null>(null);
   const { session } = useAuth();
-  const { isPremium: isRevenueCatPremium } = usePremium();
+  const { isPremium } = usePremium();
 
   // Face mesh analiz hook'u
   const {
@@ -239,7 +239,7 @@ export default function HomeScreen() {
               </View>
               <Text className="text-muted-foreground">
                 {t('welcome.subtitle', {
-                  membership: (isRevenueCatPremium || profile.is_premium) ? t('welcome.premium') : t('welcome.free')
+                  membership: isPremium ? t('welcome.premium') : t('welcome.free')
                 })}
               </Text>
             </View>
@@ -562,7 +562,7 @@ export default function HomeScreen() {
         )}
 
         {/* Premium Tanıtımı */}
-        {!isRevenueCatPremium && !profile.is_premium && (
+        {!isPremium && (
           <Card className="p-6">
             <CardContent className="items-center p-0">
               <Text className="text-foreground font-bold text-lg mb-3 text-center">

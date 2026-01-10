@@ -1,7 +1,19 @@
 // Hardcoded Exercise Library
-// 18 exercises total - 3 per face region
+/**
+ * Exercise types and data
+ */
+
+// Import icon assets (same as face-prompts.ts)
+const eyebrowsIcon = require('@/assets/icons/eyesbrown.png');
+const eyesIcon = require('@/assets/icons/eyes.png');
+const noseIcon = require('@/assets/icons/nose.png');
+const lipsIcon = require('@/assets/icons/lips.png');
+const jawlineIcon = require('@/assets/icons/jawline.png');
+const faceShapeIcon = require('@/assets/icons/face-shape.png');
 
 export type RegionId = 'eyebrows' | 'eyes' | 'nose' | 'lips' | 'jawline' | 'face_shape';
+
+export type ExerciseDifficulty = 'easy' | 'medium' | 'hard';
 
 export interface Exercise {
   id: string;
@@ -925,19 +937,19 @@ export function getRegionTitleEn(regionId: RegionId): string {
   return titles[regionId];
 }
 
-export function getRegionIcon(regionId: RegionId): string {
-  const icons: Record<RegionId, string> = {
-    eyebrows: 'git-branch-outline',
-    eyes: 'eye-outline',
-    nose: 'nose', // MaterialCommunityIcons
-    lips: 'ellipse',
-    jawline: 'grid-outline',
-    face_shape: 'person-circle-outline',
+export function getRegionIcon(regionId: RegionId): any {
+  const icons: Record<RegionId, any> = {
+    eyebrows: eyebrowsIcon,
+    eyes: eyesIcon,
+    nose: noseIcon,
+    lips: lipsIcon,
+    jawline: jawlineIcon,
+    face_shape: faceShapeIcon,
   };
   return icons[regionId];
 }
 
-// Icon kütüphanesi belirleme (burun için özel)
+// Icon kütüphanesi belirleme (burun için özel) - DEPRECATED, artık image kullanıyoruz
 export function getRegionIconLibrary(regionId: RegionId): 'ionicons' | 'material-community' {
   return regionId === 'nose' ? 'material-community' : 'ionicons';
 }

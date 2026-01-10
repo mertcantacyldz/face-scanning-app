@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Pressable } from 'react-native';
-import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
-import { useTranslation } from 'react-i18next';
+import { Text } from '@/components/ui/text';
 import type { Exercise } from '@/lib/exercises';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Pressable, View } from 'react-native';
 import { ExerciseCompletionBadge } from './ExerciseCompletionBadge';
 
 interface ExerciseCardProps {
@@ -23,12 +23,28 @@ export function ExerciseCard({
   showOnlyPreview = false,
   completionPercentage,
 }: ExerciseCardProps) {
-  const { i18n } = useTranslation();
+  const { i18n, t } = useTranslation('exercises');
+
+  // Helper function to translate Turkish exercise text to English
+  const translateExerciseText = (turkishText: string): string => {
+    if (i18n.language === 'tr') return turkishText;
+
+    return turkishText
+      .replace(/saniye/g, 'seconds')
+      .replace(/dakika/g, 'minute')
+      .replace(/tekrar/g, 'reps')
+      .replace(/tur/g, 'rounds')
+      .replace(/döngü/g, 'cycles')
+      .replace(/set/g, 'sets')
+      .replace(/\(her taraf\)/g, '(each side)')
+      .replace(/\(her yön\)/g, '(each direction)');
+  };
+
   // Difficulty colors
   const difficultyColors = {
-    easy: { bg: 'bg-green-100', text: 'text-green-800', label: 'Kolay' },
-    medium: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Orta' },
-    hard: { bg: 'bg-red-100', text: 'text-red-800', label: 'Zor' },
+    easy: { bg: 'bg-green-100', text: 'text-green-800', label: t('list.difficulty.easy') },
+    medium: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: t('list.difficulty.medium') },
+    hard: { bg: 'bg-red-100', text: 'text-red-800', label: t('list.difficulty.hard') },
   };
 
   const difficulty = difficultyColors[exercise.difficulty];
@@ -37,11 +53,10 @@ export function ExerciseCard({
     return (
       <Pressable onPress={onPress} className="active:opacity-70">
         <Card
-          className={`p-3 border ${
-            isCompleted
-              ? 'bg-green-50 border-green-200'
-              : 'bg-card border-border'
-          }`}
+          className={`p-3 border ${isCompleted
+            ? 'bg-green-50 border-green-200'
+            : 'bg-card border-border'
+            }`}
         >
           <View className="flex-row items-center">
             {/* Icon */}
@@ -56,11 +71,11 @@ export function ExerciseCard({
               </Text>
               <View className="flex-row items-center mt-0.5">
                 <Text className="text-xs text-muted-foreground">
-                  {exercise.duration}
+                  {translateExerciseText(exercise.duration)}
                 </Text>
                 <Text className="text-xs text-muted-foreground mx-1">•</Text>
                 <Text className="text-xs text-muted-foreground">
-                  {exercise.repetitions}
+                  {translateExerciseText(exercise.repetitions)}
                 </Text>
               </View>
             </View>
@@ -82,19 +97,19 @@ export function ExerciseCard({
   }
 
   // Determine which steps to show
+  const steps = i18n.language === 'tr' ? exercise.stepsTr : exercise.steps;
   const stepsToShow = showOnlyPreview
-    ? exercise.stepsTr.slice(0, 2)
-    : exercise.stepsTr;
-  const hasHiddenSteps = showOnlyPreview && exercise.stepsTr.length > 2;
+    ? steps.slice(0, 2)
+    : steps;
+  const hasHiddenSteps = showOnlyPreview && steps.length > 2;
 
   return (
     <Pressable onPress={onPress} className="active:opacity-70">
       <Card
-        className={`p-5 border ${
-          isCompleted
-            ? 'bg-success/10 border-success/30'
-            : 'bg-card border-border'
-        }`}
+        className={`p-5 border ${isCompleted
+          ? 'bg-success/10 border-success/30'
+          : 'bg-card border-border'
+          }`}
       >
         {/* Header */}
         <View className="flex-row items-start justify-between mb-3">
@@ -125,7 +140,7 @@ export function ExerciseCard({
 
         {/* Description */}
         <Text className="text-sm text-muted-foreground mb-3">
-          {exercise.descriptionTr}
+          {i18n.language === 'tr' ? exercise.descriptionTr : exercise.description}
         </Text>
 
         {/* Purpose - Why this exercise */}
@@ -134,10 +149,10 @@ export function ExerciseCard({
             <Text className="text-base mr-2">🎯</Text>
             <View className="flex-1">
               <Text className="text-xs font-semibold text-foreground mb-1">
-                Neden Bu Egzersiz?
+                {i18n.language === 'tr' ? 'Neden Bu Egzersiz?' : 'Why This Exercise?'}
               </Text>
               <Text className="text-xs text-muted-foreground leading-relaxed">
-                {exercise.purposeTr}
+                {i18n.language === 'tr' ? exercise.purposeTr : exercise.purpose}
               </Text>
             </View>
           </View>
@@ -146,15 +161,15 @@ export function ExerciseCard({
         {/* Duration & Reps */}
         <View className="flex-row mb-4">
           <View className="flex-1 bg-muted/50 p-3 rounded-lg mr-2">
-            <Text className="text-xs text-muted-foreground mb-1">Süre</Text>
+            <Text className="text-xs text-muted-foreground mb-1">{i18n.language === 'tr' ? 'Süre' : 'Duration'}</Text>
             <Text className="font-semibold text-foreground">
-              {exercise.duration}
+              {translateExerciseText(exercise.duration)}
             </Text>
           </View>
           <View className="flex-1 bg-muted/50 p-3 rounded-lg ml-2">
-            <Text className="text-xs text-muted-foreground mb-1">Tekrar</Text>
+            <Text className="text-xs text-muted-foreground mb-1">{i18n.language === 'tr' ? 'Tekrar' : 'Reps'}</Text>
             <Text className="font-semibold text-foreground">
-              {exercise.repetitions}
+              {translateExerciseText(exercise.repetitions)}
             </Text>
           </View>
         </View>
@@ -162,7 +177,7 @@ export function ExerciseCard({
         {/* Steps */}
         <View className="mb-4">
           <Text className="text-sm font-semibold text-foreground mb-2">
-            Adımlar
+            {i18n.language === 'tr' ? 'Adımlar' : 'Steps'}
           </Text>
           <View className="gap-2">
             {stepsToShow.map((step, index) => (
@@ -185,10 +200,16 @@ export function ExerciseCard({
                   <Text className="text-xl mr-2">🔒</Text>
                   <View className="flex-1">
                     <Text className="text-xs font-bold text-yellow-900">
-                      {exercise.stepsTr.length - 2} Adım Daha Var
+                      {i18n.language === 'tr'
+                        ? `${steps.length - 2} Adım Daha Var`
+                        : `${steps.length - 2} More Steps`
+                      }
                     </Text>
                     <Text className="text-xs text-yellow-800">
-                      Tüm adımları görmek için Premium'a geçin
+                      {i18n.language === 'tr'
+                        ? 'Tüm adımları görmek için Premium\'a geçin'
+                        : 'Upgrade to Premium to see all steps'
+                      }
                     </Text>
                   </View>
                 </View>
@@ -200,10 +221,10 @@ export function ExerciseCard({
         {/* Benefits */}
         <View>
           <Text className="text-sm font-semibold text-foreground mb-2">
-            Faydaları
+            {i18n.language === 'tr' ? 'Faydaları' : 'Benefits'}
           </Text>
           <View className="gap-1">
-            {exercise.benefitsTr.map((benefit, index) => (
+            {(i18n.language === 'tr' ? exercise.benefitsTr : exercise.benefits).map((benefit, index) => (
               <View key={index} className="flex-row items-center">
                 <Text className="text-green-500 mr-2">✓</Text>
                 <Text className="text-sm text-muted-foreground">{benefit}</Text>

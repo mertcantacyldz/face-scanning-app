@@ -1,12 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, TouchableOpacity, View } from 'react-native';
 
 const STORAGE_KEY = 'exercise_guide_collapsed';
 
-export function ExerciseGuideCard() {
-    const [isCollapsed, setIsCollapsed] = useState(false);
+export function ExerciseGuideCard({ initialExpanded = false, hideHeader = false }: { initialExpanded?: boolean; hideHeader?: boolean }) {
+    const { t } = useTranslation('exercises');
+    const [isCollapsed, setIsCollapsed] = useState(!initialExpanded);
 
     useEffect(() => {
         loadCollapsedState();
@@ -34,6 +36,83 @@ export function ExerciseGuideCard() {
         }
     };
 
+    // If hideHeader is true, just render the content directly
+    if (hideHeader) {
+        return (
+            <View>
+                {/* Scientific Research Section */}
+                <View className="mb-4">
+                    <View className="flex-row items-start mb-2">
+                        <Text className="text-2xl mr-2">💡</Text>
+                        <View className="flex-1">
+                            <Text className="text-sm font-semibold text-foreground mb-1">
+                                {t('guide.research.title')}
+                            </Text>
+                            <Text className="text-xs text-muted-foreground leading-relaxed">
+                                {t('guide.research.text')}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Recommended Practice */}
+                <View className="bg-card rounded-lg p-3 mb-4 border border-border">
+                    <View className="flex-row items-center mb-2">
+                        <Ionicons name="calendar-outline" size={16} color="#8B5CF6" />
+                        <Text className="text-sm font-semibold text-foreground ml-2">
+                            {t('guide.recommended.title')}
+                        </Text>
+                    </View>
+
+                    <View className="gap-1.5">
+                        <View className="flex-row items-start">
+                            <Text className="text-success mr-2">•</Text>
+                            <Text className="text-xs text-muted-foreground flex-1">
+                                {t('guide.recommended.point1')}
+                            </Text>
+                        </View>
+
+                        <View className="flex-row items-start">
+                            <Text className="text-success mr-2">•</Text>
+                            <Text className="text-xs text-muted-foreground flex-1">
+                                {t('guide.recommended.point2')}
+                            </Text>
+                        </View>
+
+                        <View className="flex-row items-start">
+                            <Text className="text-success mr-2">•</Text>
+                            <Text className="text-xs text-muted-foreground flex-1">
+                                {t('guide.recommended.point3')}
+                            </Text>
+                        </View>
+
+                        <View className="flex-row items-start">
+                            <Text className="text-success mr-2">•</Text>
+                            <Text className="text-xs text-muted-foreground flex-1">
+                                {t('guide.recommended.point4')}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Important Warning */}
+                <View className="bg-warning/10 border border-warning/30 rounded-lg p-3">
+                    <View className="flex-row items-start">
+                        <Ionicons name="alert-circle-outline" size={16} color="#F59E0B" style={{ marginTop: 2 }} />
+                        <View className="flex-1 ml-2">
+                            <Text className="text-xs font-semibold text-foreground mb-1">
+                                {t('guide.warning.title')}
+                            </Text>
+                            <Text className="text-xs text-muted-foreground leading-relaxed">
+                                {t('guide.warning.text')}
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+            </View>
+        );
+    }
+
     return (
         <View className="mx-4 mb-4 mt-2 bg-muted border border-border rounded-xl overflow-hidden">
             {/* Header - Always Visible */}
@@ -45,7 +124,7 @@ export function ExerciseGuideCard() {
                 <View className="flex-row items-center flex-1">
                     <Ionicons name="book-outline" size={20} color="#8B5CF6" />
                     <Text className="text-base font-semibold text-foreground ml-2">
-                        Egzersiz Rehberi
+                        {t('guide.title')}
                     </Text>
                 </View>
                 {isCollapsed ? (
@@ -64,13 +143,10 @@ export function ExerciseGuideCard() {
                             <Text className="text-2xl mr-2">💡</Text>
                             <View className="flex-1">
                                 <Text className="text-sm font-semibold text-foreground mb-1">
-                                    Bilimsel Araştırma
+                                    {t('guide.research.title')}
                                 </Text>
                                 <Text className="text-xs text-muted-foreground leading-relaxed">
-                                    2018 yılında JAMA Dermatology dergisinde yayınlanan araştırmada,
-                                    yüz egzersizlerinin yüz dolgunluğunu artırdığı gözlemlenmiştir.
-                                    Bu egzersizler benzer kas tonusu ve cilt dolgunluğu artırma
-                                    prensiplerine dayanır.
+                                    {t('guide.research.text')}
                                 </Text>
                             </View>
                         </View>
@@ -81,7 +157,7 @@ export function ExerciseGuideCard() {
                         <View className="flex-row items-center mb-2">
                             <Ionicons name="calendar-outline" size={16} color="#8B5CF6" />
                             <Text className="text-sm font-semibold text-foreground ml-2">
-                                Önerilen Uygulama
+                                {t('guide.recommended.title')}
                             </Text>
                         </View>
 
@@ -89,28 +165,28 @@ export function ExerciseGuideCard() {
                             <View className="flex-row items-start">
                                 <Text className="text-success mr-2">•</Text>
                                 <Text className="text-xs text-muted-foreground flex-1">
-                                    Günde 30 dakika, haftada 5-6 gün düzenli uygulama
+                                    {t('guide.recommended.point1')}
                                 </Text>
                             </View>
 
                             <View className="flex-row items-start">
                                 <Text className="text-success mr-2">•</Text>
                                 <Text className="text-xs text-muted-foreground flex-1">
-                                    Cildi fazla çekmemeye ve kırıştırmamaya dikkat edin
+                                    {t('guide.recommended.point2')}
                                 </Text>
                             </View>
 
                             <View className="flex-row items-start">
                                 <Text className="text-success mr-2">•</Text>
                                 <Text className="text-xs text-muted-foreground flex-1">
-                                    Her zaman kasları hareket ettirmeye odaklanın, cildi değil
+                                    {t('guide.recommended.point3')}
                                 </Text>
                             </View>
 
                             <View className="flex-row items-start">
                                 <Text className="text-success mr-2">•</Text>
                                 <Text className="text-xs text-muted-foreground flex-1">
-                                    Düzenli ve tutarlı uygulama esastır
+                                    {t('guide.recommended.point4')}
                                 </Text>
                             </View>
                         </View>
@@ -122,14 +198,10 @@ export function ExerciseGuideCard() {
                             <Ionicons name="alert-circle-outline" size={16} color="#F59E0B" style={{ marginTop: 2 }} />
                             <View className="flex-1 ml-2">
                                 <Text className="text-xs font-semibold text-foreground mb-1">
-                                    ⚠️ Önemli Uyarı
+                                    {t('guide.warning.title')}
                                 </Text>
                                 <Text className="text-xs text-muted-foreground leading-relaxed">
-                                    Bu egzersizler ve bilgiler, tıbbi tavsiye veya tedavi yerine
-                                    geçmez. Araştırma sonuçları bireysel deneyimleri garanti etmez.
-                                    Sonuçlar kişiden kişiye değişir. Herhangi bir sağlık veya estetik
-                                    kararı için bir doktora veya uzmana danışılmalıdır. Bu egzersizler
-                                    genel kas farkındalığı ve eğlence amaçlıdır.
+                                    {t('guide.warning.text')}
                                 </Text>
                             </View>
                         </View>

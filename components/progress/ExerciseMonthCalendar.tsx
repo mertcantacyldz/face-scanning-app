@@ -1,18 +1,19 @@
 // Exercise Month Calendar Component
 // Horizontal scrollable calendar showing 1-30/31 days with completion marks
 
-import React from 'react';
-import { View, ScrollView, Pressable } from 'react-native';
 import { Text } from '@/components/ui/text';
-import { useTranslation } from 'react-i18next';
-import { getDaysInMonthYear, getLocalDateString, getDayFromDateString } from '@/lib/exercise-tracking';
+import { getDayFromDateString, getDaysInMonthYear, getLocalDateString } from '@/lib/exercise-tracking';
 import { Ionicons } from '@expo/vector-icons';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Dimensions, Pressable, ScrollView, View } from 'react-native';
 
 interface ExerciseMonthCalendarProps {
   monthYear: string; // 'YYYY-MM'
   completedDates: number[]; // [3, 4, 7, 15, ...] - day numbers
   onDayPress?: (dayNumber: number) => void; // Optional: for manual marking
   showOnlyCurrentMonth?: boolean; // If true, disable future days
+  isVisible?: boolean; // If true, component is visible in carousel
 }
 
 export function ExerciseMonthCalendar({
@@ -20,9 +21,12 @@ export function ExerciseMonthCalendar({
   completedDates,
   onDayPress,
   showOnlyCurrentMonth = true,
+  isVisible = true,
 }: ExerciseMonthCalendarProps) {
   const { t } = useTranslation('progress');
-
+  const scrollViewRef = useRef<ScrollView>(null);
+  const hasScrolledRef = useRef(false);
+const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Get total days in this month
   const totalDays = getDaysInMonthYear(monthYear);
 
@@ -36,12 +40,132 @@ export function ExerciseMonthCalendar({
   // Create array of day numbers [1, 2, 3, ..., 30/31]
   const dayNumbers = Array.from({ length: totalDays }, (_, i) => i + 1);
 
+  // Calculate initial scroll position
+  const getInitialScrollPosition = () => {
+    if (!isCurrentMonth || !todayDayNumber || !isVisible) {
+      return 0;
+    }
+
+    const itemWidth = 56;
+    const screenWidth = Dimensions.get('window').width;
+    const contentWidth = totalDays * itemWidth;
+    const maxScrollX = Math.max(0, contentWidth - screenWidth);
+    const scrollPosition = (todayDayNumber - 1) * itemWidth - screenWidth / 2 + itemWidth / 2;
+    const clampedScrollPosition = Math.min(Math.max(0, scrollPosition), maxScrollX);
+
+    console.log('📍 Initial scroll position calculated:', { clampedScrollPosition, todayDayNumber });
+
+    return clampedScrollPosition;
+  };
+
+  // Scroll handler triggered by onLayout
+  const handleScrollViewLayout = useCallback(() => {
+    if (!isCurrentMonth || !todayDayNumber || hasScrolledRef.current || !isVisible) {
+      return;
+    }
+
+    console.log('📐 ScrollView onLayout (isVisible=true), scheduling scroll...');
+
+    // Clear any existing timeout
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+
+    // Wait for layout to fully complete - try with longer delay
+    scrollTimeoutRef.current = setTimeout(() => {
+      console.log('⏰ Timeout fired, checking ref...', {
+        hasRef: !!scrollViewRef.current,
+        refType: typeof scrollViewRef.current,
+      });
+
+      if (!scrollViewRef.current) {
+        console.log('❌ Ref null in timeout - retrying in 200ms');
+        // One more retry with longer delay
+        scrollTimeoutRef.current = setTimeout(() => {
+          console.log('🔁 Retry - checking ref again...', {
+            hasRef: !!scrollViewRef.current,
+          });
+
+          if (!scrollViewRef.current) {
+            console.log('❌ Ref still null after retry - giving up');
+            return;
+          }
+
+          if (hasScrolledRef.current) {
+            return;
+          }
+
+          const itemWidth = 56;
+          const screenWidth = Dimensions.get('window').width;
+          const contentWidth = totalDays * itemWidth;
+          const maxScrollX = Math.max(0, contentWidth - screenWidth);
+          const scrollPosition = (todayDayNumber - 1) * itemWidth - screenWidth / 2 + itemWidth / 2;
+          const clampedScrollPosition = Math.min(Math.max(0, scrollPosition), maxScrollX);
+
+          console.log('✅ SCROLLING (after retry):', { clampedScrollPosition, maxScrollX, todayDayNumber });
+
+          scrollViewRef.current.scrollTo({
+            x: clampedScrollPosition,
+            animated: true,
+          });
+
+          hasScrolledRef.current = true;
+        }, 200);
+        return;
+      }
+
+      if (hasScrolledRef.current) {
+        return;
+      }
+
+      const itemWidth = 56;
+      const screenWidth = Dimensions.get('window').width;
+      const contentWidth = totalDays * itemWidth;
+      const maxScrollX = Math.max(0, contentWidth - screenWidth);
+      const scrollPosition = (todayDayNumber - 1) * itemWidth - screenWidth / 2 + itemWidth / 2;
+      const clampedScrollPosition = Math.min(Math.max(0, scrollPosition), maxScrollX);
+
+      console.log('✅ SCROLLING:', { clampedScrollPosition, maxScrollX, todayDayNumber });
+
+      scrollViewRef.current.scrollTo({
+        x: clampedScrollPosition,
+        animated: true,
+      });
+
+      hasScrolledRef.current = true;
+    }, 100);
+  }, [isCurrentMonth, todayDayNumber, isVisible, totalDays]);
+
+  // Reset scroll flag when month changes
+  useEffect(() => {
+    hasScrolledRef.current = false;
+
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, [monthYear]);
+
+  // Trigger scroll when component becomes visible
+  useEffect(() => {
+    if (isVisible && isCurrentMonth && todayDayNumber && !hasScrolledRef.current) {
+      console.log('👁️ Component became visible, triggering scroll...');
+      // Trigger layout to initiate scroll
+      handleScrollViewLayout();
+    }
+  }, [isVisible, isCurrentMonth, todayDayNumber, handleScrollViewLayout]);
+
   return (
     <View className="bg-card rounded-lg border border-border p-3">
       <ScrollView
+        ref={scrollViewRef}
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 8 }}
+        contentContainerStyle={{ paddingHorizontal: 0, flexDirection: 'row', gap: 8 }}
+        contentOffset={{ x: getInitialScrollPosition(), y: 0 }}
+        onLayout={handleScrollViewLayout}
+        collapsable={false}
       >
         {dayNumbers.map((dayNumber) => {
           const isCompleted = completedDates.includes(dayNumber);

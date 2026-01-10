@@ -1,7 +1,7 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Card } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -75,7 +75,7 @@ export function CompleteProfileBanner({ fullName, gender }: CompleteProfileBanne
             className="bg-warning px-3 py-2 rounded-md"
           >
             <Text className="text-warning-foreground font-semibold text-xs">
-              Tamamla
+              Complete
             </Text>
           </TouchableOpacity>
 

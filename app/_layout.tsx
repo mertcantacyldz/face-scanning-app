@@ -12,6 +12,7 @@ import { AppState } from 'react-native';
 import { PremiumProvider } from '@/contexts/PremiumContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { initializeI18n } from '@/locales';
+import { ToastProvider } from 'react-native-toast-notifications';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -44,19 +45,26 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AuthProvider>
-        <PremiumProvider>
-          <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
-            <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
-            <Stack.Screen name="premium/subscribe" options={{ presentation: 'modal' }} />
-          </Stack>
-          <StatusBar style="auto" />
-          <PortalHost />
-        </PremiumProvider>
-      </AuthProvider>
+      <ToastProvider
+        placement="top"
+        duration={3000}
+        offsetTop={50}
+        swipeEnabled={true}
+      >
+        <AuthProvider>
+          <PremiumProvider>
+            <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
+              <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
+              <Stack.Screen name="premium/subscribe" options={{ presentation: 'modal' }} />
+            </Stack>
+            <StatusBar style="auto" />
+            <PortalHost />
+          </PremiumProvider>
+        </AuthProvider>
+      </ToastProvider>
     </ThemeProvider>
   );
 }
