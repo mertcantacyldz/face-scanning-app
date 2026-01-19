@@ -25,335 +25,189 @@ export const FACE_REGIONS: FaceRegion[] = [
     title: 'Kaşlar',
     icon: eyebrowsIcon,
     description: 'Kaş şekli ve simetri analizi',
-    prompt: ` You are a facial anatomy and eyebrow structure expert. You will analyze raw 3D landmark data (x, y, z, index) for eyebrow shape, thickness, symmetry, angle, and facial harmony, returning results in JSON format.
+    prompt: `You are a facial analysis expert. Analyze these PRE-CALCULATED eyebrow metrics.
 
-⚠️ STRICT MODE: 
-- Return ONLY valid JSON output
-- No explanations, thinking process, markdown code blocks, or additional text
-- Output must start with { and end with }
-- DO NOT include <thinking> tags, reasoning process, or explanations
+═══════════════════════════════════════════
+IMPORTANT: DO NOT RECALCULATE
+═══════════════════════════════════════════
 
-CRITICAL DATA ASSUMPTION: 
-Landmark indices belong to MediaPipe Face Mesh model, verified with Hybrid Control.
+All measurements below are already calculated from MediaPipe Face Mesh landmarks.
+Your job: INTERPRET and EXPLAIN these values in plain Turkish, NOT to recalculate them.
 
-TASK:
-1. Detect eyebrow landmarks using index and positional logic
-2. Analyze eyebrow shape, thickness, symmetry, angle, and facial harmony
-3. Return results in JSON format
+═══════════════════════════════════════════
+PRE-CALCULATED METRICS (1024x1024 canvas)
+═══════════════════════════════════════════
 
-═════════════════════════════════════════════
-SECTION 1: LANDMARK DETECTION AND HYBRID CONTROL
-═════════════════════════════════════════════
+BROW HEIGHT SYMMETRY (28% weight - most critical):
+- Left brow highest Y: {leftBrowHighestY}
+- Right brow highest Y: {rightBrowHighestY}
+- Height difference: {browHeightDifference} pixels ({browHeightDifferenceRatio}%)
+- Brow height symmetry score: {browHeightSymmetryScore}/10
 
-REFERENCE POINTS (Find these first):
-P_33 (RIGHT EYE OUTER): index 33
-P_263 (LEFT EYE OUTER): index 263
-P_133 (LEFT EYE INNER): index 133
-P_362 (RIGHT EYE INNER): index 362
+ARCH HEIGHT SYMMETRY (24% weight):
+- Left arch height: {leftArchHeight} pixels
+- Right arch height: {rightArchHeight} pixels
+- Arch difference: {archHeightDifference} pixels ({archHeightDifferenceRatio}%)
+- Arch height symmetry score: {archHeightSymmetryScore}/10
 
-FACE_CENTER_X = (P_33.x + P_263.x) / 2
-FACE_WIDTH = P_263.x - P_33.x
-EYE_Y_LEVEL = (P_33.y + P_263.y + P_133.y + P_362.y) / 4
+BROW DISTANCE FROM EYE (18% weight):
+- Left brow-eye distance: {leftBrowEyeDistance} pixels
+- Right brow-eye distance: {rightBrowEyeDistance} pixels
+- Distance asymmetry: {browEyeDistanceAsymmetry} pixels
+- Average distance: {avgBrowEyeDistance} pixels
+- Eye height: {eyeHeight} pixels
+- Distance ratio: {browEyeDistanceRatio}% ({browEyeDistanceAssessment})
+- Brow-eye distance score: {browEyeDistanceScore}/10
 
-LEFT EYEBROW HYBRID DETECTION:
+INNER CORNER DISTANCE (12% weight):
+- Inner corner distance: {innerCornerDistance} pixels
+- Eye width: {eyeWidth} pixels
+- Distance ratio: {innerCornerDistanceRatio}% ({innerCornerAssessment})
+- Inner corner distance score: {innerCornerDistanceScore}/10
 
-P_70 (Left eyebrow outer edge):
-  Step 1: Find index 70
-  Step 2: Verify:
-    - P_70.y < EYE_Y_LEVEL - 20 (above eyes)
-    - P_70.x < P_263.x (left of left eye outer)
-    - P_70.x > P_263.x - (FACE_WIDTH * 0.15)
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y < EYE_Y_LEVEL - 20 && 
-      p.y > EYE_Y_LEVEL - 80 &&
-      p.x < P_263.x && 
-      p.x > P_263.x - (FACE_WIDTH * 0.15)
-    ).sort((a,b) => a.x - b.x)[0]
+BROW ANGLE/SLOPE (10% weight):
+- Left brow angle: {leftBrowAngle}° ({leftBrowDirection})
+- Right brow angle: {rightBrowAngle}° ({rightBrowDirection})
+- Angle difference: {browAngleDifference}°
+- Brow angle symmetry score: {browAngleSymmetryScore}/10
 
-P_107 (Left eyebrow inner corner):
-  Step 1: Find index 107
-  Step 2: Verify:
-    - P_107.y < EYE_Y_LEVEL - 20
-    - P_107.x > P_133.x - 20
-    - P_107.x < FACE_CENTER_X
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y < EYE_Y_LEVEL - 20 && 
-      p.y > EYE_Y_LEVEL - 80 &&
-      p.x > P_133.x - 20 && 
-      p.x < FACE_CENTER_X
-    ).sort((a,b) => b.x - a.x)[0]
+BROW THICKNESS (6% weight):
+- Left brow thickness: {leftBrowThickness} pixels
+- Right brow thickness: {rightBrowThickness} pixels
+- Thickness difference: {browThicknessDifference} pixels ({browThicknessDifferenceRatio}%)
+- Brow thickness symmetry score: {browThicknessSymmetryScore}/10
 
-P_63, P_105, P_66 (Left eyebrow intermediate points):
-  Step 1: Find indices (63, 105, 66)
-  Step 2: Verify: Between P_70 and P_107, in eyebrow region
-  Step 3: If verification fails: Find intermediate points between P_70 and P_107
+BROW LENGTH (2% weight):
+- Left brow length: {leftBrowLength} pixels
+- Right brow length: {rightBrowLength} pixels
+- Length difference: {browLengthDifference} pixels ({browLengthDifferenceRatio}%)
+- Brow length symmetry score: {browLengthSymmetryScore}/10
 
-RIGHT EYEBROW HYBRID DETECTION:
+OVERALL:
+- Combined score: {overallScore}/10
+- Asymmetry level: {asymmetryLevel}
+- Face height: {faceHeight} pixels
 
-P_300 (Right eyebrow outer edge):
-  Step 1: Find index 300
-  Step 2: Verify:
-    - P_300.y < EYE_Y_LEVEL - 20
-    - P_300.x > P_33.x
-    - P_300.x < P_33.x + (FACE_WIDTH * 0.15)
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y < EYE_Y_LEVEL - 20 && 
-      p.y > EYE_Y_LEVEL - 80 &&
-      p.x > P_33.x && 
-      p.x < P_33.x + (FACE_WIDTH * 0.15)
-    ).sort((a,b) => b.x - a.x)[0]
+═══════════════════════════════════════════
+YOUR TASK
+═══════════════════════════════════════════
 
-P_336 (Right eyebrow inner corner):
-  Step 1: Find index 336
-  Step 2: Verify:
-    - P_336.y < EYE_Y_LEVEL - 20
-    - P_336.x < P_362.x + 20
-    - P_336.x > FACE_CENTER_X
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y < EYE_Y_LEVEL - 20 && 
-      p.y > EYE_Y_LEVEL - 80 &&
-      p.x < P_362.x + 20 && 
-      p.x > FACE_CENTER_X
-    ).sort((a,b) => a.x - b.x)[0]
+Based on these EXACT numbers:
+1. Explain what they mean to the user (in plain Turkish)
+2. Describe the visual appearance of the eyebrows
+3. Provide context for each measurement
+4. Give recommendations if needed
 
-P_293, P_334, P_296 (Right eyebrow intermediate points):
-  Step 1: Find indices (293, 334, 296)
-  Step 2: Verify: Between P_336 and P_300, in eyebrow region
-  Step 3: If verification fails: Find intermediate points
+CRITICAL:
+- DO NOT recalculate any values
+- USE the exact numbers provided above in your explanations
+- Reference specific measurements in every section
+- Keep scores as provided (do not inflate)
 
-═════════════════════════════════════════════
-SECTION 2: CALCULATIONS
-═════════════════════════════════════════════
+═══════════════════════════════════════════
+YOUR TASK
+═══════════════════════════════════════════
 
-2.1 EYEBROW DIMENSIONS AND POSITIONS:
-LEFT_BROW_WIDTH = P_70.x - P_107.x
-LEFT_BROW_HEIGHT = max(P_70.y, P_63.y, P_105.y, P_66.y, P_107.y) - min(P_70.y, P_63.y, P_105.y, P_66.y, P_107.y)
-LEFT_BROW_THICKNESS_RATIO = (LEFT_BROW_HEIGHT / LEFT_BROW_WIDTH) × 100
+Based on these EXACT numbers:
+1. Explain what they mean to the user (in plain Turkish)
+2. Describe the visual appearance of the eyebrows
+3. Provide context for each measurement
+4. Give recommendations if needed
 
-RIGHT_BROW_WIDTH = P_300.x - P_336.x
-RIGHT_BROW_HEIGHT = max(P_300.y, P_293.y, P_334.y, P_296.y, P_336.y) - min(P_300.y, P_293.y, P_334.y, P_296.y, P_336.y)
-RIGHT_BROW_THICKNESS_RATIO = (RIGHT_BROW_HEIGHT / RIGHT_BROW_WIDTH) × 100
+CRITICAL:
+- DO NOT recalculate any values
+- USE the exact numbers provided above in your explanations
+- Reference specific measurements in every section
+- Keep scores as provided (do not inflate)
 
-BROW_THICKNESS_DIFFERENCE = abs(LEFT_BROW_THICKNESS_RATIO - RIGHT_BROW_THICKNESS_RATIO)
-
-2.2 INTER-BROW DISTANCE:
-INTER_BROW_DISTANCE = P_336.x - P_107.x
-INTER_BROW_RATIO = (INTER_BROW_DISTANCE / FACE_WIDTH) × 100
-
-2.3 EYEBROW ANGLES:
-LEFT_DX1 = P_105.x - P_70.x
-LEFT_DY1 = P_70.y - P_105.y
-LEFT_DX2 = P_107.x - P_105.x
-LEFT_DY2 = P_105.y - P_107.y
-LEFT_ANGLE_RAD = atan2(LEFT_DY1, LEFT_DX1) - atan2(LEFT_DY2, LEFT_DX2)
-LEFT_ANGLE_DEGREE = abs(LEFT_ANGLE_RAD × (180 / π))
-
-RIGHT_DX1 = P_334.x - P_300.x
-RIGHT_DY1 = P_300.y - P_334.y
-RIGHT_DX2 = P_336.x - P_334.x
-RIGHT_DY2 = P_334.y - P_336.y
-RIGHT_ANGLE_RAD = atan2(RIGHT_DY1, RIGHT_DX1) - atan2(RIGHT_DY2, RIGHT_DX2)
-RIGHT_ANGLE_DEGREE = abs(RIGHT_ANGLE_RAD × (180 / π))
-
-BROW_ANGLE_DIFFERENCE = abs(LEFT_ANGLE_DEGREE - RIGHT_ANGLE_DEGREE)
-
-2.4 EYEBROW POSITION:
-LEFT_BROW_AVG_Y = (P_70.y + P_63.y + P_105.y + P_66.y + P_107.y) / 5
-RIGHT_BROW_AVG_Y = (P_300.y + P_293.y + P_334.y + P_296.y + P_336.y) / 5
-BROW_HEIGHT_DIFFERENCE = abs(LEFT_BROW_AVG_Y - RIGHT_BROW_AVG_Y)
-BROW_HEIGHT_DIFFERENCE_RATIO = (BROW_HEIGHT_DIFFERENCE / FACE_WIDTH) × 100
-
-LEFT_BROW_TO_EYE = abs(LEFT_BROW_AVG_Y - P_133.y)
-RIGHT_BROW_TO_EYE = abs(RIGHT_BROW_AVG_Y - P_362.y)
-BROW_TO_EYE_DIFFERENCE = abs(LEFT_BROW_TO_EYE - RIGHT_BROW_TO_EYE)
-
-2.5 EYEBROW SHAPE:
-LEFT_Y_VALUES = [P_70.y, P_63.y, P_105.y, P_66.y, P_107.y]
-LEFT_HIGHEST_INDEX = argmin(LEFT_Y_VALUES)
-
-LEFT_BROW_SHAPE = 
-  LEFT_HIGHEST_INDEX === 0 ? "UPWARD_SLANT" :
-  LEFT_HIGHEST_INDEX === 1 ? "SOFT_ARCH" :
-  LEFT_HIGHEST_INDEX === 2 ? "HIGH_ARCH" :
-  LEFT_HIGHEST_INDEX === 3 ? "LOW_ARCH" : "STRAIGHT"
-
-RIGHT_Y_VALUES = [P_300.y, P_293.y, P_334.y, P_296.y, P_336.y]
-RIGHT_HIGHEST_INDEX = argmin(RIGHT_Y_VALUES)
-
-RIGHT_BROW_SHAPE = 
-  RIGHT_HIGHEST_INDEX === 0 ? "UPWARD_SLANT" :
-  RIGHT_HIGHEST_INDEX === 1 ? "SOFT_ARCH" :
-  RIGHT_HIGHEST_INDEX === 2 ? "HIGH_ARCH" :
-  RIGHT_HIGHEST_INDEX === 3 ? "LOW_ARCH" : "STRAIGHT"
-
-2.6 3D DEPTH:
-LEFT_BROW_AVG_Z = (P_70.z + P_63.z + P_105.z + P_66.z + P_107.z) / 5
-RIGHT_BROW_AVG_Z = (P_300.z + P_293.z + P_334.z + P_296.z + P_336.z) / 5
-BROW_DEPTH_DIFFERENCE = abs(LEFT_BROW_AVG_Z - RIGHT_BROW_AVG_Z)
-
-═════════════════════════════════════════════
-SECTION 3: SCORING
-═════════════════════════════════════════════
-
-THICKNESS_SYMMETRY_SCORE =
-  BROW_THICKNESS_DIFFERENCE < 5 ? 10 :
-  BROW_THICKNESS_DIFFERENCE < 10 ? 7 :
-  BROW_THICKNESS_DIFFERENCE < 15 ? 4 :
-  BROW_THICKNESS_DIFFERENCE < 20 ? 2 : 0
-
-ANGLE_SYMMETRY_SCORE =
-  BROW_ANGLE_DIFFERENCE < 5 ? 10 :
-  BROW_ANGLE_DIFFERENCE < 10 ? 7 :
-  BROW_ANGLE_DIFFERENCE < 15 ? 4 :
-  BROW_ANGLE_DIFFERENCE < 20 ? 2 : 0
-
-HEIGHT_SYMMETRY_SCORE =
-  BROW_HEIGHT_DIFFERENCE_RATIO < 2 ? 10 :
-  BROW_HEIGHT_DIFFERENCE_RATIO < 4 ? 7 :
-  BROW_HEIGHT_DIFFERENCE_RATIO < 7 ? 4 :
-  BROW_HEIGHT_DIFFERENCE_RATIO < 10 ? 2 : 0
-
-INTER_BROW_RATIO_SCORE =
-  (INTER_BROW_RATIO < 10 || INTER_BROW_RATIO > 25) ? 3 :
-  (INTER_BROW_RATIO < 12 || INTER_BROW_RATIO > 23) ? 6 :
-  (INTER_BROW_RATIO < 15 || INTER_BROW_RATIO > 20) ? 8 : 10
-
-OVERALL_SCORE = round(
-  (THICKNESS_SYMMETRY_SCORE × 0.25) +
-  (ANGLE_SYMMETRY_SCORE × 0.30) +
-  (HEIGHT_SYMMETRY_SCORE × 0.35) +
-  (INTER_BROW_RATIO_SCORE × 0.10)
-)
-
-ASYMMETRY_LEVEL =
-  OVERALL_SCORE >= 8 ? "NONE" :
-  OVERALL_SCORE >= 5 ? "MILD" :
-  OVERALL_SCORE >= 3 ? "MODERATE" : "SEVERE"
-
-═════════════════════════════════════════════
-USER-FRIENDLY EXPLANATION REQUIREMENTS
-═════════════════════════════════════════════
-
-For EVERY "user_explanation" field, you MUST:
-1. Reference specific measurements from that category
-2. Explain what those numbers mean in context
-3. Be 2-3 sentences long
-4. Use plain language (no jargon)
-5. CRITICAL: Write in the SAME LANGUAGE specified in the system prompt (Turkish/English)
-
-EXAMPLE (for thickness_analysis):
-❌ BAD: "Your eyebrows thickness is good"
-✅ GOOD: "Left eyebrow has 18% thickness ratio, right has 19%. Only 1 point difference, showing excellent symmetry. Your eyebrows are in MEDIUM category and well-balanced."
-
-Apply this pattern to ALL "user_explanation" fields below.
-
-═════════════════════════════════════════════
-OUTPUT FORMAT (JSON)
-═════════════════════════════════════════════
+═══════════════════════════════════════════
+OUTPUT JSON FORMAT
+═══════════════════════════════════════════
 
 {
   "analysis_result": {
-    "general_assessment": "string",
-    "asymmetry_level": "NONE/MILD/MODERATE/SEVERE",
-    "overall_score": 0-10,
-    "dominant_issue": "string"
+    "general_assessment": "string (reference the scores)",
+    "asymmetry_level": "{asymmetryLevel}",  // Use provided value
+    "overall_score": {overallScore},         // Use provided value
+    "asymmetry_type": "string"
   },
-  
+
   "user_friendly_summary": {
     "assessment": "string (max 10 words)",
-    "explanation": "string (2-3 sentences)",
+    "explanation": "string (2-3 sentences, MUST reference browHeightDifference={browHeightDifference}px, archHeightDifference={archHeightDifference}px, etc.)",
     "key_findings": [
-      "string (3-5 bullets)",
-      "string (text only, no emojis)"
+      "Sol kaş en yüksek noktası {leftBrowHighestY}, sağ kaş {rightBrowHighestY} (fark: {browHeightDifference}px)",
+      "Kemer yüksekliği farkı {archHeightDifference}px ({archHeightDifferenceRatio}%)",
+      "Kaş-göz mesafesi: Sol {leftBrowEyeDistance}px, Sağ {rightBrowEyeDistance}px ({browEyeDistanceAssessment})"
     ]
   },
 
-  "shape_analysis": {
-    "left_brow_shape": "UPWARD_SLANT/SOFT_ARCH/HIGH_ARCH/LOW_ARCH/STRAIGHT",
-    "right_brow_shape": "UPWARD_SLANT/SOFT_ARCH/HIGH_ARCH/LOW_ARCH/STRAIGHT",
-    "shape_harmony": "MATCHED/MISMATCHED",
-    "angle_difference": "number°",
-    "angle_score": 0-10,
-    "user_explanation": "string (plain language)"
+  "detailed_analysis": {
+    "left_eyebrow": {
+      "highest_y": {leftBrowHighestY},              // COPY provided value
+      "arch_height": {leftArchHeight},              // COPY provided value
+      "eye_distance": {leftBrowEyeDistance},        // COPY provided value
+      "inner_corner_distance": {leftInnerCornerDistance},  // COPY provided value
+      "angle": {leftBrowAngle},                     // COPY provided value
+      "thickness": {leftBrowThickness},             // COPY provided value
+      "length": {leftBrowLength},                   // COPY provided value
+      "score": {leftBrowScore},                     // COPY provided value
+      "user_explanation": "string (explain what these measurements mean)"
+    },
+    "right_eyebrow": {
+      "highest_y": {rightBrowHighestY},             // COPY provided value
+      "arch_height": {rightArchHeight},             // COPY provided value
+      "eye_distance": {rightBrowEyeDistance},       // COPY provided value
+      "inner_corner_distance": {rightInnerCornerDistance},  // COPY provided value
+      "angle": {rightBrowAngle},                    // COPY provided value
+      "thickness": {rightBrowThickness},            // COPY provided value
+      "length": {rightBrowLength},                  // COPY provided value
+      "score": {rightBrowScore},                    // COPY provided value
+      "user_explanation": "string (explain what these measurements mean)"
+    },
+    "symmetry_analysis": {
+      "height_difference": {browHeightDifference},           // COPY
+      "height_difference_ratio": {browHeightDifferenceRatio},// COPY
+      "arch_difference": {archHeightDifference},             // COPY
+      "arch_difference_ratio": {archHeightDifferenceRatio},  // COPY
+      "eye_distance_asymmetry": {browEyeDistanceAsymmetry},  // COPY
+      "inner_corner_asymmetry": {innerCornerDistanceAsymmetry},  // COPY
+      "angle_difference": {browAngleDifference},             // COPY
+      "thickness_difference": {browThicknessDifference},     // COPY
+      "length_difference": {browLengthDifference},           // COPY
+      "symmetry_score": {overallScore},                      // COPY
+      "user_explanation": "string (explain {browHeightDifference}px, {archHeightDifference}px, etc.)"
+    }
   },
-  
-  "thickness_analysis": {
-    "thickness_difference": "number px",
-    "thickness_score": 0-10,
-    "thickness_assessment": "THIN/MEDIUM/THICK",
-    "left_thickness_ratio": "number%",
-    "right_thickness_ratio": "number%",
-    "user_explanation": "string (plain language)"
-  },
-  
-  "position_analysis": {
-    "inter_brow_distance": "number px",
-    "inter_brow_ratio": "number%",
-    "idealness": "NARROW/IDEAL/WIDE",
-    "height_difference": "number px",
-    "height_score": 0-10,
-    "user_explanation": "string (plain language)"
-  },
-  
-  "eye_distance": {
-    "left_brow_to_eye": "number px",
-    "right_brow_to_eye": "number px",
-    "distance_difference": "number px",
-    "idealness": "string",
-    "user_explanation": "string (plain language)"
-  },
-  
-  "symmetry_analysis": {
-    "horizontal_symmetry": "GOOD/FAIR/POOR",
-    "vertical_symmetry": "GOOD/FAIR/POOR",
-    "shape_symmetry": "GOOD/FAIR/POOR",
-    "overall_symmetry_score": 0-10,
-    "user_explanation": "string (plain language)"
-  },
-  
-  "3d_analysis": {
-    "depth_difference": "number mm",
-    "interpretation": "string",
-    "user_explanation": "string (plain language)"
-  },
-  
-  "facial_harmony": {
-    "face_width_ratio": "number%",
-    "harmonic_balance": "string",
-    "golden_ratio_compliance": "GOOD/FAIR/POOR",
-    "user_explanation": "string (plain language)"
+
+  "visual_assessment": {
+    "prominent_asymmetry_areas": ["string based on lowest scores"],
+    "visual_appearance": "string (describe how eyebrows look with these measurements)",
+    "brow_eye_distance_assessment": "{browEyeDistanceAssessment}",  // COPY
+    "inner_corner_assessment": "{innerCornerDistanceAssessment}",   // COPY
+    "user_explanation": "string"
   },
 
   "recommendations": {
-    "medical_advice": "string",
-    "priority_intervention": "string",
+    "medical_advice": "string (IF score < 5, suggest professional evaluation)",
+    "priority_intervention": "string (based on lowest sub-score)",
     "attention_points": ["string"]
   },
 
   "metadata": {
     "analysis_date": "ISO timestamp",
-    "points_used": number,
-    "reliability": "HIGH/MEDIUM/LOW",
-    "model_version": "V4"
+    "points_used": 468,
+    "reliability": "HIGH",
+    "model_version": "V5_CALCULATED",
+    "calculation_method": "typescript_precalculated"
   }
 }
 
-CRITICAL APPLICATION NOTES:
-* Return ONLY JSON - No additional explanations
-* All coordinates and calculations to 2 decimal places
-* Reliability: < 400 landmarks = "MEDIUM", ≥400 = "HIGH"
-* Use index values first, fall back to hybrid control if invalid
-* Mark in metadata if hybrid control was used
-* Determine shape by location of highest point (smallest y)
-
-CRITICAL FINAL WARNING:
-Response MUST be ONLY valid JSON.
-No markdown (\`\`\`json), no code blocks, no explanations, no thinking tags.
-Start with { and end with }
+STRICT REQUIREMENTS:
+- All numeric fields in output MUST exactly match the input metrics
+- No recalculation allowed
+- Reference exact numbers in all text explanations
+- If you change a provided score, the system will reject your response
     `,
   },
   {
@@ -361,448 +215,82 @@ Start with { and end with }
     title: 'Gözler',
     icon: eyesIcon,
     description: 'Göz şekli ve boyut analizi',
-    prompt: `You are a facial anatomy and eye structure expert. You will analyze raw 3D landmark data (x, y, z, index) for eye shape, size, symmetry, inter-eye distance, and eyelid structure, returning results in JSON format.
+    prompt: `You are a facial analysis expert. Analyze these PRE-CALCULATED eye metrics.
 
-⚠️ STRICT MODE: 
-- Return ONLY valid JSON output
-- No explanations, thinking process, markdown code blocks, or additional text
-- Output must start with { and end with }
-- DO NOT include <thinking> tags, reasoning process, or explanations
+═══════════════════════════════════════════
+IMPORTANT: DO NOT RECALCULATE
+═══════════════════════════════════════════
 
-CRITICAL DATA ASSUMPTION: 
-Landmark indices belong to MediaPipe Face Mesh model, verified with Hybrid Control.
+All measurements below are already calculated from MediaPipe Face Mesh landmarks.
+Your job: INTERPRET and EXPLAIN these values in plain Turkish, NOT to recalculate them.
 
-TASK:
-1. Detect eye landmarks using index and positional logic
-2. Analyze eye shape, size, symmetry, inter-eye distance, and eyelid structure
-3. Return results in JSON format
+═══════════════════════════════════════════
+PRE-CALCULATED METRICS (1024x1024 canvas)
+═══════════════════════════════════════════
 
-═════════════════════════════════════════════
-SECTION 1: LANDMARK DETECTION AND HYBRID CONTROL
-═════════════════════════════════════════════
+EYE SIZE SYMMETRY:
+- Left eye: {leftEyeWidth}px × {leftEyeHeight}px (area: {leftEyeArea}px²)
+- Right eye: {rightEyeWidth}px × {rightEyeHeight}px (area: {rightEyeArea}px²)
+- Width difference: {widthDifference}px ({widthDifferenceRatio}%)
+- Height difference: {heightDifference}px ({heightDifferenceRatio}%)
+- Area difference: {areaDifference}px² ({areaDifferenceRatio}%)
+- Size symmetry score: {sizeSymmetryScore}/10
 
-REFERENCE POINTS (Find these first):
-P_4 (NOSE TIP): index 4
-FACE_CENTER_Y = P_4.y
+EYE POSITION SYMMETRY:
+- Left eye center: ({leftEyeCenterX}, {leftEyeCenterY})
+- Right eye center: ({rightEyeCenterX}, {rightEyeCenterY})
+- Vertical misalignment: {verticalMisalignment}px ({verticalMisalignmentRatio}%)
+- Horizontal asymmetry: {horizontalAsymmetry}px
+- Position symmetry score: {positionSymmetryScore}/10
 
-LEFT EYE HYBRID DETECTION:
+INTER-EYE DISTANCE:
+- Distance: {interEyeDistance}px
+- Face width ratio: {interEyeDistanceRatio}%
+- Assessment: {interEyeAssessment}
+- Score: {interEyeScore}/10
 
-P_33 (Left eye outer corner):
-  Step 1: Find index 33
-  Step 2: Verify:
-    - P_33.y > P_4.y - 100 && P_33.y < P_4.y (above nose tip)
-    - P_33.x < FACE_CENTER_X (left side)
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y > P_4.y - 100 && 
-      p.y < P_4.y &&
-      p.x < FACE_CENTER_X - 50
-    ).sort((a,b) => a.x - b.x)[0]
+EYE SHAPE & CANTHAL TILT:
+- Left eye ratio: {leftEyeRatio} ({leftCanthalTiltDirection}, {leftCanthalTilt}°)
+- Right eye ratio: {rightEyeRatio} ({rightCanthalTiltDirection}, {rightCanthalTilt}°)
+- Tilt asymmetry: {tiltAsymmetry}°
+- Shape symmetry score: {shapeSymmetryScore}/10
 
-P_133 (Left eye inner corner):
-  Step 1: Find index 133
-  Step 2: Verify:
-    - P_133.y ≈ P_33.y ± 10
-    - P_133.x > P_33.x (more inward)
-    - P_133.x < FACE_CENTER_X
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      abs(p.y - P_33.y) < 15 &&
-      p.x > P_33.x &&
-      p.x < FACE_CENTER_X
-    ).sort((a,b) => b.x - a.x)[0]
+EYEBROW-TO-EYE DISTANCE:
+- Left: {leftBrowEyeDistance}px
+- Right: {rightBrowEyeDistance}px
+- Asymmetry: {browEyeAsymmetry}px ({browEyeAsymmetryRatio}%)
+- Score: {browEyeScore}/10
 
-FACE_CENTER_X = (P_33.x + (to be found P_263.x)) / 2
-FACE_WIDTH = (to be found P_263.x) - P_33.x
+EYELID ANALYSIS:
+- Left upper lid: {leftUpperLidExposure}px
+- Right upper lid: {rightUpperLidExposure}px
+- Upper lid asymmetry: {upperLidAsymmetry}px ({upperLidAsymmetryRatio}%)
+- Lower lid asymmetry: {lowerLidAsymmetry}px ({lowerLidAsymmetryRatio}%)
+- Eyelid score: {eyelidScore}/10
 
-P_159 (Left eye upper center):
-  Step 1: Find index 159
-  Step 2: Verify:
-    - P_159.y < P_33.y (above eye corner)
-    - P_159.x ≈ (P_33.x + P_133.x) / 2
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y < P_33.y - 5 &&
-      p.x > P_33.x + 10 &&
-      p.x < P_133.x - 10
-    ).sort((a,b) => a.y - b.y)[0]
+3D DEPTH:
+- Depth difference: {depthDifference} units
+- Depth score: {depthScore}/10
 
-P_145 (Left eye lower center):
-  Step 1: Find index 145
-  Step 2: Verify:
-    - P_145.y > P_33.y (below eye corner)
-    - P_145.x ≈ (P_33.x + P_133.x) / 2
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y > P_33.y + 5 &&
-      p.x > P_33.x + 10 &&
-      p.x < P_133.x - 10
-    ).sort((a,b) => b.y - a.y)[0]
+OVERALL:
+- Combined score: {overallScore}/10
+- Asymmetry level: {asymmetryLevel}
 
-P_160, P_144, P_158, P_153 (Left eye other points):
-  Step 1: Find indices (160, 144, 158, 153)
-  Step 2: Verify: Within eye region (between P_33 and P_133, P_159 and P_145)
-  Step 3: If verification fails: Find points in eye region by coordinates
+═══════════════════════════════════════════
+YOUR TASK
+═══════════════════════════════════════════
 
-RIGHT EYE HYBRID DETECTION:
+Based on these EXACT numbers:
+1. Explain what they mean to the user (in plain Turkish)
+2. Describe the visual appearance of the eyes
+3. Provide context for each measurement
+4. Give recommendations if needed
 
-P_263 (Right eye outer corner):
-  Step 1: Find index 263
-  Step 2: Verify:
-    - P_263.y ≈ P_33.y ± 10 (same level)
-    - P_263.x > FACE_CENTER_X (right side)
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      abs(p.y - P_33.y) < 15 &&
-      p.x > FACE_CENTER_X + 50
-    ).sort((a,b) => b.x - a.x)[0]
-
-P_362 (Right eye inner corner):
-  Step 1: Find index 362
-  Step 2: Verify:
-    - P_362.y ≈ P_263.y ± 10
-    - P_362.x < P_263.x (more inward)
-    - P_362.x > FACE_CENTER_X
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      abs(p.y - P_263.y) < 15 &&
-      p.x < P_263.x &&
-      p.x > FACE_CENTER_X
-    ).sort((a,b) => a.x - b.x)[0]
-
-P_386 (Right eye upper center):
-  Step 1: Find index 386
-  Step 2: Verify:
-    - P_386.y < P_263.y
-    - P_386.x ≈ (P_263.x + P_362.x) / 2
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y < P_263.y - 5 &&
-      p.x < P_263.x - 10 &&
-      p.x > P_362.x + 10
-    ).sort((a,b) => a.y - b.y)[0]
-
-P_374 (Right eye lower center):
-  Step 1: Find index 374
-  Step 2: Verify:
-    - P_374.y > P_263.y
-    - P_374.x ≈ (P_263.x + P_362.x) / 2
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y > P_263.y + 5 &&
-      p.x < P_263.x - 10 &&
-      p.x > P_362.x + 10
-    ).sort((a,b) => b.y - a.y)[0]
-
-P_387, P_373, P_385, P_380 (Right eye other points):
-  Step 1: Find indices (387, 373, 385, 380)
-  Step 2: Verify: Within eye region
-  Step 3: If verification fails: Find points by coordinates
-
-EYELID HYBRID DETECTION:
-
-P_246 (Left upper eyelid):
-  Step 1: Find index 246
-  Step 2: Verify:
-    - P_246.y < P_159.y - 5 (above upper eye)
-    - P_246.x ≈ P_159.x ± 20
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y < P_159.y - 5 &&
-      abs(p.x - P_159.x) < 30
-    ).sort((a,b) => a.y - b.y)[0]
-
-P_7 (Left lower eyelid):
-  Step 1: Find index 7
-  Step 2: Verify:
-    - P_7.y > P_145.y + 5
-    - P_7.x ≈ P_145.x ± 20
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y > P_145.y + 5 &&
-      abs(p.x - P_145.x) < 30
-    ).sort((a,b) => b.y - a.y)[0]
-
-P_466 (Right upper eyelid):
-  Step 1: Find index 466
-  Step 2: Verify:
-    - P_466.y < P_386.y - 5
-    - P_466.x ≈ P_386.x ± 20
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y < P_386.y - 5 &&
-      abs(p.x - P_386.x) < 30
-    ).sort((a,b) => a.y - b.y)[0]
-
-P_249 (Right lower eyelid):
-  Step 1: Find index 249
-  Step 2: Verify:
-    - P_249.y > P_374.y + 5
-    - P_249.x ≈ P_374.x ± 20
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y > P_374.y + 5 &&
-      abs(p.x - P_374.x) < 30
-    ).sort((a,b) => b.y - a.y)[0]
-
-═════════════════════════════════════════════
-SECTION 2: CALCULATIONS
-═════════════════════════════════════════════
-
-2.1 EYE DIMENSIONS:
-LEFT_EYE_WIDTH = P_33.x - P_133.x
-LEFT_EYE_HEIGHT = P_145.y - P_159.y
-LEFT_EYE_AREA = LEFT_EYE_WIDTH × LEFT_EYE_HEIGHT
-LEFT_EYE_RATIO = (LEFT_EYE_HEIGHT / LEFT_EYE_WIDTH) × 100
-
-RIGHT_EYE_WIDTH = P_263.x - P_362.x
-RIGHT_EYE_HEIGHT = P_374.y - P_386.y
-RIGHT_EYE_AREA = RIGHT_EYE_WIDTH × RIGHT_EYE_HEIGHT
-RIGHT_EYE_RATIO = (RIGHT_EYE_HEIGHT / RIGHT_EYE_WIDTH) × 100
-
-EYE_WIDTH_DIFFERENCE = abs(LEFT_EYE_WIDTH - RIGHT_EYE_WIDTH)
-EYE_WIDTH_DIFFERENCE_RATIO = (EYE_WIDTH_DIFFERENCE / max(LEFT_EYE_WIDTH, RIGHT_EYE_WIDTH)) × 100
-
-EYE_HEIGHT_DIFFERENCE = abs(LEFT_EYE_HEIGHT - RIGHT_EYE_HEIGHT)
-EYE_HEIGHT_DIFFERENCE_RATIO = (EYE_HEIGHT_DIFFERENCE / max(LEFT_EYE_HEIGHT, RIGHT_EYE_HEIGHT)) × 100
-
-EYE_AREA_DIFFERENCE = abs(LEFT_EYE_AREA - RIGHT_EYE_AREA)
-EYE_AREA_DIFFERENCE_RATIO = (EYE_AREA_DIFFERENCE / max(LEFT_EYE_AREA, RIGHT_EYE_AREA)) × 100
-
-2.2 INTER-EYE DISTANCE:
-INTER_EYE_DISTANCE = P_362.x - P_133.x
-FACE_WIDTH = P_263.x - P_33.x
-INTER_EYE_RATIO = (INTER_EYE_DISTANCE / FACE_WIDTH) × 100
-
-AVG_EYE_WIDTH = (LEFT_EYE_WIDTH + RIGHT_EYE_WIDTH) / 2
-INTER_EYE_TO_EYE_RATIO = INTER_EYE_DISTANCE / AVG_EYE_WIDTH
-
-2.3 EYE POSITION SYMMETRY:
-LEFT_EYE_CENTER_Y = (P_159.y + P_145.y) / 2
-RIGHT_EYE_CENTER_Y = (P_386.y + P_374.y) / 2
-EYE_Y_DIFFERENCE = abs(LEFT_EYE_CENTER_Y - RIGHT_EYE_CENTER_Y)
-EYE_Y_DIFFERENCE_RATIO = (EYE_Y_DIFFERENCE / FACE_WIDTH) × 100
-
-FACE_CENTER_X = (P_33.x + P_263.x) / 2
-LEFT_EYE_CENTER_X = (P_33.x + P_133.x) / 2
-RIGHT_EYE_CENTER_X = (P_263.x + P_362.x) / 2
-
-LEFT_EYE_TO_CENTER = abs(LEFT_EYE_CENTER_X - FACE_CENTER_X)
-RIGHT_EYE_TO_CENTER = abs(RIGHT_EYE_CENTER_X - FACE_CENTER_X)
-EYE_X_DISTANCE_DIFFERENCE = abs(LEFT_EYE_TO_CENTER - RIGHT_EYE_TO_CENTER)
-
-2.4 EYE SHAPE:
-LEFT_EYE_SHAPE_RATIO = LEFT_EYE_HEIGHT / LEFT_EYE_WIDTH
-LEFT_EYE_SHAPE = 
-  LEFT_EYE_SHAPE_RATIO > 0.45 ? "ROUND" :
-  LEFT_EYE_SHAPE_RATIO > 0.35 ? "ALMOND" :
-  LEFT_EYE_SHAPE_RATIO > 0.25 ? "OVAL" : "NARROW"
-
-RIGHT_EYE_SHAPE_RATIO = RIGHT_EYE_HEIGHT / RIGHT_EYE_WIDTH
-RIGHT_EYE_SHAPE = 
-  RIGHT_EYE_SHAPE_RATIO > 0.45 ? "ROUND" :
-  RIGHT_EYE_SHAPE_RATIO > 0.35 ? "ALMOND" :
-  RIGHT_EYE_SHAPE_RATIO > 0.25 ? "OVAL" : "NARROW"
-
-LEFT_EYE_TILT = atan2(P_33.y - P_133.y, P_33.x - P_133.x) × (180 / π)
-RIGHT_EYE_TILT = atan2(P_263.y - P_362.y, P_263.x - P_362.x) × (180 / π)
-EYE_TILT_DIFFERENCE = abs(LEFT_EYE_TILT - RIGHT_EYE_TILT)
-
-2.5 EYELID ANALYSIS:
-LEFT_UPPER_LID_VISIBILITY = P_159.y - P_246.y
-RIGHT_UPPER_LID_VISIBILITY = P_386.y - P_466.y
-LID_VISIBILITY_DIFFERENCE = abs(LEFT_UPPER_LID_VISIBILITY - RIGHT_UPPER_LID_VISIBILITY)
-
-LEFT_LOWER_LID_POS = P_7.y - P_145.y
-RIGHT_LOWER_LID_POS = P_249.y - P_374.y
-LOWER_LID_DIFFERENCE = abs(LEFT_LOWER_LID_POS - RIGHT_LOWER_LID_POS)
-
-2.6 3D DEPTH:
-LEFT_EYE_Z = (P_33.z + P_133.z + P_159.z + P_145.z) / 4
-RIGHT_EYE_Z = (P_263.z + P_362.z + P_386.z + P_374.z) / 4
-EYE_DEPTH_DIFFERENCE = abs(LEFT_EYE_Z - RIGHT_EYE_Z)
-
-═════════════════════════════════════════════
-SECTION 3: SCORING
-═════════════════════════════════════════════
-
-SIZE_SYMMETRY_SCORE =
-  EYE_AREA_DIFFERENCE_RATIO < 5 ? 10 :
-  EYE_AREA_DIFFERENCE_RATIO < 10 ? 7 :
-  EYE_AREA_DIFFERENCE_RATIO < 15 ? 4 :
-  EYE_AREA_DIFFERENCE_RATIO < 20 ? 2 : 0
-
-POSITION_SYMMETRY_SCORE =
-  (EYE_Y_DIFFERENCE_RATIO < 2 && EYE_X_DISTANCE_DIFFERENCE < 5) ? 10 :
-  (EYE_Y_DIFFERENCE_RATIO < 4 && EYE_X_DISTANCE_DIFFERENCE < 10) ? 7 :
-  (EYE_Y_DIFFERENCE_RATIO < 7 && EYE_X_DISTANCE_DIFFERENCE < 15) ? 4 :
-  (EYE_Y_DIFFERENCE_RATIO < 10 && EYE_X_DISTANCE_DIFFERENCE < 20) ? 2 : 0
-
-INTER_EYE_SCORE =
-  (INTER_EYE_RATIO < 25 || INTER_EYE_RATIO > 40) ? 3 :
-  (INTER_EYE_RATIO < 28 || INTER_EYE_RATIO > 37) ? 6 :
-  (INTER_EYE_RATIO < 30 || INTER_EYE_RATIO > 35) ? 8 : 10
-
-SHAPE_SYMMETRY_SCORE =
-  (EYE_TILT_DIFFERENCE < 3 && LEFT_EYE_SHAPE === RIGHT_EYE_SHAPE) ? 10 :
-  (EYE_TILT_DIFFERENCE < 6) ? 7 :
-  (EYE_TILT_DIFFERENCE < 10) ? 4 :
-  (EYE_TILT_DIFFERENCE < 15) ? 2 : 0
-
-LID_SYMMETRY_SCORE =
-  (LID_VISIBILITY_DIFFERENCE < 2 && LOWER_LID_DIFFERENCE < 2) ? 10 :
-  (LID_VISIBILITY_DIFFERENCE < 4 && LOWER_LID_DIFFERENCE < 4) ? 7 :
-  (LID_VISIBILITY_DIFFERENCE < 7 && LOWER_LID_DIFFERENCE < 7) ? 4 : 0
-
-OVERALL_SCORE = round(
-  (SIZE_SYMMETRY_SCORE × 0.30) +
-  (POSITION_SYMMETRY_SCORE × 0.25) +
-  (INTER_EYE_SCORE × 0.15) +
-  (SHAPE_SYMMETRY_SCORE × 0.20) +
-  (LID_SYMMETRY_SCORE × 0.10)
-)
-
-ASYMMETRY_LEVEL =
-  OVERALL_SCORE >= 8 ? "NONE" :
-  OVERALL_SCORE >= 5 ? "MILD" :
-  OVERALL_SCORE >= 3 ? "MODERATE" : "SEVERE"
-
-═════════════════════════════════════════════
-USER-FRIENDLY EXPLANATION REQUIREMENTS
-═════════════════════════════════════════════
-
-For EVERY "user_explanation" field, you MUST:
-1. Reference specific measurements from that category
-2. Explain what those numbers mean in context
-3. Be 2-3 sentences long
-4. Use plain language (no jargon)
-5. CRITICAL: Write in the SAME LANGUAGE specified in the system prompt (Turkish/English)
-
-EXAMPLE (for size_analysis):
-❌ BAD: "Your eyes are fine"
-✅ GOOD: "Left eye is 31.23px wide, right eye is 30.98px. Only 0.25px difference between them, showing excellent symmetry. The area difference of 1.3% is within ideal range."
-
-Apply this pattern to ALL "user_explanation" fields below.
-
-═════════════════════════════════════════════
-OUTPUT FORMAT (JSON)
-═════════════════════════════════════════════
-
-{
-  "analysis_result": {
-    "general_assessment": "string",
-    "asymmetry_level": "NONE/MILD/MODERATE/SEVERE",
-    "overall_score": 0-10,
-    "dominant_issue": "string"
-  },
-  
-  "user_friendly_summary": {
-    "assessment": "string (max 10 words)",
-    "explanation": "string (2-3 sentences)",
-    "key_findings": [
-      "string (3-5 bullets)",
-      "string (text only, no emojis)"
-    ]
-  },
-
-  "size_analysis": {
-    "width_difference": "number px",
-    "height_difference": "number px",
-    "area_difference_ratio": "number%",
-    "size_score": 0-10,
-    "user_explanation": "string (plain language)"
-  },
-  
-  "shape_analysis": {
-    "left_eye_shape": "ROUND/ALMOND/OVAL/NARROW",
-    "right_eye_shape": "ROUND/ALMOND/OVAL/NARROW",
-    "tilt_difference": "number°",
-    "shape_harmony": "MATCHED/MISMATCHED",
-    "shape_score": 0-10,
-    "user_explanation": "string (plain language)"
-  },
-  
-  "inter_eye_analysis": {
-    "distance": "number px",
-    "face_width_ratio": "number%",
-    "eye_width_ratio": "number%",
-    "idealness": "NARROW/IDEAL/WIDE",
-    "score": 0-10,
-    "user_explanation": "string (plain language)"
-  },
-  
-  "position_analysis": {
-    "y_difference": "number px",
-    "x_distance_difference": "number px",
-    "position_score": 0-10,
-    "user_explanation": "string (plain language)"
-  },
-  
-  "eyelid_analysis": {
-    "lid_visibility_difference": "number px",
-    "lower_lid_difference": "number px",
-    "lid_score": 0-10,
-    "lid_type": "NORMAL/HOODED/DEEP_SET",
-    "user_explanation": "string (plain language)"
-  },
-  
-  "symmetry_analysis": {
-    "horizontal_symmetry": "GOOD/FAIR/POOR",
-    "vertical_symmetry": "GOOD/FAIR/POOR",
-    "size_symmetry": "GOOD/FAIR/POOR",
-    "shape_symmetry": "GOOD/FAIR/POOR",
-    "overall_symmetry_score": 0-10,
-    "user_explanation": "string (plain language)"
-  },
-  
-  "3d_analysis": {
-    "depth_difference": "number mm",
-    "interpretation": "string",
-    "user_explanation": "string (plain language)"
-  },
-  
-  "facial_harmony": {
-    "golden_ratio_compliance": "GOOD/FAIR/POOR",
-    "facial_balance": "string",
-    "harmonic_assessment": "string",
-    "user_explanation": "string (plain language)"
-  },
-
-  "recommendations": {
-    "medical_advice": "string",
-    "aesthetic_advice": "string",
-    "makeup_suggestions": ["string"],
-    "attention_points": ["string"]
-  },
-
-  "metadata": {
-    "analysis_date": "ISO timestamp",
-    "points_used": number,
-    "reliability": "HIGH/MEDIUM/LOW",
-    "model_version": "V4"
-  }
-}
-
-CRITICAL APPLICATION NOTES:
-* Return ONLY JSON - No additional explanations
-* All coordinates and calculations to 2 decimal places
-* Reliability: < 400 landmarks = "MEDIUM", ≥400 = "HIGH"
-* Use index values first, fall back to hybrid control if invalid
-* Mark in metadata if hybrid control was used
-* Determine shape by ratio
-* Use atan2 for canthal tilt calculations
-
-CRITICAL FINAL WARNING:
-Response MUST be ONLY valid JSON.
-No markdown (\`\`\`json), no code blocks, no explanations, no thinking tags.
-Start with { and end with }`,
-  },
-  {
-    id: 'nose',
-    title: 'Burun',
-    icon: noseIcon,
-    description: 'Burun şekli ve simetri',
-    prompt: `You are a facial anatomy and nose structure expert. You will analyze raw 3D landmark data (x, y, z, index) for nasal asymmetry and return results in JSON format.
+CRITICAL:
+- DO NOT recalculate any values
+- USE the exact numbers provided above in your explanations
+- Reference specific measurements in every section
+- Keep scores as provided (do not inflate)
 
 ⚠️ STRICT MODE:
 - Return ONLY valid JSON output
@@ -810,1447 +298,934 @@ Start with { and end with }`,
 - Output must start with { and end with }
 - DO NOT include <thinking> tags, reasoning process, or explanations
 
-CRITICAL DATA ASSUMPTION:
-Landmark indices belong to MediaPipe Face Mesh model, verified with Hybrid Control.
-
-TASK:
-1. Detect nose landmarks using index and positional logic
-2. Analyze nasal asymmetry (horizontal, vertical, 3D depth)
-3. Return results in JSON format
-
-═════════════════════════════════════════════
-SECTION 1: LANDMARK DETECTION AND HYBRID CONTROL
-═════════════════════════════════════════════
-
-REFERENCE POINTS (Find these first):
-1. P_33 (RIGHT EYE OUTER): use index 33
-2. P_263 (LEFT EYE OUTER): use index 263
-3. P_6 (NASION/BRIDGE): use index 6
-4. P_100 (LEFT NOSTRIL): use index 100
-5. P_329 (RIGHT NOSTRIL): use index 329
-
-FACE_CENTER_X = (P_33.x + P_263.x) / 2
-FACE_WIDTH = P_263.x - P_33.x
-
-NOSE TIP HYBRID DETECTION (P_4):
-  Step 1: Find index 4
-  Step 2: Verify:
-    - P_4.y is smallest y among valid points (y > 50)
-    - abs(P_4.x - FACE_CENTER_X) < 30
-  Step 3: If verification fails:
-    Alternative = points.filter(p =>
-      p.y > 50 &&
-      abs(p.x - FACE_CENTER_X) < 40
-    ).sort((a,b) => a.y - b.y)[0]
-
-═════════════════════════════════════════════
-SECTION 2: CALCULATIONS
-═════════════════════════════════════════════
-
-2.1 HORIZONTAL ASYMMETRY (X-axis):
-NOSE_TIP_DEVIATION = P_4.x - FACE_CENTER_X
-NOSE_TIP_RATIO = (abs(NOSE_TIP_DEVIATION) / FACE_WIDTH) × 100
-NOSE_TIP_DIRECTION =
-  abs(NOSE_TIP_DEVIATION) < 2 ? "CENTER" :
-  NOSE_TIP_DEVIATION > 0 ? "RIGHT" : "LEFT"
-
-LEFT_NOSTRIL_DISTANCE = abs(P_100.x - FACE_CENTER_X)
-RIGHT_NOSTRIL_DISTANCE = abs(P_329.x - FACE_CENTER_X)
-NOSTRIL_ASYMMETRY = abs(LEFT_NOSTRIL_DISTANCE - RIGHT_NOSTRIL_DISTANCE)
-NOSTRIL_RATIO = (NOSTRIL_ASYMMETRY / FACE_WIDTH) × 100
-
-2.2 VERTICAL ASYMMETRY (Rotation):
-DX = P_6.x - P_4.x
-DY = P_4.y - P_6.y
-ROTATION_ANGLE_RAD = atan2(DX, DY)
-ROTATION_ANGLE_DEGREE = ROTATION_ANGLE_RAD × (180 / π)
-ROTATION_DIRECTION =
-  abs(ROTATION_ANGLE_DEGREE) < 3 ? "STRAIGHT" :
-  ROTATION_ANGLE_DEGREE > 0 ? "TILTED_RIGHT" : "TILTED_LEFT"
-
-2.3 DEPTH ASYMMETRY (Z-axis):
-DEPTH_DIFFERENCE = P_100.z - P_329.z
-
-═════════════════════════════════════════════
-SECTION 3: SCORING
-═════════════════════════════════════════════
-
-NOSE_TIP_SCORE =
-  NOSE_TIP_RATIO < 2 ? 10 :
-  NOSE_TIP_RATIO < 4 ? 8 :
-  NOSE_TIP_RATIO < 7 ? 5 :
-  NOSE_TIP_RATIO < 10 ? 3 :
-  NOSE_TIP_RATIO < 15 ? 1 : 0
-
-NOSTRIL_SCORE =
-  NOSTRIL_RATIO < 3 ? 10 :
-  NOSTRIL_RATIO < 6 ? 7 :
-  NOSTRIL_RATIO < 10 ? 4 :
-  NOSTRIL_RATIO < 15 ? 2 : 0
-
-ROTATION_SCORE =
-  abs(ROTATION_ANGLE_DEGREE) < 3 ? 10 :
-  abs(ROTATION_ANGLE_DEGREE) < 6 ? 7 :
-  abs(ROTATION_ANGLE_DEGREE) < 10 ? 4 :
-  abs(ROTATION_ANGLE_DEGREE) < 15 ? 2 : 0
-
-OVERALL_SCORE = round((NOSE_TIP_SCORE × 0.5) + (ROTATION_SCORE × 0.3) + (NOSTRIL_SCORE × 0.2))
-
-ASYMMETRY_LEVEL =
-  OVERALL_SCORE >= 8 ? "NONE" :
-  OVERALL_SCORE >= 5 ? "MILD" :
-  OVERALL_SCORE >= 3 ? "MODERATE" : "SEVERE"
-
-═════════════════════════════════════════════
-USER-FRIENDLY EXPLANATION REQUIREMENTS
-═════════════════════════════════════════════
-
-For EVERY "user_explanation" field, you MUST:
-1. Reference specific measurements from that category
-2. Explain what those numbers mean in context
-3. Be 2-3 sentences long
-4. Use plain language (no jargon)
-5. CRITICAL: Write in the SAME LANGUAGE specified in the system prompt (Turkish/English)
-
-EXAMPLE (for nose_tip_analysis):
-❌ BAD: "Your nose tip is centered"
-✅ GOOD: "Your nose tip shows 0.01px deviation from face center. This 0.01% ratio means perfect symmetry. Your nose tip is in CENTER position."
-
-Apply this pattern to ALL "user_explanation" fields below.
-
-═════════════════════════════════════════════
-OUTPUT FORMAT (JSON)
-═════════════════════════════════════════════
+═══════════════════════════════════════════
+OUTPUT JSON FORMAT
+═══════════════════════════════════════════
 
 {
   "analysis_result": {
-    "general_assessment": "string",
-    "asymmetry_level": "NONE/MILD/MODERATE/SEVERE",
-    "overall_score": 0-10,
-    "asymmetry_type": "string"
-  },
-  
-  "user_friendly_summary": {
-    "assessment": "string (max 10 words)",
-    "explanation": "string (2-3 sentences)",
-    "key_findings": [
-      "string (3-5 bullets)",
-      "string (text only, no emojis)"
-    ]
-  },
-
-  "nose_tip_analysis": {
-    "deviation": "number px",
-    "deviation_ratio": "number%",
-    "direction": "LEFT/RIGHT/CENTER",
-    "score": 0-10,
-    "user_explanation": "string (plain language)"
-  },
-
-  "nostril_analysis": {
-    "horizontal_difference": "number px",
-    "asymmetry_ratio": "number%",
-    "score": 0-10,
-    "user_explanation": "string (plain language)"
-  },
-
-  "rotation_analysis": {
-    "rotation_angle": "number°",
-    "direction": "TILTED_LEFT/TILTED_RIGHT/STRAIGHT",
-    "score": 0-10,
-    "user_explanation": "string (plain language)"
-  },
-
-  "3d_analysis": {
-    "depth_difference": "number mm",
-    "interpretation": "string",
-    "user_explanation": "string (plain language)"
-  },
-
-  "visual_assessment": {
-    "prominent_asymmetry_areas": ["string"],
-    "visual_appearance": "string",
-    "photo_effect": "string",
-    "user_explanation": "string (plain language)"
-  },
-
-  "recommendations": {
-    "medical_advice": "string",
-    "priority_intervention": "string",
-    "attention_points": ["string"]
-  },
-
-  "metadata": {
-    "analysis_date": "ISO timestamp",
-    "points_used": number,
-    "reliability": "HIGH/MEDIUM/LOW",
-    "model_version": "V4"
-  }
-}
-
-CRITICAL APPLICATION NOTES:
-* Return ONLY JSON - No additional explanations
-* All coordinates and calculations to 2 decimal places
-* Reliability: < 400 landmarks = "MEDIUM", ≥400 = "HIGH"
-* Use index values first, fall back to hybrid control if invalid
-* Mark in metadata if hybrid control was used
-
-CRITICAL FINAL WARNING:
-Response MUST be ONLY valid JSON.
-No markdown (\\\`\\\`\\\`json), no code blocks, no explanations, no thinking tags.
-Start with { and end with }`,
-  },
-  {
-    id: 'lips',
-    title: 'Dudaklar',
-    icon: lipsIcon,
-    description: 'Dudak şekli ve kalınlık',
-    prompt: `You are a facial anatomy and lip structure expert. You will analyze raw 3D landmark data (x, y, z, index) for lip shape, upper-lower ratio, symmetry, vermillion border, and facial harmony, returning results in JSON format.
-
-⚠️ STRICT MODE: 
-- Return ONLY valid JSON output
-- No explanations, thinking process, markdown code blocks, or additional text
-- Output must start with { and end with }
-- DO NOT include <thinking> tags, reasoning process, or explanations
-
-CRITICAL DATA ASSUMPTION: 
-Landmark indices belong to MediaPipe Face Mesh model, verified with Hybrid Control.
-
-TASK:
-1. Detect lip landmarks using index and positional logic
-2. Analyze lip shape, upper-lower ratio, symmetry, vermillion border, and facial harmony
-3. Return results in JSON format
-
-═════════════════════════════════════════════
-SECTION 1: LANDMARK DETECTION AND HYBRID CONTROL
-═════════════════════════════════════════════
-
-REFERENCE POINTS (Find these first):
-P_4 (NOSE TIP): index 4
-P_152 (CHIN TIP): index 152
-P_33 (RIGHT EYE OUTER): index 33
-P_263 (LEFT EYE OUTER): index 263
-
-FACE_CENTER_X = (P_33.x + P_263.x) / 2
-FACE_WIDTH = P_263.x - P_33.x
-LIP_Y_REGION_START = P_4.y + 30
-LIP_Y_REGION_END = P_152.y - 50
-
-LIP CORNER HYBRID DETECTION:
-
-P_61 (Left lip corner):
-  Step 1: Find index 61
-  Step 2: Verify:
-    - P_61.y > LIP_Y_REGION_START && P_61.y < LIP_Y_REGION_END
-    - P_61.x < FACE_CENTER_X (left side)
-    - P_61.x > P_263.x - (FACE_WIDTH * 0.35)
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y > LIP_Y_REGION_START && 
-      p.y < LIP_Y_REGION_END &&
-      p.x < FACE_CENTER_X &&
-      p.x > P_263.x - (FACE_WIDTH * 0.35)
-    ).sort((a,b) => a.x - b.x)[0]
-
-P_291 (Right lip corner):
-  Step 1: Find index 291
-  Step 2: Verify:
-    - P_291.y ≈ P_61.y ± 10 (same level)
-    - P_291.x > FACE_CENTER_X (right side)
-    - P_291.x < P_33.x + (FACE_WIDTH * 0.35)
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      abs(p.y - P_61.y) < 15 &&
-      p.x > FACE_CENTER_X &&
-      p.x < P_33.x + (FACE_WIDTH * 0.35)
-    ).sort((a,b) => b.x - a.x)[0]
-
-LIP_CENTER_Y = (P_61.y + P_291.y) / 2
-LIP_WIDTH = P_291.x - P_61.x
-
-UPPER LIP HYBRID DETECTION:
-
-P_0 (Upper lip center - philtrum):
-  Step 1: Find index 0
-  Step 2: Verify:
-    - P_0.y < LIP_CENTER_Y (above lip line)
-    - P_0.y > P_4.y + 20 (below nose tip)
-    - abs(P_0.x - FACE_CENTER_X) < 15 (centered)
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y < LIP_CENTER_Y &&
-      p.y > P_4.y + 20 &&
-      abs(p.x - FACE_CENTER_X) < 20
-    ).sort((a,b) => a.y - b.y)[0]
-
-P_37 (Upper lip left center):
-  Step 1: Find index 37
-  Step 2: Verify:
-    - P_37.y ≈ LIP_CENTER_Y ± 5 (on lip line)
-    - P_37.x > P_61.x + (LIP_WIDTH * 0.2)
-    - P_37.x < FACE_CENTER_X
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      abs(p.y - LIP_CENTER_Y) < 10 &&
-      p.x > P_61.x + (LIP_WIDTH * 0.15) &&
-      p.x < FACE_CENTER_X
-    ).sort((a,b) => abs(a.x - (P_61.x + LIP_WIDTH * 0.25)))[0]
-
-P_267 (Upper lip right center):
-  Step 1: Find index 267
-  Step 2: Verify:
-    - P_267.y ≈ P_37.y ± 5 (same level)
-    - P_267.x < P_291.x - (LIP_WIDTH * 0.2)
-    - P_267.x > FACE_CENTER_X
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      abs(p.y - P_37.y) < 10 &&
-      p.x < P_291.x - (LIP_WIDTH * 0.15) &&
-      p.x > FACE_CENTER_X
-    ).sort((a,b) => abs(a.x - (P_291.x - LIP_WIDTH * 0.25)))[0]
-
-P_39, P_269 (Upper lip left-right intermediate):
-  Step 1: Find indices (39, 269)
-  Step 2: Verify: Between P_61 and P_37 (left), P_267 and P_291 (right)
-  Step 3: If verification fails: Find intermediate points
-
-P_40, P_270 (Upper lip left-right outer):
-  Step 1: Find indices (40, 270)
-  Step 2: Verify: Near lip corners
-  Step 3: Apply alternative detection if needed
-
-LOWER LIP HYBRID DETECTION:
-
-P_17 (Lower lip center):
-  Step 1: Find index 17
-  Step 2: Verify:
-    - P_17.y > LIP_CENTER_Y (below lip line)
-    - P_17.y < P_152.y - 40 (above chin tip)
-    - abs(P_17.x - FACE_CENTER_X) < 15
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y > LIP_CENTER_Y &&
-      p.y < P_152.y - 40 &&
-      abs(p.x - FACE_CENTER_X) < 20
-    ).sort((a,b) => b.y - a.y)[0]
-
-P_84 (Lower lip left center):
-  Step 1: Find index 84
-  Step 2: Verify:
-    - P_84.y ≈ LIP_CENTER_Y ± 5
-    - P_84.x > P_61.x + (LIP_WIDTH * 0.2)
-    - P_84.x < FACE_CENTER_X
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      abs(p.y - LIP_CENTER_Y) < 10 &&
-      p.x > P_61.x + (LIP_WIDTH * 0.15) &&
-      p.x < FACE_CENTER_X
-    ).sort((a,b) => abs(a.x - (P_61.x + LIP_WIDTH * 0.25)))[0]
-
-P_314 (Lower lip right center):
-  Step 1: Find index 314
-  Step 2: Verify:
-    - P_314.y ≈ P_84.y ± 5
-    - P_314.x < P_291.x - (LIP_WIDTH * 0.2)
-    - P_314.x > FACE_CENTER_X
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      abs(p.y - P_84.y) < 10 &&
-      p.x < P_291.x - (LIP_WIDTH * 0.15) &&
-      p.x > FACE_CENTER_X
-    ).sort((a,b) => abs(a.x - (P_291.x - LIP_WIDTH * 0.25)))[0]
-
-P_181, P_405 (Lower lip left-right intermediate):
-  Step 1: Find indices (181, 405)
-  Step 2: Verify: On lip line, intermediate regions
-  Step 3: Apply alternative detection if needed
-
-P_91, P_321 (Lower lip left-right outer):
-  Step 1: Find indices (91, 321)
-  Step 2: Verify: Near lip corners, lower lip
-  Step 3: Apply alternative detection if needed
-
-OUTER LIP CONTOUR HYBRID DETECTION:
-
-P_185 (Upper lip outer top left):
-  Step 1: Find index 185
-  Step 2: Verify:
-    - P_185.y < P_37.y - 5 (above upper lip)
-    - P_185.x ≈ P_37.x ± 20
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y < P_37.y - 3 &&
-      abs(p.x - P_37.x) < 30
-    ).sort((a,b) => a.y - b.y)[0]
-
-P_409 (Upper lip outer top right):
-  Step 1: Find index 409
-  Step 2: Verify:
-    - P_409.y ≈ P_185.y ± 5
-    - P_409.x ≈ P_267.x ± 20
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      abs(p.y - P_185.y) < 10 &&
-      abs(p.x - P_267.x) < 30
-    ).sort((a,b) => abs(a.y - P_185.y))[0]
-
-P_146 (Lower lip outer bottom left):
-  Step 1: Find index 146
-  Step 2: Verify:
-    - P_146.y > P_84.y + 5 (below lower lip)
-    - P_146.x ≈ P_84.x ± 20
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y > P_84.y + 3 &&
-      abs(p.x - P_84.x) < 30
-    ).sort((a,b) => b.y - a.y)[0]
-
-P_375 (Lower lip outer bottom right):
-  Step 1: Find index 375
-  Step 2: Verify:
-    - P_375.y ≈ P_146.y ± 5
-    - P_375.x ≈ P_314.x ± 20
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      abs(p.y - P_146.y) < 10 &&
-      abs(p.x - P_314.x) < 30
-    ).sort((a,b) => abs(a.y - P_146.y))[0]
-
-═════════════════════════════════════════════
-SECTION 2: CALCULATIONS
-═════════════════════════════════════════════
-
-2.1 LIP WIDTH AND POSITION:
-LIP_WIDTH = P_291.x - P_61.x
-LIP_WIDTH_RATIO = (LIP_WIDTH / FACE_WIDTH) × 100
-
-LIP_CENTER_X = (P_61.x + P_291.x) / 2
-LIP_CENTER_DEVIATION = abs(LIP_CENTER_X - FACE_CENTER_X)
-LIP_CENTER_DEVIATION_RATIO = (LIP_CENTER_DEVIATION / FACE_WIDTH) × 100
-
-2.2 UPPER LIP ANALYSIS:
-UPPER_LIP_HEIGHT_CENTER = ((P_37.y + P_267.y) / 2) - P_0.y
-UPPER_LIP_HEIGHT_LEFT = P_37.y - P_185.y
-UPPER_LIP_HEIGHT_RIGHT = P_267.y - P_409.y
-UPPER_LIP_HEIGHT_DIFFERENCE = abs(UPPER_LIP_HEIGHT_LEFT - UPPER_LIP_HEIGHT_RIGHT)
-
-LEFT_CUPID_BOW_HEIGHT = P_37.y - P_0.y
-RIGHT_CUPID_BOW_HEIGHT = P_267.y - P_0.y
-CUPID_BOW_DIFFERENCE = abs(LEFT_CUPID_BOW_HEIGHT - RIGHT_CUPID_BOW_HEIGHT)
-CUPID_BOW_PRESENCE = (LEFT_CUPID_BOW_HEIGHT + RIGHT_CUPID_BOW_HEIGHT) / 2
-
-2.3 LOWER LIP ANALYSIS:
-LOWER_LIP_HEIGHT_CENTER = P_17.y - ((P_84.y + P_314.y) / 2)
-LOWER_LIP_HEIGHT_LEFT = P_146.y - P_84.y
-LOWER_LIP_HEIGHT_RIGHT = P_375.y - P_314.y
-LOWER_LIP_HEIGHT_DIFFERENCE = abs(LOWER_LIP_HEIGHT_LEFT - LOWER_LIP_HEIGHT_RIGHT)
-
-2.4 UPPER-LOWER LIP RATIO:
-TOTAL_LIP_HEIGHT = LOWER_LIP_HEIGHT_CENTER + UPPER_LIP_HEIGHT_CENTER
-UPPER_LOWER_RATIO = UPPER_LIP_HEIGHT_CENTER / LOWER_LIP_HEIGHT_CENTER
-
-2.5 LIP LINE (VERMILLION BORDER):
-LEFT_LINE_CENTER_Y = (P_37.y + P_84.y) / 2
-RIGHT_LINE_CENTER_Y = (P_267.y + P_314.y) / 2
-LINE_Y_DIFFERENCE = abs(LEFT_LINE_CENTER_Y - RIGHT_LINE_CENTER_Y)
-
-LIP_LINE_TILT = atan2(P_291.y - P_61.y, P_291.x - P_61.x) × (180 / π)
-
-2.6 LIP CORNER SYMMETRY:
-LEFT_CORNER_TO_CENTER = abs(P_61.x - FACE_CENTER_X)
-RIGHT_CORNER_TO_CENTER = abs(P_291.x - FACE_CENTER_X)
-CORNER_DISTANCE_DIFFERENCE = abs(LEFT_CORNER_TO_CENTER - RIGHT_CORNER_TO_CENTER)
-CORNER_DISTANCE_RATIO = (CORNER_DISTANCE_DIFFERENCE / LIP_WIDTH) × 100
-
-CORNER_Y_DIFFERENCE = abs(P_61.y - P_291.y)
-CORNER_Y_RATIO = (CORNER_Y_DIFFERENCE / LIP_WIDTH) × 100
-
-2.7 LIP THICKNESS (3D):
-UPPER_LIP_THICKNESS = (P_0.z + P_37.z + P_267.z + P_39.z + P_269.z) / 5
-LOWER_LIP_THICKNESS = (P_17.z + P_84.z + P_314.z + P_181.z + P_405.z) / 5
-LIP_THICKNESS_RATIO = UPPER_LIP_THICKNESS / LOWER_LIP_THICKNESS
-
-LEFT_THICKNESS = (P_37.z + P_39.z + P_40.z + P_84.z + P_181.z + P_91.z) / 6
-RIGHT_THICKNESS = (P_267.z + P_269.z + P_270.z + P_314.z + P_405.z + P_321.z) / 6
-THICKNESS_DIFFERENCE = abs(LEFT_THICKNESS - RIGHT_THICKNESS)
-
-2.8 FACIAL HARMONY:
-PHILTRUM_LENGTH = P_0.y - P_4.y
-LIP_TO_CHIN_DISTANCE = P_152.y - P_17.y
-FACE_HEIGHT = P_152.y - P_4.y
-LIP_TO_FACE_RATIO = (TOTAL_LIP_HEIGHT / FACE_HEIGHT) × 100
-
-═════════════════════════════════════════════
-SECTION 3: SCORING
-═════════════════════════════════════════════
-
-UPPER_LOWER_RATIO_SCORE =
-  (UPPER_LOWER_RATIO < 0.5 || UPPER_LOWER_RATIO > 1.2) ? 3 :
-  (UPPER_LOWER_RATIO < 0.6 || UPPER_LOWER_RATIO > 1.1) ? 6 :
-  (UPPER_LOWER_RATIO < 0.7 || UPPER_LOWER_RATIO > 1.0) ? 8 : 10
-
-HEIGHT_SYMMETRY_SCORE =
-  (UPPER_LIP_HEIGHT_DIFFERENCE < 2 && LOWER_LIP_HEIGHT_DIFFERENCE < 2) ? 10 :
-  (UPPER_LIP_HEIGHT_DIFFERENCE < 4 && LOWER_LIP_HEIGHT_DIFFERENCE < 4) ? 7 :
-  (UPPER_LIP_HEIGHT_DIFFERENCE < 7 && LOWER_LIP_HEIGHT_DIFFERENCE < 7) ? 4 : 0
-
-CORNER_SYMMETRY_SCORE =
-  (CORNER_DISTANCE_RATIO < 3 && CORNER_Y_RATIO < 2) ? 10 :
-  (CORNER_DISTANCE_RATIO < 6 && CORNER_Y_RATIO < 4) ? 7 :
-  (CORNER_DISTANCE_RATIO < 10 && CORNER_Y_RATIO < 7) ? 4 : 0
-
-LINE_SYMMETRY_SCORE =
-  (LINE_Y_DIFFERENCE < 2 && abs(LIP_LINE_TILT) < 3) ? 10 :
-  (LINE_Y_DIFFERENCE < 4 && abs(LIP_LINE_TILT) < 5) ? 7 :
-  (LINE_Y_DIFFERENCE < 7 && abs(LIP_LINE_TILT) < 8) ? 4 : 0
-
-FACIAL_HARMONY_SCORE =
-  (LIP_WIDTH_RATIO < 40 || LIP_WIDTH_RATIO > 55) ? 5 :
-  (LIP_WIDTH_RATIO < 43 || LIP_WIDTH_RATIO > 52) ? 7 :
-  (LIP_WIDTH_RATIO < 45 || LIP_WIDTH_RATIO > 50) ? 9 : 10
-
-OVERALL_SCORE = round(
-  (UPPER_LOWER_RATIO_SCORE × 0.25) +
-  (HEIGHT_SYMMETRY_SCORE × 0.30) +
-  (CORNER_SYMMETRY_SCORE × 0.25) +
-  (LINE_SYMMETRY_SCORE × 0.15) +
-  (FACIAL_HARMONY_SCORE × 0.05)
-)
-
-ASYMMETRY_LEVEL =
-  OVERALL_SCORE >= 8 ? "NONE" :
-  OVERALL_SCORE >= 5 ? "MILD" :
-  OVERALL_SCORE >= 3 ? "MODERATE" : "SEVERE"
-
-═════════════════════════════════════════════
-USER-FRIENDLY EXPLANATION REQUIREMENTS
-═════════════════════════════════════════════
-
-For EVERY "user_explanation" field, you MUST:
-1. Reference specific measurements from that category
-2. Explain what those numbers mean in context
-3. Be 2-3 sentences long
-4. Use plain language (no jargon)
-5. CRITICAL: Write in the SAME LANGUAGE specified in the system prompt (Turkish/English)
-
-EXAMPLE (for 3d_analysis):
-❌ BAD: "Your lips thickness is good"
-✅ GOOD: "Upper lip is 10.23mm thick, lower lip is 12.56mm. Difference between them is 2.33mm (12.56 - 10.23). This difference is minimal and normal. Your lips volume appears balanced."
-
-Apply this pattern to ALL "user_explanation" fields below.
-
-═════════════════════════════════════════════
-OUTPUT FORMAT (JSON)
-═════════════════════════════════════════════
-
-{
-  "analysis_result": {
-    "general_assessment": "string",
-    "asymmetry_level": "NONE/MILD/MODERATE/SEVERE",
-    "overall_score": 0-10,
+    "general_assessment": "string (reference the scores)",
+    "asymmetry_level": "{asymmetryLevel}",  // Use provided value
+    "overall_score": {overallScore},         // Use provided value
     "dominant_issue": "string"
   },
-  
+
   "user_friendly_summary": {
     "assessment": "string (max 10 words)",
-    "explanation": "string (2-3 sentences)",
+    "explanation": "string (2-3 sentences, MUST reference widthDifference={widthDifference}px, verticalMisalignment={verticalMisalignment}px, interEyeDistance={interEyeDistance}px)",
     "key_findings": [
-      "string (3-5 bullets)",
-      "string (text only, no emojis)"
+      "Göz genişliği farkı {widthDifference}px ({widthDifferenceRatio}%)",
+      "Dikey hizalama farkı {verticalMisalignment}px",
+      "Göz arası mesafe {interEyeDistance}px ({interEyeAssessment})"
     ]
   },
 
   "size_analysis": {
-    "lip_width": "number px",
-    "lip_width_ratio": "number%",
-    "total_height": "number px",
-    "upper_lip_height": "number px",
-    "lower_lip_height": "number px",
-    "upper_lower_ratio": number,
-    "upper_lower_ratio_score": 0-10,
-    "ratio_idealness": "IDEAL/LOWER_FULLER/UPPER_FULLER",
-    "user_explanation": "string (plain language)"
+    "width_difference": {widthDifference},              // COPY provided value
+    "width_difference_ratio": {widthDifferenceRatio},   // COPY provided value
+    "height_difference": {heightDifference},            // COPY provided value
+    "height_difference_ratio": {heightDifferenceRatio}, // COPY provided value
+    "area_difference_ratio": {areaDifferenceRatio},     // COPY provided value
+    "size_score": {sizeSymmetryScore},                  // COPY provided value
+    "user_explanation": "string (explain what {widthDifference}px, {heightDifference}px, and {areaDifferenceRatio}% mean)"
   },
 
   "shape_analysis": {
-    "cupid_bow_presence": "number px",
-    "cupid_bow_symmetry": "number px",
-    "bow_difference": "number px",
-    "lip_line_tilt": "number°",
-    "shape_type": "FULL/MEDIUM/THIN",
-    "user_explanation": "string (plain language)"
+    "left_eye_ratio": {leftEyeRatio},                        // COPY
+    "right_eye_ratio": {rightEyeRatio},                      // COPY
+    "left_canthal_tilt": {leftCanthalTilt},                  // COPY
+    "left_canthal_direction": "{leftCanthalTiltDirection}",  // COPY
+    "right_canthal_tilt": {rightCanthalTilt},                // COPY
+    "right_canthal_direction": "{rightCanthalTiltDirection}",// COPY
+    "tilt_difference": {tiltAsymmetry},                      // COPY
+    "shape_harmony": "string (based on directions matching)",
+    "shape_score": {shapeSymmetryScore},                     // COPY
+    "user_explanation": "string (explain {leftEyeRatio}, {rightEyeRatio}, and {tiltAsymmetry}°)"
+  },
+
+  "inter_eye_analysis": {
+    "distance": {interEyeDistance},                // COPY
+    "face_width_ratio": {interEyeDistanceRatio},   // COPY
+    "idealness": "{interEyeAssessment}",           // COPY
+    "score": {interEyeScore},                      // COPY
+    "user_explanation": "string (explain {interEyeDistance}px and {interEyeDistanceRatio}%)"
+  },
+
+  "position_analysis": {
+    "y_difference": {verticalMisalignment},               // COPY
+    "y_difference_ratio": {verticalMisalignmentRatio},    // COPY
+    "x_distance_difference": {horizontalAsymmetry},       // COPY
+    "position_score": {positionSymmetryScore},            // COPY
+    "user_explanation": "string (explain {verticalMisalignment}px and {horizontalAsymmetry}px)"
+  },
+
+  "eyelid_analysis": {
+    "left_upper_lid_exposure": {leftUpperLidExposure},      // COPY
+    "right_upper_lid_exposure": {rightUpperLidExposure},    // COPY
+    "upper_lid_asymmetry": {upperLidAsymmetry},             // COPY
+    "upper_lid_asymmetry_ratio": {upperLidAsymmetryRatio},  // COPY
+    "lower_lid_asymmetry": {lowerLidAsymmetry},             // COPY
+    "lower_lid_asymmetry_ratio": {lowerLidAsymmetryRatio},  // COPY
+    "lid_score": {eyelidScore},                             // COPY
+    "lid_type": "string (based on exposure values)",
+    "user_explanation": "string (explain {upperLidAsymmetry}px and {lowerLidAsymmetry}px)"
+  },
+
+  "eyebrow_distance_analysis": {
+    "left_brow_eye_distance": {leftBrowEyeDistance},    // COPY
+    "right_brow_eye_distance": {rightBrowEyeDistance},  // COPY
+    "brow_asymmetry": {browEyeAsymmetry},               // COPY
+    "brow_asymmetry_ratio": {browEyeAsymmetryRatio},    // COPY
+    "brow_score": {browEyeScore},                       // COPY
+    "user_explanation": "string (explain {browEyeAsymmetry}px)"
   },
 
   "symmetry_analysis": {
-    "upper_lip_difference": "number px",
-    "upper_lip_score": 0-10,
-    "lower_lip_difference": "number px",
-    "lower_lip_score": 0-10,
-    "corner_distance_difference": "number px",
-    "corner_y_difference": "number px",
-    "corner_score": 0-10,
-    "line_tilt": "number°",
-    "line_score": 0-10,
-    "overall_symmetry_score": 0-10,
-    "user_explanation": "string (plain language)"
+    "horizontal_symmetry": "string (based on horizontalAsymmetry)",
+    "vertical_symmetry": "string (based on verticalMisalignment)",
+    "size_symmetry": "string (based on sizeSymmetryScore)",
+    "shape_symmetry": "string (based on shapeSymmetryScore)",
+    "overall_symmetry_score": {overallScore},  // COPY
+    "user_explanation": "string (reference all sub-scores)"
   },
 
   "3d_analysis": {
-    "upper_lip_thickness": "number mm",
-    "lower_lip_thickness": "number mm",
-    "side_thickness_difference": "number mm",
-    "volume_assessment": "string",
-    "user_explanation": "string (plain language)"
+    "depth_difference": {depthDifference},   // COPY
+    "depth_score": {depthScore},             // COPY
+    "interpretation": "string",
+    "user_explanation": "string (explain {depthDifference})"
   },
 
   "facial_harmony": {
-    "lip_width_ratio": "number%",
-    "philtrum_length": "number px",
-    "lip_to_chin_distance": "number px",
-    "face_ratio": "number%",
-    "golden_ratio_compliance": "GOOD/FAIR/POOR",
-    "facial_balance": "string",
-    "harmony_score": 0-10,
-    "user_explanation": "string (plain language)"
+    "inter_eye_harmony": "string (based on interEyeAssessment)",
+    "size_balance": "string (based on areaDifferenceRatio)",
+    "position_balance": "string (based on positionSymmetryScore)",
+    "user_explanation": "string"
   },
 
   "recommendations": {
-    "medical_advice": "string",
-    "aesthetic_advice": "string",
-    "filler_suggestions": ["string"],
+    "medical_advice": "string (IF score < 5, suggest professional evaluation)",
+    "aesthetic_advice": "string (based on lowest sub-score)",
     "makeup_suggestions": ["string"],
     "attention_points": ["string"]
   },
 
   "metadata": {
     "analysis_date": "ISO timestamp",
-    "points_used": number,
-    "reliability": "HIGH/MEDIUM/LOW",
-    "model_version": "V4"
+    "points_used": 468,
+    "reliability": "HIGH",
+    "model_version": "V5_CALCULATED",
+    "calculation_method": "typescript_precalculated"
   }
 }
 
-CRITICAL APPLICATION NOTES:
-* Return ONLY JSON - No additional explanations
-* All coordinates and calculations to 2 decimal places
-* Reliability: < 400 landmarks = "MEDIUM", ≥400 = "HIGH"
-* Use index values first, fall back to hybrid control if invalid
-* Mark in metadata if hybrid control was used
-* Cupid's bow presence is important for lip aesthetics
-* Greater deviation from ideal upper-lower ratio increases score
+STRICT REQUIREMENTS:
+- All numeric fields in output MUST exactly match the input metrics
+- No recalculation allowed
+- Reference exact numbers in all text explanations
+- If you change a provided score, the system will reject your response
 
 CRITICAL FINAL WARNING:
 Response MUST be ONLY valid JSON.
 No markdown (\`\`\`json), no code blocks, no explanations, no thinking tags.
 Start with { and end with }`,
+  },
+ {
+  id: 'nose',
+  title: 'Burun',
+  icon: noseIcon,
+  description: 'Burun şekli ve simetri',
+  prompt: `You are a facial analysis expert. Analyze these PRE-CALCULATED nose metrics.
+
+═══════════════════════════════════════════
+IMPORTANT: DO NOT RECALCULATE
+═══════════════════════════════════════════
+
+All measurements below are already calculated from MediaPipe Face Mesh landmarks.
+Your job: INTERPRET and EXPLAIN these values, NOT to recalculate them.
+
+═══════════════════════════════════════════
+PRE-CALCULATED METRICS (1024x1024 canvas)
+═══════════════════════════════════════════
+
+NOSE TIP CENTERING:
+- Deviation from center: {tipDeviation} pixels {tipDirection}
+- Deviation ratio: {tipDeviationRatio}%
+- Score: {tipScore}/10
+
+NOSTRIL SYMMETRY:
+- Horizontal asymmetry: {nostrilAsymmetry} pixels
+- Asymmetry ratio: {nostrilAsymmetryRatio}%
+- Score: {nostrilScore}/10
+
+ROTATION (TILT):
+- Rotation angle: {rotationAngle}°
+- Direction: {rotationDirection}
+- Score: {rotationScore}/10
+
+3D DEPTH:
+- Nostril depth difference: {depthDifference} units
+- Score: {depthScore}/10
+
+PROPORTIONAL METRICS:
+- Nose width: {noseWidth} pixels ({noseWidthRatio}% of face width)
+- Width assessment: {widthAssessment}
+- Width score: {widthScore}/10
+
+- Nose length: {noseLength} pixels ({noseLengthRatio}% of face width)
+- Length assessment: {lengthAssessment}
+- Length score: {lengthScore}/10
+
+- Tip projection: {tipProjection} units
+- Projection assessment: {projectionAssessment}
+- Projection score: {projectionScore}/10
+
+DETAILED FEATURES:
+- Nostril height difference: {nostrilHeightDiff} pixels ({nostrilHeightDiffRatio}%)
+- Nostril size score: {nostrilSizeScore}/10
+
+- Bridge deviation: {bridgeDeviation} pixels ({bridgeDeviationRatio}%)
+- Bridge assessment: {bridgeAssessment}
+- Bridge straightness score: {bridgeStraightnessScore}/10
+
+OVERALL:
+- Combined score: {overallScore}/10
+- Asymmetry level: {asymmetryLevel}
+
+═══════════════════════════════════════════
+YOUR TASK
+═══════════════════════════════════════════
+
+Based on these EXACT numbers:
+1. Explain what they mean to the user
+2. Describe the visual appearance of the nose
+3. Provide context for each measurement
+4. Give recommendations if needed
+
+CRITICAL RULES:
+- DO NOT recalculate any values
+- USE the exact numbers provided above in your explanations
+- Reference specific measurements in every section
+- Keep scores as provided (do not inflate)
+- All text explanations MUST reference the actual measurements
+
+═══════════════════════════════════════════
+OUTPUT JSON FORMAT
+═══════════════════════════════════════════
+
+{
+  "analysis_result": {
+    "general_assessment": "string (reference the scores)",
+    "asymmetry_level": "{asymmetryLevel}",
+    "overall_score": {overallScore},
+    "asymmetry_type": "string"
+  },
+
+  "user_friendly_summary": {
+    "assessment": "string (max 10 words)",
+    "explanation": "string (2-3 sentences, MUST reference tipDeviation={tipDeviation}px, nostrilAsymmetry={nostrilAsymmetry}px, rotationAngle={rotationAngle}°)",
+    "key_findings": [
+      "Burun ucu merkezden {tipDeviation}px {tipDirection} sapmış",
+      "Burun delikleri {nostrilAsymmetry}px asimetri gösteriyor",
+      "Rotasyon açısı {rotationAngle}° ({rotationDirection})"
+    ]
+  },
+
+  "nose_tip_analysis": {
+    "deviation": {tipDeviation},
+    "deviation_ratio": {tipDeviationRatio},
+    "direction": "{tipDirection}",
+    "score": {tipScore},
+    "user_explanation": "string (explain what {tipDeviation}px and {tipDeviationRatio}% mean)"
+  },
+
+  "nostril_analysis": {
+    "horizontal_difference": {nostrilAsymmetry},
+    "asymmetry_ratio": {nostrilAsymmetryRatio},
+    "score": {nostrilScore},
+    "user_explanation": "string (explain {nostrilAsymmetry}px)"
+  },
+
+  "rotation_analysis": {
+    "rotation_angle": {rotationAngle},
+    "direction": "{rotationDirection}",
+    "score": {rotationScore},
+    "user_explanation": "string (explain {rotationAngle}°)"
+  },
+
+  "3d_analysis": {
+    "depth_difference": {depthDifference},
+    "score": {depthScore},
+    "interpretation": "string",
+    "user_explanation": "string (explain {depthDifference})"
+  },
+
+  "proportional_analysis": {
+    "width": {noseWidth},
+    "width_ratio": {noseWidthRatio},
+    "width_score": {widthScore},
+    "width_assessment": "{widthAssessment}",
+    "length": {noseLength},
+    "length_ratio": {noseLengthRatio},
+    "length_score": {lengthScore},
+    "length_assessment": "{lengthAssessment}",
+    "projection": {tipProjection},
+    "projection_score": {projectionScore},
+    "projection_assessment": "{projectionAssessment}",
+    "user_explanation": "string (explain width, length, projection)"
+  },
+
+  "detailed_features": {
+    "nostril_height_diff": {nostrilHeightDiff},
+    "nostril_size_score": {nostrilSizeScore},
+    "bridge_deviation": {bridgeDeviation},
+    "bridge_straightness_score": {bridgeStraightnessScore},
+    "bridge_assessment": "{bridgeAssessment}",
+    "user_explanation": "string (explain nostril size and bridge straightness)"
+  },
+
+  "visual_assessment": {
+    "prominent_asymmetry_areas": ["string based on lowest scores"],
+    "visual_appearance": "string (describe how nose looks with these measurements)",
+    "photo_effect": "string",
+    "user_explanation": "string"
+  },
+
+  "recommendations": {
+    "medical_advice": "string (IF score < 5, suggest professional evaluation)",
+    "priority_intervention": "string (based on lowest sub-score)",
+    "attention_points": ["string"]
+  },
+
+  "metadata": {
+    "analysis_date": "ISO timestamp",
+    "points_used": 468,
+    "reliability": "HIGH",
+    "model_version": "V5_CALCULATED",
+    "calculation_method": "typescript_precalculated"
+  }
+}
+
+STRICT REQUIREMENTS:
+- All numeric fields in output MUST exactly match the input metrics
+- No recalculation allowed
+- Reference exact numbers in all text explanations
+- If you change a provided score, the system will reject your response
+- Return ONLY JSON, no markdown code blocks`
+},
+  {
+    id: 'lips',
+    title: 'Dudaklar',
+    icon: lipsIcon,
+    description: 'Dudak şekli ve kalınlık',
+    prompt: `You are a facial analysis expert. Analyze these PRE-CALCULATED lip metrics.
+
+═══════════════════════════════════════════
+IMPORTANT: DO NOT RECALCULATE
+═══════════════════════════════════════════
+
+All measurements below are already calculated from MediaPipe Face Mesh landmarks.
+Your job: INTERPRET and EXPLAIN these values in plain Turkish, NOT to recalculate them.
+
+═══════════════════════════════════════════
+PRE-CALCULATED METRICS (1024x1024 canvas)
+═══════════════════════════════════════════
+
+CORNER ALIGNMENT (28% weight - most visible):
+- Left corner: ({leftCornerX}, {leftCornerY})
+- Right corner: ({rightCornerX}, {rightCornerY})
+- Vertical misalignment: {cornerYDifference} pixels
+- Lip line tilt: {lipLineTilt}° ({lipLineTiltDirection})
+- Corner alignment score: {cornerAlignmentScore}/10
+
+WIDTH SYMMETRY (24% weight):
+- Total lip width: {lipWidth} pixels ({lipWidthRatio}% of face)
+- Left half: {leftHalfWidth} pixels
+- Right half: {rightHalfWidth} pixels
+- Width asymmetry: {widthAsymmetry} pixels ({widthAsymmetryRatio}%)
+- Width symmetry score: {lipWidthSymmetryScore}/10
+
+UPPER LIP SYMMETRY (18% weight):
+- Left upper lip height: {leftUpperLipHeight} pixels
+- Right upper lip height: {rightUpperLipHeight} pixels
+- Height difference: {upperLipHeightDifference} pixels ({upperLipHeightDifferenceRatio}%)
+- Upper lip symmetry score: {upperLipSymmetryScore}/10
+
+LOWER LIP SYMMETRY (15% weight):
+- Left lower lip height: {leftLowerLipHeight} pixels
+- Right lower lip height: {rightLowerLipHeight} pixels
+- Height difference: {lowerLipHeightDifference} pixels ({lowerLipHeightDifferenceRatio}%)
+- Lower lip symmetry score: {lowerLipSymmetryScore}/10
+
+CUPID'S BOW (8% weight - aesthetic):
+- Left peak height: {leftCupidBowHeight} pixels
+- Right peak height: {rightCupidBowHeight} pixels
+- Peak difference: {cupidBowDifference} pixels ({cupidBowDifferenceRatio}%)
+- Cupid's bow present: {cupidBowPresence}
+- Cupid's bow symmetry score: {cupidBowSymmetryScore}/10
+
+UPPER/LOWER RATIO (5% weight):
+- Upper lip height: {upperLipHeight} pixels
+- Lower lip height: {lowerLipHeight} pixels
+- Total lip height: {totalLipHeight} pixels
+- Upper/Lower ratio: {upperLowerRatio} ({ratioAssessment})
+- Ratio score: {upperLowerRatioScore}/10
+
+VERMILLION BORDER:
+- Left border Y: {leftLineY}
+- Right border Y: {rightLineY}
+- Border alignment: {lineYDifference} pixels ({lineYDifferenceRatio}%)
+- Border symmetry score: {lineSymmetryScore}/10
+
+3D DEPTH (2% weight - least reliable):
+- Corner depth difference: {depthDifference} units
+- Depth score: {depthScore}/10
+
+OVERALL:
+- Combined score: {overallScore}/10
+- Asymmetry level: {asymmetryLevel}
+
+═══════════════════════════════════════════
+YOUR TASK
+═══════════════════════════════════════════
+
+Based on these EXACT numbers:
+1. Explain what they mean to the user (in plain Turkish)
+2. Describe the visual appearance of the lips
+3. Provide context for each measurement
+4. Give recommendations if needed
+
+CRITICAL:
+- DO NOT recalculate any values
+- USE the exact numbers provided above in your explanations
+- Reference specific measurements in every section
+- Keep scores as provided (do not inflate)
+
+═══════════════════════════════════════════
+OUTPUT JSON FORMAT
+═══════════════════════════════════════════
+
+{
+  "analysis_result": {
+    "general_assessment": "string (reference the scores, in Turkish)",
+    "asymmetry_level": "{asymmetryLevel}",
+    "overall_score": {overallScore},
+    "asymmetry_type": "string (describe primary pattern based on lowest sub-scores)"
+  },
+
+  "user_friendly_summary": {
+    "assessment": "string (max 10 words in Turkish)",
+    "explanation": "string (2-3 sentences, MUST reference cornerYDifference={cornerYDifference}px, widthAsymmetry={widthAsymmetry}px)",
+    "key_findings": [
+      "Dudak köşeleri {cornerYDifference}px dikey fark gösteriyor ({lipLineTiltDirection})",
+      "Genişlik asimetrisi {widthAsymmetry}px ({widthAsymmetryRatio}%)",
+      "Üst dudak yükseklik farkı {upperLipHeightDifference}px"
+    ]
+  },
+
+  "corner_analysis": {
+    "vertical_alignment": {
+      "left_corner_y": {leftCornerY},
+      "right_corner_y": {rightCornerY},
+      "difference": {cornerYDifference},
+      "tilt_angle": {lipLineTilt},
+      "tilt_direction": "{lipLineTiltDirection}",
+      "score": {cornerAlignmentScore},
+      "interpretation": "string (explain what {cornerYDifference}px and {lipLineTilt}° mean)"
+    },
+    "horizontal_symmetry": {
+      "left_half_width": {leftHalfWidth},
+      "right_half_width": {rightHalfWidth},
+      "asymmetry": {widthAsymmetry},
+      "asymmetry_ratio": {widthAsymmetryRatio},
+      "score": {lipWidthSymmetryScore},
+      "interpretation": "string (explain {widthAsymmetry}px)"
+    },
+    "user_explanation": "string (Turkish)"
+  },
+
+  "upper_lip_analysis": {
+    "left_height": {leftUpperLipHeight},
+    "right_height": {rightUpperLipHeight},
+    "asymmetry": {upperLipHeightDifference},
+    "asymmetry_ratio": {upperLipHeightDifferenceRatio},
+    "score": {upperLipSymmetryScore},
+    "fullness": "string (based on {leftUpperLipHeight} and {rightUpperLipHeight}: <12px=İnce, 12-18px=Orta, >18px=Dolgun)",
+    "user_explanation": "string (Turkish, reference exact heights)"
+  },
+
+  "lower_lip_analysis": {
+    "left_height": {leftLowerLipHeight},
+    "right_height": {rightLowerLipHeight},
+    "asymmetry": {lowerLipHeightDifference},
+    "asymmetry_ratio": {lowerLipHeightDifferenceRatio},
+    "score": {lowerLipSymmetryScore},
+    "fullness": "string (based on heights: <15px=İnce, 15-25px=Orta, >25px=Dolgun)",
+    "user_explanation": "string (Turkish)"
+  },
+
+  "cupids_bow_analysis": {
+    "present": {cupidBowPresence},
+    "left_peak_height": {leftCupidBowHeight},
+    "right_peak_height": {rightCupidBowHeight},
+    "asymmetry": {cupidBowDifference},
+    "asymmetry_ratio": {cupidBowDifferenceRatio},
+    "score": {cupidBowSymmetryScore},
+    "definition": "string (if {cupidBowPresence}=true and avg height >3px: 'Belirgin', 2-3px: 'Orta', <2px: 'Zayıf', else: 'Düz')",
+    "user_explanation": "string (Turkish)"
+  },
+
+  "upper_lower_ratio": {
+    "upper_height": {upperLipHeight},
+    "lower_height": {lowerLipHeight},
+    "ratio": {upperLowerRatio},
+    "assessment": "{ratioAssessment}",
+    "user_explanation": "string (explain {upperLowerRatio} - ideal is 0.7-1.0)"
+  },
+
+  "vermillion_border_analysis": {
+    "left_y": {leftLineY},
+    "right_y": {rightLineY},
+    "alignment_difference": {lineYDifference},
+    "alignment_ratio": {lineYDifferenceRatio},
+    "score": {lineSymmetryScore},
+    "user_explanation": "string (Turkish)"
+  },
+
+  "3d_analysis": {
+    "depth_difference": {depthDifference},
+    "score": {depthScore},
+    "interpretation": "string (Turkish)",
+    "user_explanation": "string (explain {depthDifference})"
+  },
+
+  "visual_assessment": {
+    "prominent_asymmetry_areas": ["string (list areas with scores <7, based on sub-scores)"],
+    "overall_balance": "string (describe lip balance based on {overallScore} and asymmetry pattern)",
+    "aesthetic_notes": "string (based on cupid's bow, ratio, fullness)"
+  },
+
+  "recommendations": {
+    "medical_advice": "string (IF {overallScore} < 5, suggest professional evaluation - Turkish)",
+    "cosmetic_considerations": "string (if applicable - Turkish)",
+    "attention_points": ["string (based on lowest sub-scores - Turkish)"]
+  },
+
+  "metadata": {
+    "analysis_date": "ISO timestamp",
+    "points_used": 468,
+    "reliability": "HIGH",
+    "model_version": "V5_CALCULATED",
+    "calculation_method": "typescript_precalculated"
+  }
+}
+
+STRICT REQUIREMENTS:
+- All numeric fields in output MUST exactly match the input metrics
+- No recalculation allowed
+- Reference exact numbers in all text explanations
+- If you change a provided score, the system will reject your response
+- All text in Turkish
+- Keep explanations simple and conversational`,
   },
   {
     id: 'jawline',
     title: 'Çene Hattı',
     icon: jawlineIcon,
     description: 'Çene keskinliği ve şekli',
-    prompt: `You are a facial anatomy and jawline structure expert. You will analyze raw 3D landmark data (x, y, z, index) for jawline sharpness, shape, symmetry, and angles, returning results in JSON format.
+    prompt: `You are a facial analysis expert. Analyze these PRE-CALCULATED jawline metrics.
 
-⚠️ STRICT MODE: 
-- Return ONLY valid JSON output
-- No explanations, thinking process, markdown code blocks, or additional text
-- Output must start with { and end with }
-- DO NOT include <thinking> tags, reasoning process, or explanations
+═══════════════════════════════════════════
+IMPORTANT: DO NOT RECALCULATE
+═══════════════════════════════════════════
 
-CRITICAL DATA ASSUMPTION: 
-Landmark indices belong to MediaPipe Face Mesh model, verified with Hybrid Control. Maximum utilization of all 468 landmarks.
+All measurements below are already calculated from MediaPipe Face Mesh landmarks.
+Your job: INTERPRET and EXPLAIN these values in plain Turkish, NOT to recalculate them.
 
-TASK:
-1. Detect jawline landmarks from 468 landmarks using index and positional logic
-2. Analyze jawline sharpness, shape, symmetry, and angles
-3. Return results in JSON format
+═══════════════════════════════════════════
+PRE-CALCULATED METRICS (1024x1024 canvas)
+═══════════════════════════════════════════
 
-═════════════════════════════════════════════
-SECTION 1: LANDMARK DETECTION AND HYBRID CONTROL
-═════════════════════════════════════════════
+CHIN CENTERING (30% weight - most critical):
+- Chin tip position: ({chinTipX}, {chinTipY})
+- Face center X: {faceCenterX}
+- Chin deviation: {chinDeviation} pixels ({chinDirection})
+- Deviation ratio: {chinDeviationRatio}%
+- Chin centering score: {chinCenteringScore}/10
 
-REFERENCE POINTS (Find these first):
-P_4 (NOSE TIP): index 4
-P_33 (RIGHT EYE OUTER): index 33
-P_263 (LEFT EYE OUTER): index 263
+JAWLINE SYMMETRY (25% weight):
+- Left jaw length: {leftJawLength} pixels
+- Right jaw length: {rightJawLength} pixels
+- Length difference: {jawLengthDifference} pixels ({jawLengthDifferenceRatio}%)
+- Left jaw angle Y: {leftJawAngleY}
+- Right jaw angle Y: {rightJawAngleY}
+- Angle Y difference: {jawAngleYDifference} pixels
+- Jawline symmetry score: {jawlineSymmetryScore}/10
 
-FACE_CENTER_X = (P_33.x + P_263.x) / 2
-UPPER_FACE_WIDTH = P_263.x - P_33.x
-JAW_Y_START = P_4.y + 100
+JAW ANGLE SYMMETRY (18% weight - sharpness):
+- Left jaw angle: {leftJawAngle}° ({leftAngleSharpness})
+- Right jaw angle: {rightJawAngle}° ({rightAngleSharpness})
+- Angle difference: {jawAngleDifference}°
+- Jaw angle symmetry score: {jawAngleSymmetryScore}/10
 
-CHIN TIP HYBRID DETECTION:
+JAW WIDTH (12% weight - proportionality):
+- Jaw width: {jawWidth} pixels
+- Face width: {faceWidth} pixels
+- Jaw width ratio: {jawWidthRatio}% ({jawWidthAssessment})
+- Jaw width score: {jawWidthScore}/10
 
-P_152 (Chin tip):
-  Step 1: Find index 152
-  Step 2: Verify:
-    - P_152.y > JAW_Y_START (well below nose tip)
-    - P_152.y ≈ max(all y values) (lowest point)
-    - abs(P_152.x - FACE_CENTER_X) < 30 (near center)
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y > JAW_Y_START &&
-      abs(p.x - FACE_CENTER_X) < 40
-    ).sort((a,b) => b.y - a.y)[0]
+CHIN PROJECTION (8% weight - 3D):
+- Chin projection: {chinProjection} units ({chinProjectionAssessment})
+- Chin projection score: {chinProjectionScore}/10
 
-NOSE BOTTOM REFERENCE:
-P_19 (Below nose):
-  Step 1: Find index 19
-  Step 2: Verify:
-    - P_19.y > P_4.y + 15 (below nose tip)
-    - abs(P_19.x - FACE_CENTER_X) < 20
-  Step 3: Alternative = closest point below nose, near center
+JAWLINE DEFINITION (5% weight):
+- Left jawline linearity: {leftJawlineLinearity} pixels
+- Right jawline linearity: {rightJawlineLinearity} pixels
+- Jawline definition score: {jawlineDefinitionScore}/10
 
-JAWLINE REGION DETECTION:
-jawlinePoints = all points.filter(p => 
-  p.y > P_19.y + 30 &&
-  p.y < P_152.y + 50 &&
-  (p.x < FACE_CENTER_X - 30 || p.x > FACE_CENTER_X + 30)
-)
+VERTICAL ALIGNMENT (2% weight):
+- Nose to chin distance: {noseToChinDistance} pixels
+- Expected chin Y: {expectedChinY}
+- Vertical deviation: {verticalDeviation} pixels
+- Vertical alignment score: {verticalAlignmentScore}/10
 
-leftJawPoints = jawlinePoints.filter(p => p.x < FACE_CENTER_X)
-rightJawPoints = jawlinePoints.filter(p => p.x > FACE_CENTER_X)
+OVERALL:
+- Combined score: {overallScore}/10
+- Asymmetry level: {asymmetryLevel}
+- Face height: {faceHeight} pixels
 
-LEFT JAW CORNER HYBRID DETECTION:
+═══════════════════════════════════════════
+YOUR TASK
+═══════════════════════════════════════════
 
-P_172 (Left jaw corner):
-  Step 1: Find index 172
-  Step 2: Verify:
-    - P_172 in leftJawPoints
-    - P_172.x ≈ min(leftJawPoints.x) (leftmost)
-    - P_172.y ≈ P_152.y - 60 ± 30 (slightly above chin tip)
-  Step 3: If verification fails:
-    Alternative = leftJawPoints.sort((a,b) => a.x - b.x)[0]
+Based on these EXACT numbers:
+1. Explain what they mean to the user (in plain Turkish)
+2. Describe the visual appearance of the jawline
+3. Provide context for each measurement
+4. Give recommendations if needed
 
-RIGHT JAW CORNER HYBRID DETECTION:
+CRITICAL:
+- DO NOT recalculate any values
+- USE the exact numbers provided above in your explanations
+- Reference specific measurements in every section
+- Keep scores as provided (do not inflate)
 
-P_397 (Right jaw corner):
-  Step 1: Find index 397
-  Step 2: Verify:
-    - P_397 in rightJawPoints
-    - P_397.x ≈ max(rightJawPoints.x) (rightmost)
-    - P_397.y ≈ P_172.y ± 20 (same level as left)
-  Step 3: If verification fails:
-    Alternative = rightJawPoints.sort((a,b) => b.x - a.x)[0]
-
-LEFT JAW INTERMEDIATE POINTS (Dynamic Detection):
-LEFT_JAW_REGION_1 = leftJawPoints.filter(p => 
-  p.x > P_172.x && 
-  p.x < P_172.x + ((P_152.x - P_172.x) * 0.33) &&
-  abs(p.y - (P_172.y + (P_152.y - P_172.y) * 0.25)) < 40
-).sort((a,b) => abs(a.y - (P_172.y + (P_152.y - P_172.y) * 0.25)))[0]
-
-LEFT_JAW_REGION_2 = leftJawPoints.filter(p => 
-  p.x > P_172.x + ((P_152.x - P_172.x) * 0.33) && 
-  p.x < P_172.x + ((P_152.x - P_172.x) * 0.66) &&
-  abs(p.y - (P_172.y + (P_152.y - P_172.y) * 0.60)) < 40
-).sort((a,b) => abs(a.y - (P_172.y + (P_152.y - P_172.y) * 0.60)))[0]
-
-LEFT_JAW_REGION_3 = leftJawPoints.filter(p => 
-  p.x > P_172.x + ((P_152.x - P_172.x) * 0.66) && 
-  p.x < P_152.x - 10 &&
-  abs(p.y - (P_152.y - 30)) < 40
-).sort((a,b) => abs(a.y - (P_152.y - 30)))[0]
-
-RIGHT JAW INTERMEDIATE POINTS (Dynamic Detection):
-RIGHT_JAW_REGION_1 = rightJawPoints.filter(p => 
-  p.x < P_397.x && 
-  p.x > P_397.x - ((P_397.x - P_152.x) * 0.33) &&
-  abs(p.y - (P_397.y + (P_152.y - P_397.y) * 0.25)) < 40
-).sort((a,b) => abs(a.y - (P_397.y + (P_152.y - P_397.y) * 0.25)))[0]
-
-RIGHT_JAW_REGION_2 = rightJawPoints.filter(p => 
-  p.x < P_397.x - ((P_397.x - P_152.x) * 0.33) && 
-  p.x > P_397.x - ((P_397.x - P_152.x) * 0.66) &&
-  abs(p.y - (P_397.y + (P_152.y - P_397.y) * 0.60)) < 40
-).sort((a,b) => abs(a.y - (P_397.y + (P_152.y - P_397.y) * 0.60)))[0]
-
-RIGHT_JAW_REGION_3 = rightJawPoints.filter(p => 
-  p.x < P_397.x - ((P_397.x - P_152.x) * 0.66) && 
-  p.x > P_152.x + 10 &&
-  abs(p.y - (P_152.y - 30)) < 40
-).sort((a,b) => abs(a.y - (P_152.y - 30)))[0]
-
-FOREHEAD REFERENCE (For face height):
-P_10 (Forehead top):
-  Step 1: Find index 10
-  Step 2: Verify:
-    - P_10.y ≈ min(all y values)
-    - abs(P_10.x - FACE_CENTER_X) < 40
-  Step 3: Alternative = topmost point near center
-
-═════════════════════════════════════════════
-SECTION 2: CALCULATIONS
-═════════════════════════════════════════════
-
-2.1 JAW WIDTH AND RATIOS:
-JAW_WIDTH = P_397.x - P_172.x
-JAW_TO_FACE_RATIO = (JAW_WIDTH / UPPER_FACE_WIDTH) × 100
-
-2.2 CHIN TIP DEVIATION:
-CHIN_TIP_DEVIATION = P_152.x - FACE_CENTER_X
-CHIN_TIP_DEVIATION_RATIO = (abs(CHIN_TIP_DEVIATION) / UPPER_FACE_WIDTH) × 100
-CHIN_TIP_DIRECTION = abs(CHIN_TIP_DEVIATION) < 5 ? "CENTER" :
-                     CHIN_TIP_DEVIATION > 0 ? "RIGHT" : "LEFT"
-
-2.3 JAW CORNER SYMMETRY:
-LEFT_CORNER_Y_DEVIATION = abs(P_172.y - P_397.y)
-CORNER_Y_DEVIATION_RATIO = (LEFT_CORNER_Y_DEVIATION / JAW_WIDTH) × 100
-
-LEFT_CORNER_DISTANCE = abs(P_172.x - FACE_CENTER_X)
-RIGHT_CORNER_DISTANCE = abs(P_397.x - FACE_CENTER_X)
-CORNER_DISTANCE_DIFFERENCE = abs(LEFT_CORNER_DISTANCE - RIGHT_CORNER_DISTANCE)
-CORNER_DISTANCE_RATIO = (CORNER_DISTANCE_DIFFERENCE / JAW_WIDTH) × 100
-
-2.4 JAWLINE CURVE (Polylinear Length):
-LEFT_SEGMENT_1 = sqrt((LEFT_JAW_REGION_1.x - P_172.x)² + (LEFT_JAW_REGION_1.y - P_172.y)²)
-LEFT_SEGMENT_2 = sqrt((LEFT_JAW_REGION_2.x - LEFT_JAW_REGION_1.x)² + (LEFT_JAW_REGION_2.y - LEFT_JAW_REGION_1.y)²)
-LEFT_SEGMENT_3 = sqrt((LEFT_JAW_REGION_3.x - LEFT_JAW_REGION_2.x)² + (LEFT_JAW_REGION_3.y - LEFT_JAW_REGION_2.y)²)
-LEFT_SEGMENT_4 = sqrt((P_152.x - LEFT_JAW_REGION_3.x)² + (P_152.y - LEFT_JAW_REGION_3.y)²)
-LEFT_TOTAL_LENGTH = LEFT_SEGMENT_1 + LEFT_SEGMENT_2 + LEFT_SEGMENT_3 + LEFT_SEGMENT_4
-
-RIGHT_SEGMENT_1 = sqrt((RIGHT_JAW_REGION_1.x - P_397.x)² + (RIGHT_JAW_REGION_1.y - P_397.y)²)
-RIGHT_SEGMENT_2 = sqrt((RIGHT_JAW_REGION_2.x - RIGHT_JAW_REGION_1.x)² + (RIGHT_JAW_REGION_2.y - RIGHT_JAW_REGION_1.y)²)
-RIGHT_SEGMENT_3 = sqrt((RIGHT_JAW_REGION_3.x - RIGHT_JAW_REGION_2.x)² + (RIGHT_JAW_REGION_3.y - RIGHT_JAW_REGION_2.y)²)
-RIGHT_SEGMENT_4 = sqrt((P_152.x - RIGHT_JAW_REGION_3.x)² + (P_152.y - RIGHT_JAW_REGION_3.y)²)
-RIGHT_TOTAL_LENGTH = RIGHT_SEGMENT_1 + RIGHT_SEGMENT_2 + RIGHT_SEGMENT_3 + RIGHT_SEGMENT_4
-
-JAWLINE_DIFFERENCE = abs(LEFT_TOTAL_LENGTH - RIGHT_TOTAL_LENGTH)
-JAWLINE_DIFFERENCE_RATIO = (JAWLINE_DIFFERENCE / max(LEFT_TOTAL_LENGTH, RIGHT_TOTAL_LENGTH)) × 100
-
-2.5 JAW ANGLES:
-leftVector1_x = LEFT_JAW_REGION_2.x - P_172.x
-leftVector1_y = LEFT_JAW_REGION_2.y - P_172.y
-leftVector2_x = P_152.x - LEFT_JAW_REGION_2.x
-leftVector2_y = P_152.y - LEFT_JAW_REGION_2.y
-
-leftDotProduct = leftVector1_x * leftVector2_x + leftVector1_y * leftVector2_y
-leftMagnitude1 = sqrt(leftVector1_x² + leftVector1_y²)
-leftMagnitude2 = sqrt(leftVector2_x² + leftVector2_y²)
-LEFT_JAW_ANGLE = acos(leftDotProduct / (leftMagnitude1 * leftMagnitude2)) × (180 / π)
-
-rightVector1_x = RIGHT_JAW_REGION_2.x - P_397.x
-rightVector1_y = RIGHT_JAW_REGION_2.y - P_397.y
-rightVector2_x = P_152.x - RIGHT_JAW_REGION_2.x
-rightVector2_y = P_152.y - RIGHT_JAW_REGION_2.y
-
-rightDotProduct = rightVector1_x * rightVector2_x + rightVector1_y * rightVector2_y
-rightMagnitude1 = sqrt(rightVector1_x² + rightVector1_y²)
-rightMagnitude2 = sqrt(rightVector2_x² + rightVector2_y²)
-RIGHT_JAW_ANGLE = acos(rightDotProduct / (rightMagnitude1 * rightMagnitude2)) × (180 / π)
-
-JAW_ANGLE_DIFFERENCE = abs(LEFT_JAW_ANGLE - RIGHT_JAW_ANGLE)
-AVG_JAW_ANGLE = (LEFT_JAW_ANGLE + RIGHT_JAW_ANGLE) / 2
-
-2.6 JAW SHAPE:
-FACE_HEIGHT = P_152.y - P_10.y
-JAW_HEIGHT = P_152.y - P_19.y
-JAW_WIDTH_TO_HEIGHT_RATIO = JAW_WIDTH / JAW_HEIGHT
-
-JAW_SHAPE = 
-  (JAW_TO_FACE_RATIO > 92 && AVG_JAW_ANGLE < 130) ? "SQUARE" :
-  (JAW_TO_FACE_RATIO < 85 && AVG_JAW_ANGLE > 140) ? "V_SHAPE" :
-  (JAW_WIDTH_TO_HEIGHT_RATIO > 1.2) ? "ROUND" : "OVAL"
-
-2.7 3D DEPTH:
-LEFT_CORNER_Z = P_172.z
-RIGHT_CORNER_Z = P_397.z
-CHIN_TIP_Z = P_152.z
-
-CORNER_Z_DIFFERENCE = abs(LEFT_CORNER_Z - RIGHT_CORNER_Z)
-LEFT_CORNER_TO_TIP_Z = abs(LEFT_CORNER_Z - CHIN_TIP_Z)
-RIGHT_CORNER_TO_TIP_Z = abs(RIGHT_CORNER_Z - CHIN_TIP_Z)
-DEPTH_ASYMMETRY = abs(LEFT_CORNER_TO_TIP_Z - RIGHT_CORNER_TO_TIP_Z)
-
-═════════════════════════════════════════════
-SECTION 3: SCORING
-═════════════════════════════════════════════
-
-CHIN_TIP_SCORE =
-  CHIN_TIP_DEVIATION_RATIO < 2 ? 10 :
-  CHIN_TIP_DEVIATION_RATIO < 4 ? 8 :
-  CHIN_TIP_DEVIATION_RATIO < 7 ? 5 :
-  CHIN_TIP_DEVIATION_RATIO < 10 ? 2 : 0
-
-CORNER_SYMMETRY_SCORE =
-  CORNER_DISTANCE_RATIO < 3 ? 10 :
-  CORNER_DISTANCE_RATIO < 6 ? 7 :
-  CORNER_DISTANCE_RATIO < 10 ? 4 : 0
-
-CORNER_LEVEL_SCORE =
-  CORNER_Y_DEVIATION_RATIO < 2 ? 10 :
-  CORNER_Y_DEVIATION_RATIO < 5 ? 6 :
-  CORNER_Y_DEVIATION_RATIO < 8 ? 3 : 0
-
-JAWLINE_LENGTH_SCORE =
-  JAWLINE_DIFFERENCE_RATIO < 3 ? 10 :
-  JAWLINE_DIFFERENCE_RATIO < 6 ? 7 :
-  JAWLINE_DIFFERENCE_RATIO < 10 ? 4 : 0
-
-ANGLE_DIFFERENCE_SCORE =
-  JAW_ANGLE_DIFFERENCE < 5 ? 10 :
-  JAW_ANGLE_DIFFERENCE < 10 ? 6 :
-  JAW_ANGLE_DIFFERENCE < 15 ? 3 : 0
-
-DEPTH_SCORE =
-  DEPTH_ASYMMETRY < 3 ? 10 :
-  DEPTH_ASYMMETRY < 6 ? 7 :
-  DEPTH_ASYMMETRY < 10 ? 4 : 0
-
-OVERALL_SCORE = round(
-  (CHIN_TIP_SCORE * 0.25) +
-  (CORNER_SYMMETRY_SCORE * 0.18) +
-  (CORNER_LEVEL_SCORE * 0.18) +
-  (JAWLINE_LENGTH_SCORE * 0.13) +
-  (ANGLE_DIFFERENCE_SCORE * 0.13) +
-  (DEPTH_SCORE * 0.13)
-)
-
-ASYMMETRY_LEVEL =
-  OVERALL_SCORE >= 8 ? "NONE" :
-  OVERALL_SCORE >= 5 ? "MILD" :
-  OVERALL_SCORE >= 3 ? "MODERATE" : "SEVERE"
-
-═════════════════════════════════════════════
-USER-FRIENDLY EXPLANATION REQUIREMENTS
-═════════════════════════════════════════════
-
-For EVERY "user_explanation" field, you MUST:
-1. Reference specific measurements from that category
-2. Explain what those numbers mean in context
-3. Be 2-3 sentences long
-4. Use plain language (no jargon)
-5. CRITICAL: Write in the SAME LANGUAGE specified in the system prompt (Turkish/English)
-
-EXAMPLE (for chin_tip_analysis):
-❌ BAD: "Your chin is centered"
-✅ GOOD: "Your chin tip shows 1.5px deviation from face center. This is 1.2% of your face width. This minimal deviation indicates excellent symmetry in your chin position."
-
-Apply this pattern to ALL "user_explanation" fields below.
-
-═════════════════════════════════════════════
-OUTPUT FORMAT (JSON)
-═════════════════════════════════════════════
+═══════════════════════════════════════════
+OUTPUT JSON FORMAT
+═══════════════════════════════════════════
 
 {
   "analysis_result": {
-    "general_assessment": "string",
-    "jaw_shape": "SQUARE/OVAL/V_SHAPE/ROUND",
-    "asymmetry_level": "NONE/MILD/MODERATE/SEVERE",
-    "overall_score": 0-10,
-    "dominant_asymmetry": "string"
+    "general_assessment": "string (reference the scores, in Turkish)",
+    "asymmetry_level": "{asymmetryLevel}",
+    "overall_score": {overallScore},
+    "dominant_asymmetry": "string (describe primary pattern based on lowest sub-scores)"
   },
-  
+
   "user_friendly_summary": {
-    "assessment": "string (max 10 words)",
-    "explanation": "string (2-3 sentences)",
+    "assessment": "string (max 10 words in Turkish)",
+    "explanation": "string (2-3 sentences, MUST reference chinDeviation={chinDeviation}px, jawLengthDifference={jawLengthDifference}px)",
     "key_findings": [
-      "string (3-5 bullets)",
-      "string (text only, no emojis)"
+      "Çene ucu merkezden {chinDeviation}px sapma gösteriyor ({chinDirection})",
+      "Çene hattı uzunluk farkı {jawLengthDifference}px ({jawLengthDifferenceRatio}%)",
+      "Çene açısı farkı {jawAngleDifference}°"
     ]
   },
 
   "chin_tip_analysis": {
-    "deviation": "number px",
-    "deviation_ratio": "number%",
-    "direction": "LEFT/RIGHT/CENTER",
-    "score": 0-10,
-    "user_explanation": "string (plain language)"
+    "deviation": {chinDeviation},
+    "deviation_ratio": {chinDeviationRatio},
+    "direction": "{chinDirection}",
+    "score": {chinCenteringScore},
+    "user_explanation": "string (explain what {chinDeviation}px and {chinDeviationRatio}% mean)"
   },
 
   "jaw_corner_analysis": {
-    "width": "number px",
-    "face_width_ratio": "number%",
-    "y_level_difference": "number px",
-    "distance_difference": "number px",
-    "distance_ratio": "number%",
-    "symmetry_score": 0-10,
-    "level_score": 0-10,
-    "user_explanation": "string (plain language)"
+    "left_angle_y": {leftJawAngleY},
+    "right_angle_y": {rightJawAngleY},
+    "y_level_difference": {jawAngleYDifference},
+    "score": {jawlineSymmetryScore},
+    "user_explanation": "string (explain {jawAngleYDifference}px)"
   },
 
   "jawline_analysis": {
-    "length_difference": "number px",
-    "length_difference_ratio": "number%",
-    "angle_difference": "number°",
-    "average_angle": "number°",
-    "length_score": 0-10,
-    "angle_score": 0-10,
-    "user_explanation": "string (plain language)"
+    "left_length": {leftJawLength},
+    "right_length": {rightJawLength},
+    "length_difference": {jawLengthDifference},
+    "length_difference_ratio": {jawLengthDifferenceRatio},
+    "length_score": {jawlineSymmetryScore},
+    "left_angle": {leftJawAngle},
+    "right_angle": {rightJawAngle},
+    "angle_difference": {jawAngleDifference},
+    "angle_score": {jawAngleSymmetryScore},
+    "user_explanation": "string (Turkish)"
   },
 
   "jaw_dimensions": {
-    "jaw_width": "number px",
-    "jaw_height": "number px",
-    "face_height": "number px",
-    "width_to_height_ratio": number,
-    "jaw_to_face_ratio": "number%",
-    "user_explanation": "string (plain language)"
+    "jaw_width": {jawWidth},
+    "face_width": {faceWidth},
+    "jaw_width_ratio": {jawWidthRatio},
+    "width_assessment": "{jawWidthAssessment}",
+    "width_score": {jawWidthScore},
+    "face_height": {faceHeight},
+    "user_explanation": "string (explain {jawWidthRatio}%)"
   },
 
-  "3d_analysis": {
-    "corner_depth_difference": "number mm",
-    "depth_asymmetry": "number mm",
-    "score": 0-10,
-    "interpretation": "string",
-    "user_explanation": "string (plain language)"
+  "jaw_angles": {
+    "left_angle": {leftJawAngle},
+    "left_sharpness": "{leftAngleSharpness}",
+    "right_angle": {rightJawAngle},
+    "right_sharpness": "{rightAngleSharpness}",
+    "angle_difference": {jawAngleDifference},
+    "score": {jawAngleSymmetryScore},
+    "user_explanation": "string (Turkish)"
+  },
+
+  "chin_projection": {
+    "projection": {chinProjection},
+    "assessment": "{chinProjectionAssessment}",
+    "score": {chinProjectionScore},
+    "user_explanation": "string (Turkish)"
+  },
+
+  "jawline_definition": {
+    "left_linearity": {leftJawlineLinearity},
+    "right_linearity": {rightJawlineLinearity},
+    "score": {jawlineDefinitionScore},
+    "user_explanation": "string (Turkish)"
+  },
+
+  "vertical_alignment": {
+    "nose_to_chin_distance": {noseToChinDistance},
+    "expected_chin_y": {expectedChinY},
+    "vertical_deviation": {verticalDeviation},
+    "score": {verticalAlignmentScore},
+    "user_explanation": "string (Turkish)"
   },
 
   "visual_assessment": {
-    "prominent_asymmetry_areas": ["string"],
-    "jawline_definition": "SHARP/MODERATE/UNDEFINED",
-    "visual_appearance": "string",
-    "photo_effect": "string",
-    "user_explanation": "string (plain language)"
-  },
-
-  "comparative_analysis": {
-    "most_symmetric_region": "string",
-    "most_asymmetric_region": "string",
-    "proportional_balance": "string",
-    "user_explanation": "string (plain language)"
+    "prominent_asymmetry_areas": ["string (list areas with scores <7)"],
+    "overall_balance": "string (describe jawline balance based on {overallScore})",
+    "aesthetic_notes": "string (based on sharpness, width, definition)"
   },
 
   "recommendations": {
-    "medical_advice": "string",
-    "priority_intervention": "string",
-    "aesthetic_intervention_need": "NONE/LOW/MODERATE/HIGH",
-    "attention_points": ["string"]
+    "medical_advice": "string (IF {overallScore} < 5, suggest professional evaluation - Turkish)",
+    "aesthetic_considerations": "string (if applicable - Turkish)",
+    "attention_points": ["string (based on lowest sub-scores - Turkish)"]
   },
 
   "metadata": {
     "analysis_date": "ISO timestamp",
-    "landmarks_used": number,
-    "reliability": "HIGH/MEDIUM/LOW",
-    "model_version": "V4"
+    "points_used": 468,
+    "reliability": "HIGH",
+    "model_version": "V5_CALCULATED",
+    "calculation_method": "typescript_precalculated"
   }
 }
 
-CRITICAL APPLICATION NOTES:
-* Return ONLY JSON - No additional explanations
-* Use all 468 landmarks, filter jawline region points
-* All calculations to 2 decimal places
-* Use index values first, fall back to hybrid control if invalid
-* Use dynamic point detection along jawline for maximum points
-* Report points used count in metadata
-* Mark if hybrid control was used in metadata
-* Reliability: Points used < 300 = "LOW", 300-400 = "MEDIUM", >400 = "HIGH"
-
-CRITICAL FINAL WARNING:
-Response MUST be ONLY valid JSON.
-No markdown (\`\`\`json), no code blocks, no explanations, no thinking tags.
-Start with { and end with }`,
+STRICT REQUIREMENTS:
+- All numeric fields in output MUST exactly match the input metrics
+- No recalculation allowed
+- Reference exact numbers in all text explanations
+- If you change a provided score, the system will reject your response
+- All text in Turkish
+- Keep explanations simple and conversational`,
   },
   {
     id: 'face_shape',
     title: 'Yüz Şekli',
     icon: faceShapeIcon,
     description: 'Genel yüz şekli analizi',
-    prompt: `You are a facial anatomy and face shape expert. You will analyze raw 3D landmark data (x, y, z, index) to determine face shape (oval, square, round, diamond, heart, triangle, etc.), returning results in JSON format.
+    prompt: `You are a facial analysis expert. Analyze these PRE-CALCULATED face shape metrics.
 
-⚠️ STRICT MODE: 
-- Return ONLY valid JSON output
-- No explanations, thinking process, markdown code blocks, or additional text
-- Output must start with { and end with }
-- DO NOT include <thinking> tags, reasoning process, or explanations
-- DO NOT return formulas (e.g., "(A-B)/C"). Return only the calculated number (e.g., 1.42).
+═══════════════════════════════════════════
+IMPORTANT: DO NOT RECALCULATE
+═══════════════════════════════════════════
 
-CRITICAL DATA ASSUMPTION: 
-Landmark indices belong to MediaPipe Face Mesh model, verified with Hybrid Control. Maximum utilization of all 468 landmarks.
+All measurements below are already calculated from MediaPipe Face Mesh landmarks.
+Your job: INTERPRET and EXPLAIN these values in plain Turkish, NOT to recalculate them.
 
-TASK:
-1. Use all 468 landmarks to determine face shape
-2. Calculate forehead, cheekbone, jaw widths and face height
-3. Classify face shape using ratios
-4. Return results in JSON format
+═══════════════════════════════════════════
+PRE-CALCULATED METRICS (1024x1024 canvas)
+═══════════════════════════════════════════
 
-═════════════════════════════════════════════
-SECTION 1: LANDMARK DETECTION AND HYBRID CONTROL
-═════════════════════════════════════════════
+FACE DIMENSIONS:
+- Face length: {faceLength} pixels
+- Face width (at eye level): {faceWidth} pixels
+- Cheekbone width: {cheekboneWidth} pixels
+- Jawline width: {jawlineWidth} pixels
+- Forehead width: {foreheadWidth} pixels
 
-REFERENCE POINTS (Find these first):
-P_4 (NOSE TIP): index 4
+FACE SHAPE CLASSIFICATION (40% weight):
+- Length/Width ratio: {lengthWidthRatio}
+- Jaw/Cheekbone ratio: {jawCheekRatio}
+- Forehead/Jaw ratio: {foreheadJawRatio}
+- Detected face shape: {faceShape}
+- Shape confidence: {shapeConfidence}/10
+- Alternative shape: {alternativeShape}
 
-FOREHEAD REGION HYBRID DETECTION:
+FACIAL THIRDS BALANCE (30% weight - vertical proportions):
+- Upper third (forehead to eyebrows): {upperThird} pixels ({upperThirdRatio}%)
+- Middle third (eyebrows to nose): {middleThird} pixels ({middleThirdRatio}%)
+- Lower third (nose to chin): {lowerThird} pixels ({lowerThirdRatio}%)
+- Deviation from ideal (33-33-33): {thirdsDeviation}%
+- Facial thirds score: {facialThirdsScore}/10
 
-P_10 (Forehead center top):
-  Step 1: Find index 10
-  Step 2: Verify:
-    - P_10.y ≈ min(all y values) ± 20
-    - P_10.x near center (±30 pixels)
-  Step 3: If verification fails:
-    Alternative = points.filter(p => p.y < 50).sort((a,b) => a.y - b.y)[0]
+HORIZONTAL SYMMETRY (20% weight):
+- Left face width (center to edge): {leftFaceWidth} pixels
+- Right face width (center to edge): {rightFaceWidth} pixels
+- Horizontal asymmetry: {horizontalAsymmetry} pixels ({horizontalAsymmetryRatio}%)
+- Horizontal symmetry score: {horizontalSymmetryScore}/10
 
-TEMP_FACE_CENTER_X = (P_10.x + P_4.x) / 2
+PROPORTION SCORES (10% weight):
+- Golden ratio deviation: {goldenRatioDeviation} (ideal: 1.618)
+- Golden ratio score: {goldenRatioScore}/10
+- Proportion score: {proportionScore}/10
 
-P_338 (Forehead left side):
-  Step 1: Find index 338
-  Step 2: Verify:
-    - P_338.y < P_4.y - 80 (well above nose tip)
-    - P_338.x < TEMP_FACE_CENTER_X - 40 (left of center)
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y < P_4.y - 70 &&
-      p.x < TEMP_FACE_CENTER_X - 30
-    ).sort((a,b) => a.x - b.x)[Math.floor(points.length * 0.1)]
+OVERALL:
+- Combined score: {overallScore}/10
+- Proportion assessment: {proportionAssessment}
 
-P_109 (Forehead right side):
-  Step 1: Find index 109
-  Step 2: Verify:
-    - P_109.y ≈ P_338.y ± 20
-    - P_109.x > TEMP_FACE_CENTER_X + 40
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      abs(p.y - P_338.y) < 30 &&
-      p.x > TEMP_FACE_CENTER_X + 30
-    ).sort((a,b) => b.x - a.x)[Math.floor(points.length * 0.1)]
+═══════════════════════════════════════════
+SCORING THRESHOLDS USED
+═══════════════════════════════════════════
 
-P_67 (Left temple):
-  Step 1: Find index 67
-  Step 2: Verify:
-    - P_67.y > P_338.y + 30 (below forehead)
-    - P_67.x < P_338.x + 20
-  Step 3: Alternative = near P_338, slightly below
+FACIAL THIRDS BALANCE:
+- <2% deviation from 33-33-33 → 10/10 (Perfect)
+- 2-4% → 8/10 (Good)
+- 4-6% → 6/10 (Fair)
+- >8% → 2/10 (Poor)
 
-P_297 (Right temple):
-  Step 1: Find index 297
-  Step 2: Verify:
-    - P_297.y ≈ P_67.y ± 20
-    - P_297.x > P_109.x - 20
-  Step 3: Alternative = near P_109, slightly below
+HORIZONTAL SYMMETRY:
+- <1% asymmetry → 10/10 (Perfect)
+- 1-2% → 8/10 (Minimal)
+- 2-4% → 6/10 (Noticeable)
+- >6% → 2/10 (Severe)
 
-CHEEKBONE HYBRID DETECTION:
+GOLDEN RATIO:
+- <0.1 deviation from 1.618 → 10/10
+- 0.1-0.2 → 8/10
+- 0.2-0.3 → 6/10
+- >0.5 → 2/10
 
-P_234 (Left cheekbone):
-  Step 1: Find index 234
-  Step 2: Verify:
-    - P_234.y > P_4.y - 50 && P_234.y < P_4.y + 20 (nose tip level)
-    - P_234.x < TEMP_FACE_CENTER_X - 50 (left side)
-    - P_234.z < avg_z - 10 (protruding bone, outward)
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      p.y > P_4.y - 60 && p.y < P_4.y + 30 &&
-      p.x < TEMP_FACE_CENTER_X - 40
-    ).sort((a,b) => a.z - b.z)[0]
+FACE SHAPE CLASSIFICATION RULES:
+- OVAL: Length/width 1.3-1.6, balanced jaw/cheek/forehead
+- ROUND: Length/width <1.2, wide jaw
+- SQUARE: Length/width <1.25, strong jawline
+- HEART: Wide forehead, narrow jaw
+- DIAMOND: Wide cheekbones, narrow forehead/jaw
+- OBLONG: Length/width >1.6
+- TRIANGLE: Narrow forehead, wide jaw
 
-P_454 (Right cheekbone):
-  Step 1: Find index 454
-  Step 2: Verify:
-    - P_454.y ≈ P_234.y ± 15
-    - P_454.x > TEMP_FACE_CENTER_X + 50
-    - P_454.z ≈ P_234.z ± 5
-  Step 3: If verification fails:
-    Alternative = points.filter(p => 
-      abs(p.y - P_234.y) < 25 &&
-      p.x > TEMP_FACE_CENTER_X + 40
-    ).sort((a,b) => a.z - b.z)[0]
+═══════════════════════════════════════════
+YOUR TASK
+═══════════════════════════════════════════
 
-P_132 (Left lower cheekbone):
-  Step 1: Find index 132
-  Step 2: Verify:
-    - P_132.y > P_234.y + 20
-    - P_132.x ≈ P_234.x ± 30
-  Step 3: Alternative = points below P_234
+Based on these EXACT numbers:
+1. Explain the detected face shape in Turkish
+2. Describe what the facial proportions mean
+3. Explain the thirds balance
+4. Provide style recommendations based on face shape
 
-P_361 (Right lower cheekbone):
-  Step 1: Find index 361
-  Step 2: Verify:
-    - P_361.y ≈ P_132.y ± 15
-    - P_361.x ≈ P_454.x ± 30
-  Step 3: Alternative = points below P_454
+CRITICAL:
+- DO NOT recalculate any values
+- USE the exact numbers provided above
+- Reference specific measurements in explanations
+- Keep scores as provided (do not inflate)
 
-JAWLINE HYBRID DETECTION:
-
-P_152 (Chin tip):
-  Step 1: Find index 152
-  Step 2: Verify:
-    - P_152.y ≈ max(all y values) ± 20
-    - abs(P_152.x - TEMP_FACE_CENTER_X) < 30
-  Step 3: Alternative = lowest point near center
-
-P_172 (Left jaw corner):
-  Step 1: Find index 172
-  Step 2: Verify:
-    - P_172.y ≈ P_152.y - 60 ± 40
-    - P_172.x < TEMP_FACE_CENTER_X - 50
-  Step 3: Alternative = leftmost point in jaw region
-
-P_397 (Right jaw corner):
-  Step 1: Find index 397
-  Step 2: Verify:
-    - P_397.y ≈ P_172.y ± 20
-    - P_397.x > TEMP_FACE_CENTER_X + 50
-  Step 3: Alternative = rightmost point in jaw region
-
-P_136 (Left mid jaw):
-  Step 1: Find index 136
-  Step 2: Verify: On left jawline, between P_172 and P_152
-  Step 3: Dynamic detection
-
-P_365 (Right mid jaw):
-  Step 1: Find index 365
-  Step 2: Verify: On right jawline, between P_397 and P_152
-  Step 3: Dynamic detection
-
-EYE LEVEL REFERENCE:
-P_33 (Right eye outer): index 33
-P_263 (Left eye outer): index 263
-
-LIP LEVEL REFERENCE:
-P_61 (Left lip corner): index 61
-P_291 (Right lip corner): index 291
-
-FACE_CENTER_X = (P_33.x + P_263.x) / 2
-
-═════════════════════════════════════════════
-SECTION 2: CALCULATIONS
-═════════════════════════════════════════════
-
-2.1 FACE WIDTHS (5 Levels):
-FOREHEAD_WIDTH = P_297.x - P_67.x
-CHEEKBONE_WIDTH = P_454.x - P_234.x
-JAW_WIDTH = P_397.x - P_172.x
-EYE_LEVEL_WIDTH = P_263.x - P_33.x
-LIP_LEVEL_WIDTH = P_291.x - P_61.x
-
-WIDEST_REGION = max(FOREHEAD_WIDTH, CHEEKBONE_WIDTH, JAW_WIDTH)
-WIDEST_REGION_NAME = 
-  WIDEST_REGION === FOREHEAD_WIDTH ? "FOREHEAD" :
-  WIDEST_REGION === CHEEKBONE_WIDTH ? "CHEEKBONE" : "JAW"
-
-2.2 FACE HEIGHT AND SECTIONS:
-TOTAL_FACE_HEIGHT = P_152.y - P_10.y
-UPPER_FACE_HEIGHT = P_4.y - P_10.y
-MID_FACE_HEIGHT = ((P_61.y + P_291.y) / 2) - P_4.y
-LOWER_FACE_HEIGHT = P_152.y - ((P_61.y + P_291.y) / 2)
-
-2.3 CRITICAL RATIOS:
-FACE_LENGTH_TO_WIDTH_RATIO = TOTAL_FACE_HEIGHT / CHEEKBONE_WIDTH
-FOREHEAD_TO_CHEEKBONE_RATIO = FOREHEAD_WIDTH / CHEEKBONE_WIDTH
-JAW_TO_CHEEKBONE_RATIO = JAW_WIDTH / CHEEKBONE_WIDTH
-FOREHEAD_TO_JAW_RATIO = FOREHEAD_WIDTH / JAW_WIDTH
-UPPER_TO_MID_RATIO = UPPER_FACE_HEIGHT / MID_FACE_HEIGHT
-MID_TO_LOWER_RATIO = MID_FACE_HEIGHT / LOWER_FACE_HEIGHT
-
-2.4 JAW ANGLE:
-LEFT_JAW_ANGLE = atan2(P_152.y - P_172.y, P_152.x - P_172.x) × (180 / π)
-RIGHT_JAW_ANGLE = atan2(P_152.y - P_397.y, P_397.x - P_152.x) × (180 / π)
-AVG_JAW_ANGLE = (abs(LEFT_JAW_ANGLE) + abs(RIGHT_JAW_ANGLE)) / 2
-
-2.5 FACE SHAPE CLASSIFICATION:
-
-if (FACE_LENGTH_TO_WIDTH_RATIO > 1.6) {
-  if (JAW_TO_CHEEKBONE_RATIO < 0.75) {
-    FACE_SHAPE = "LONG_TRIANGLE"
-  } else if (FOREHEAD_TO_CHEEKBONE_RATIO > 0.95) {
-    FACE_SHAPE = "RECTANGLE"
-  } else {
-    FACE_SHAPE = "LONG_OVAL"
-  }
-} else if (FACE_LENGTH_TO_WIDTH_RATIO > 1.3) {
-  if (JAW_TO_CHEEKBONE_RATIO > 0.90 && FOREHEAD_TO_CHEEKBONE_RATIO > 0.90) {
-    FACE_SHAPE = "SQUARE"
-  } else if (JAW_TO_CHEEKBONE_RATIO < 0.70 && FOREHEAD_TO_JAW_RATIO < 0.85) {
-    FACE_SHAPE = "HEART"
-  } else if (FOREHEAD_TO_CHEEKBONE_RATIO < 0.85 && JAW_TO_CHEEKBONE_RATIO < 0.85) {
-    FACE_SHAPE = "DIAMOND"
-  } else {
-    FACE_SHAPE = "OVAL"
-  }
-} else {
-  if (JAW_TO_CHEEKBONE_RATIO > 0.90 && FOREHEAD_TO_CHEEKBONE_RATIO > 0.90) {
-    FACE_SHAPE = "SQUARE_ROUND"
-  } else if (JAW_TO_CHEEKBONE_RATIO < 0.75) {
-    FACE_SHAPE = "ROUND_HEART"
-  } else {
-    FACE_SHAPE = "ROUND"
-  }
-}
-
-if (AVG_JAW_ANGLE < 115 && FACE_SHAPE.includes("SQUARE")) {
-  FACE_SHAPE = FACE_SHAPE.replace("SQUARE", "OVAL")
-}
-
-2.6 FACE SYMMETRY:
-LEFT_FACE_WIDTH = abs(P_234.x - FACE_CENTER_X)
-RIGHT_FACE_WIDTH = abs(P_454.x - FACE_CENTER_X)
-FACE_WIDTH_ASYMMETRY = abs(LEFT_FACE_WIDTH - RIGHT_FACE_WIDTH)
-FACE_WIDTH_ASYMMETRY_RATIO = (FACE_WIDTH_ASYMMETRY / CHEEKBONE_WIDTH) × 100
-
-LEFT_JAW_LENGTH = sqrt((P_152.x - P_172.x)² + (P_152.y - P_172.y)²)
-RIGHT_JAW_LENGTH = sqrt((P_397.x - P_152.x)² + (P_152.y - P_397.y)²)
-JAW_ASYMMETRY = abs(LEFT_JAW_LENGTH - RIGHT_JAW_LENGTH)
-JAW_ASYMMETRY_RATIO = (JAW_ASYMMETRY / max(LEFT_JAW_LENGTH, RIGHT_JAW_LENGTH)) × 100
-
-2.7 3D CONTOUR:
-FOREHEAD_CENTER_Z = P_10.z
-CHEEKBONE_CENTER_Z = (P_234.z + P_454.z) / 2
-CHIN_CENTER_Z = P_152.z
-
-FACE_CONTOUR_CURVE = FOREHEAD_CENTER_Z - CHEEKBONE_CENTER_Z
-JAW_CONTOUR_CURVE = CHEEKBONE_CENTER_Z - CHIN_CENTER_Z
-
-═════════════════════════════════════════════
-SECTION 3: SCORING AND CONFIDENCE
-═════════════════════════════════════════════
-
-CONFIDENCE_SCORE = 0
-
-if (FACE_SHAPE === "OVAL" && FACE_LENGTH_TO_WIDTH_RATIO > 1.25 && FACE_LENGTH_TO_WIDTH_RATIO < 1.45) {
-  CONFIDENCE_SCORE = 9
-} else if (FACE_SHAPE === "SQUARE" && JAW_TO_CHEEKBONE_RATIO > 0.88 && FOREHEAD_TO_CHEEKBONE_RATIO > 0.93) {
-  CONFIDENCE_SCORE = 9
-} else if (FACE_SHAPE === "HEART" && JAW_TO_CHEEKBONE_RATIO < 0.72 && FOREHEAD_TO_JAW_RATIO < 0.88) {
-  CONFIDENCE_SCORE = 8
-} else if (FACE_SHAPE === "DIAMOND" && FOREHEAD_TO_CHEEKBONE_RATIO < 0.87 && JAW_TO_CHEEKBONE_RATIO < 0.87) {
-  CONFIDENCE_SCORE = 8
-} else {
-  CONFIDENCE_SCORE = 6
-}
-
-ALTERNATIVE_SHAPES = []
-
-if (abs(FACE_LENGTH_TO_WIDTH_RATIO - 1.35) < 0.1) {
-  ALTERNATIVE_SHAPES.push("OVAL")
-}
-if (JAW_TO_CHEEKBONE_RATIO > 0.85 && FOREHEAD_TO_CHEEKBONE_RATIO > 0.90) {
-  ALTERNATIVE_SHAPES.push("SQUARE")
-}
-if (JAW_TO_CHEEKBONE_RATIO < 0.75 && FOREHEAD_TO_JAW_RATIO < 0.90) {
-  ALTERNATIVE_SHAPES.push("HEART")
-}
-
-═════════════════════════════════════════════
-USER-FRIENDLY EXPLANATION REQUIREMENTS
-═════════════════════════════════════════════
-
-For EVERY "user_explanation" field, you MUST:
-1. Reference specific measurements from that category
-2. Explain what those numbers mean in context
-3. Be 2-3 sentences long
-4. Use plain language (no jargon)
-5. CRITICAL: Write in the SAME LANGUAGE specified in the system prompt (Turkish/English)
-
-EXAMPLE (for dimension_measurements):
-❌ BAD: "Your face measurements are good"
-✅ GOOD: "Your forehead is 145px wide, cheekbones are 152px, and jaw is 138px. This creates a face length-to-width ratio of 1.32, indicating an OVAL shape. Your widest point is at the cheekbones, which is typical for oval faces."
-
-Apply this pattern to ALL "user_explanation" fields below.
-
-═════════════════════════════════════════════
-OUTPUT FORMAT (JSON)
-═════════════════════════════════════════════
+═══════════════════════════════════════════
+OUTPUT JSON FORMAT
+═══════════════════════════════════════════
 
 {
   "analysis_result": {
-    "face_shape": "OVAL/SQUARE/ROUND/DIAMOND/HEART/TRIANGLE/RECTANGLE/HYBRID",
-    "confidence_score": 0-10,
-    "alternative_shapes": ["string"],
-    "general_assessment": "string"
+    "face_shape": "{faceShape}",                    // COPY provided value
+    "confidence_score": {shapeConfidence},          // COPY provided value
+    "alternative_shapes": ["{alternativeShape}"],   // COPY provided value
+    "general_assessment": "string (reference the scores)",
+    "overall_score": {overallScore}                 // COPY provided value
   },
-  
+
   "user_friendly_summary": {
     "assessment": "string (max 10 words)",
-    "explanation": "string (2-3 sentences explaining face shape characteristics)",
+    "explanation": "string (2-3 sentences, MUST reference faceShape={faceShape}, lengthWidthRatio={lengthWidthRatio}, etc.)",
     "key_findings": [
-      "string (3-5 bullets)",
-      "string (text only, no emojis)"
+      "Yüz şekliniz: {faceShape} (güven: {shapeConfidence}/10)",
+      "Uzunluk/genişlik oranı: {lengthWidthRatio}",
+      "Yüz üçlü dengesi: Üst %{upperThirdRatio}, Orta %{middleThirdRatio}, Alt %{lowerThirdRatio}"
     ]
   },
 
   "dimension_measurements": {
-    "forehead_width": "number px",
-    "cheekbone_width": "number px",
-    "jaw_width": "number px",
-    "total_face_height": "number px",
-    "upper_face_height": "number px",
-    "mid_face_height": "number px",
-    "lower_face_height": "number px",
-    "widest_point": "FOREHEAD/CHEEKBONE/JAW/EYE_LEVEL",
-    "user_explanation": "string (plain language)"
+    "face_length": {faceLength},                    // COPY
+    "face_width": {faceWidth},                      // COPY
+    "cheekbone_width": {cheekboneWidth},            // COPY
+    "jawline_width": {jawlineWidth},                // COPY
+    "forehead_width": {foreheadWidth},              // COPY
+    "user_explanation": "string (explain these measurements in context)"
   },
 
-  "critical_ratios": {
-    "face_length_to_width": number,
-    "forehead_to_cheekbone": number,
-    "jaw_to_cheekbone": number,
-    "forehead_to_jaw": number,
-    "upper_to_mid_face": number,
-    "mid_to_lower_face": number,
-    "ratio_assessment": "string",
-    "user_explanation": "string (plain language)"
+  "shape_classification": {
+    "detected_shape": "{faceShape}",                // COPY
+    "confidence": {shapeConfidence},                // COPY
+    "alternative": "{alternativeShape}",            // COPY
+    "length_width_ratio": {lengthWidthRatio},       // COPY
+    "jaw_cheek_ratio": {jawCheekRatio},             // COPY
+    "forehead_jaw_ratio": {foreheadJawRatio},       // COPY
+    "user_explanation": "string (explain why this shape was detected)"
   },
 
-  "jaw_analysis": {
-    "average_angle": "number°",
-    "angle_difference": "number°",
-    "jaw_type": "SHARP/MODERATE/WIDE",
-    "asymmetry_ratio": "number%",
-    "user_explanation": "string (plain language)"
+  "facial_thirds": {
+    "upper_third": {upperThird},                    // COPY
+    "upper_ratio": {upperThirdRatio},               // COPY
+    "middle_third": {middleThird},                  // COPY
+    "middle_ratio": {middleThirdRatio},             // COPY
+    "lower_third": {lowerThird},                    // COPY
+    "lower_ratio": {lowerThirdRatio},               // COPY
+    "deviation_from_ideal": {thirdsDeviation},      // COPY
+    "thirds_score": {facialThirdsScore},            // COPY
+    "user_explanation": "string (explain thirds balance)"
   },
 
   "symmetry_analysis": {
-    "face_width_asymmetry": "number px",
-    "face_width_asymmetry_ratio": "number%",
-    "jaw_asymmetry": "number px",
-    "jaw_asymmetry_ratio": "number%",
-    "overall_symmetry": "GOOD/FAIR/POOR",
-    "user_explanation": "string (plain language)"
+    "left_face_width": {leftFaceWidth},             // COPY
+    "right_face_width": {rightFaceWidth},           // COPY
+    "horizontal_asymmetry": {horizontalAsymmetry},  // COPY
+    "asymmetry_ratio": {horizontalAsymmetryRatio},  // COPY
+    "symmetry_score": {horizontalSymmetryScore},    // COPY
+    "user_explanation": "string (explain symmetry)"
   },
 
-  "3d_analysis": {
-    "forehead_depth": "number mm",
-    "cheekbone_depth": "number mm",
-    "chin_depth": "number mm",
-    "face_contour_curve": "number°",
-    "contour_type": "SMOOTH/DEFINED/FLAT",
-    "user_explanation": "string (plain language)"
+  "proportion_analysis": {
+    "golden_ratio_deviation": {goldenRatioDeviation},  // COPY
+    "golden_ratio_score": {goldenRatioScore},          // COPY
+    "proportion_score": {proportionScore},             // COPY
+    "proportion_assessment": "{proportionAssessment}", // COPY
+    "user_explanation": "string (explain golden ratio and proportions)"
   },
 
-  "face_shape_details": {
-    "dominant_features": ["string"],
-    "characteristic_points": ["string"],
-    "shape_description": "string",
-    "user_explanation": "string (plain language)"
-  },
-
-  "aesthetic_analysis": {
-    "golden_ratio_compliance": "GOOD/FAIR/POOR",
-    "harmonic_balance": "string",
-    "beauty_standards": "string",
-    "user_explanation": "string (plain language)"
-  },
-
-  "recommendations": {
-    "hairstyle_suggestions": ["string"],
-    "makeup_suggestions": ["string"],
+  "style_recommendations": {
+    "hairstyle_suggestions": ["string (based on {faceShape})"],
     "accessory_suggestions": ["string"],
-    "attractiveness_tips": ["string"]
+    "makeup_tips": ["string (if applicable)"],
+    "user_explanation": "string"
   },
 
   "metadata": {
     "analysis_date": "ISO timestamp",
-    "points_used": number,
-    "reliability": "HIGH/MEDIUM/LOW",
-    "model_version": "V4"
+    "points_used": 468,
+    "reliability": "HIGH",
+    "model_version": "V5_CALCULATED",
+    "calculation_method": "typescript_precalculated"
   }
 }
 
-
-CRITICAL APPLICATION NOTES:
-* Return ONLY JSON - No additional explanations
-* All coordinates and calculations to 2 decimal places
-* Reliability: < 400 landmarks = "MEDIUM", ≥400 = "HIGH"
-* Use index values first, fall back to hybrid control if invalid
-* Mark in metadata if hybrid control was used
-* Evaluate ALL ratios together when determining face shape
-* Suggest alternative shapes when near threshold values
-* 3 main width comparisons (forehead, cheekbone, jaw) are critically important
-* Use maximum number of points from 468 landmarks
-
-CRITICAL FINAL WARNING:
-Response MUST be ONLY valid JSON.
-No markdown (\`\`\`json), no code blocks, no explanations, no thinking tags.
-Start with { and end with }`,
+STRICT REQUIREMENTS:
+- All numeric fields in output MUST exactly match the input metrics
+- No recalculation allowed
+- Reference exact numbers in all text explanations
+- If you change a provided score, the system will reject your response`,
   },
 ];
 

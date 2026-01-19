@@ -76,8 +76,8 @@ const validateMesh = (faceData: any) => {
 
   for (const idx of criticalIndices) {
     const point = landmarks[idx];
-    // Koordinatlar fotoğraf içinde mi? (512x512 piksel)
-    if (!point || point.x < 0 || point.x > 512 || point.y < 0 || point.y > 512) {
+    // Koordinatlar fotoğraf içinde mi? (1024x1024 piksel)
+    if (!point || point.x < 0 || point.x > 1024 || point.y < 0 || point.y > 1024) {
       return {
         isValid: false,
         quality: 'poor' as const,
@@ -451,14 +451,14 @@ export function useFaceMesh() {
     try {
       console.log('🔒 [KUYRUK] İşlem kilitlendi');
 
-      // Resmi optimize et (512x512 - MediaPipe için optimal)
+      // Resmi optimize et (1024x1024 - MediaPipe için optimal, yüksek hassasiyet)
       const manipulatedImage = await (async () => {
         const context = ImageManipulator.manipulate(imageUri);
-        context.resize({ width: 512, height: 512 });
+        context.resize({ width: 1024, height: 1024 });
         const image = await context.renderAsync();
         const result = await image.saveAsync({
           format: SaveFormat.JPEG,
-          compress: 0.9,
+          compress: 0.95,
           base64: true
         });
         return result;

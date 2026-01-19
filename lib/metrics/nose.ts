@@ -61,6 +61,11 @@ export function extractNoseMetrics(rawResponse: Record<string, any>): NoseMetric
     symmetryAnalysis.nostril_symmetry ??
     getNestedValue(rawResponse, 'nostril_symmetry');
 
+  // Detect calculation source from metadata
+  const calculationMethod = rawResponse.metadata?.calculation_method;
+  const calculationSource =
+    calculationMethod === 'typescript_precalculated' ? 'typescript' : 'ai';
+
   return {
     overall_score: overallScore,
     general_assessment: analysisResult.general_assessment,
@@ -70,5 +75,6 @@ export function extractNoseMetrics(rawResponse: Record<string, any>): NoseMetric
     bridge_straightness: bridgeStraightness,
     tip_position: tipPosition,
     nostril_symmetry: nostrilSymmetry,
+    calculation_source: calculationSource as 'typescript' | 'ai',
   };
 }

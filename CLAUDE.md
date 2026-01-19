@@ -127,13 +127,13 @@ app/
 **Implementation:** `app/(tabs)/index.tsx` (1000+ lines)
 - Embeds MediaPipe Web library via CDN in hidden WebView
 - Communicates via `postMessage` API
-- Processes images at 512x512 resolution (optimal for MediaPipe)
+- Processes images at 1024x1024 resolution (high precision for landmark detection)
 
 **Workflow:**
 ```
 Camera/Gallery (expo-image-picker)
   ↓
-Resize to 512x512 (expo-image-manipulator)
+Resize to 1024x1024 (expo-image-manipulator)
   ↓
 Convert to base64
   ↓
@@ -159,12 +159,12 @@ Navigate to analysis screen
 ```javascript
 faceMesh.setOptions({
   maxNumFaces: 1,                    // Single face detection
-  refineLandmarks: false,            // Faster processing, less iris/lip detail
-  minDetectionConfidence: 0.5,       // 50% confidence threshold
-  minTrackingConfidence: 0.0,        // Not used (static images)
+  refineLandmarks: true,             // Iris detail enabled (landmarks 468-477)
+  minDetectionConfidence: 0.7,       // 70% confidence threshold (high quality)
+  minTrackingConfidence: 0.5,        // Medium tracking confidence
   selfieMode: false,                 // No horizontal flip
   staticImageMode: true,             // Optimized for photos, not video
-  modelComplexity: 1                 // Medium model (0=lite, 1=full, 2=attention)
+  modelComplexity: 1                 // Full model (0=lite, 1=full, 2=heavy - 1 is optimal)
 });
 ```
 
@@ -295,19 +295,19 @@ plugins: ['react-native-reanimated/plugin']  // 3. MUST BE LAST (official docs r
 ## Important Implementation Details
 
 ### Image Processing (Critical Requirements)
-- **ALWAYS resize to 512x512** before MediaPipe analysis (non-negotiable for accuracy)
+- **ALWAYS resize to 1024x1024** before MediaPipe analysis (high precision landmark detection)
 - Use `expo-image-manipulator` with the new API:
   ```typescript
   const context = ImageManipulator.manipulate(imageUri);
-  context.resize({ width: 512, height: 512 });
+  context.resize({ width: 1024, height: 1024 });
   const image = await context.renderAsync();
   const result = await image.saveAsync({
     format: SaveFormat.JPEG,
-    compress: 0.9,
-    base64: true  // Required for WebView communication
+    compress: 0.95,  // High quality (95%)
+    base64: true     // Required for WebView communication
   });
   ```
-- **Why 512x512?** MediaPipe Face Mesh training data optimized for this resolution
+- **Why 1024x1024?** Higher resolution provides better landmark precision for detailed facial measurements
 - Square aspect ratio prevents face distortion
 - Old `manipulateAsync()` API is deprecated
 
@@ -342,13 +342,14 @@ These indices reference MediaPipe's fixed 468-point face mesh topology.
 
 ### Performance
 - MediaPipe in WebView offloads heavy ML processing
-- 512x512 image size balances quality vs. speed
+- 1024x1024 image size provides high precision landmark detection
 - Use `react-native-reanimated` for smooth UI animations
 - WebView is hidden (1x1 pixels, opacity: 0) to reduce rendering overhead
+- Processing time: ~2-4 seconds on modern devices (acceptable trade-off for accuracy)
 
 ### Common Gotchas
 1. **Reanimated plugin MUST be last** in `babel.config.js` plugins array
-2. **512x512 resize is mandatory** - other sizes reduce MediaPipe accuracy significantly
+2. **1024x1024 resize is mandatory** - this resolution provides optimal landmark precision
 3. **WebView requires `javaScriptEnabled={true}`** - MediaPipe won't load without it
 4. **`EXPO_PUBLIC_` prefix is required** for client-side environment variables in Expo
 5. **Session persistence is manual** - handled via AppState listener, not automatic

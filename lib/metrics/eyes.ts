@@ -59,6 +59,11 @@ export function extractEyesMetrics(rawResponse: Record<string, any>): EyesMetric
     leftEye.eyelid_condition ??
     getNestedValue(rawResponse, 'eyelid_condition');
 
+  // Detect calculation source from metadata
+  const calculationMethod = rawResponse.metadata?.calculation_method;
+  const calculationSource =
+    calculationMethod === 'typescript_precalculated' ? 'typescript' : 'ai';
+
   return {
     overall_score: overallScore,
     general_assessment: analysisResult.general_assessment,
@@ -68,5 +73,6 @@ export function extractEyesMetrics(rawResponse: Record<string, any>): EyesMetric
     right_eye_score: rightEyeScore || undefined,
     eye_spacing: eyeSpacing,
     eyelid_condition: eyelidCondition,
+    calculation_source: calculationSource as 'typescript' | 'ai',
   };
 }

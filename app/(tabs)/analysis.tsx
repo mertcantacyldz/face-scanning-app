@@ -29,6 +29,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+// ============================================
+// TEST MODE: AI çağrısını atla, sadece hesaplamaları test et
+// Para harcamamak için true yap, AI'ı açmak için false yap
+// ============================================
+const TEST_MODE = true;
+
 interface FaceAnalysisData {
   id: string;
   landmarks: { x: number; y: number; z: number; index: number }[];
@@ -46,6 +52,7 @@ const AnalysisScreen = () => {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [showSpinWheel, setShowSpinWheel] = useState(false);
   const [attractivenessScore, setAttractivenessScore] = useState<number | null>(null);
+  const [userGender, setUserGender] = useState<'female' | 'male' | 'other' | null>(null);
 
   // Premium hook
   const { isPremium, freeAnalysisUsed, freeAnalysisRegion, markFreeAnalysisUsed } = usePremium();
@@ -78,6 +85,18 @@ const AnalysisScreen = () => {
       }
 
       console.log('Loading face analysis for user:', user.id);
+
+      // Fetch user's gender from profile
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('gender')
+        .eq('id', user.id)
+        .single();
+
+      if (profileData?.gender) {
+        setUserGender(profileData.gender as 'female' | 'male' | 'other');
+        console.log('User gender loaded:', profileData.gender);
+      }
 
       // Fetch latest face analysis
       const { data, error } = await supabase
@@ -130,6 +149,115 @@ const AnalysisScreen = () => {
     }
   };
 
+  /**
+   * Calculate overall_score from sub-scores using weighted average
+   * This overrides AI's calculation which is often incorrect
+   */
+  const calculateOverallScore = (jsonResult: Record<string, any>, regionId: string): number => {
+    // Define weights for each region based on customPrompt formulas
+    const weights: Record<string, Record<string, number>> = {
+      eyebrows: {
+        angle_score: 0.35,
+        thickness_score: 0.25,
+        height_score: 0.20,
+        overall_symmetry_score: 0.20,
+      },
+      eyes: {
+        size_score: 0.30,
+        shape_score: 0.25,
+        position_score: 0.20,
+        inter_eye_score: 0.15,
+        lid_score: 0.10,
+      },
+      nose: {
+        nose_tip_score: 0.50,
+        rotation_score: 0.30,
+        nostril_score: 0.20,
+      },
+      lips: {
+        upper_lower_ratio_score: 0.30,
+        upper_lip_score: 0.25,
+        lower_lip_score: 0.25,
+        corner_score: 0.20,
+      },
+      jawline: {
+        chin_tip_score: 0.35,
+        symmetry_score: 0.30,
+        length_score: 0.20,
+        angle_score: 0.15,
+      },
+      face_shape: {
+        // Face shape uses confidence_score, not overall_score
+        // No calculation needed
+      },
+    };
+
+    // Get weights for this region
+    const regionWeights = weights[regionId];
+    if (!regionWeights || Object.keys(regionWeights).length === 0) {
+      // No weights defined (e.g., face_shape) - use AI's score
+      return jsonResult.analysis_result?.overall_score ??
+             jsonResult.analysis_result?.confidence_score ??
+             0;
+    }
+
+    // Extract sub-scores from various possible locations in JSON
+    const getScore = (key: string): number | null => {
+      // Convert "nose_tip_score" → "nose_tip_analysis"
+      const sectionName = key.replace('_score', '_analysis');
+
+      // Check in top-level analysis sections (e.g., nose_tip_analysis.score)
+      if (jsonResult[sectionName]?.score !== undefined) {
+        return jsonResult[sectionName].score;
+      }
+
+      // Fallback: Check in nested structures
+      if (jsonResult.symmetry_analysis?.[key] !== undefined) {
+        return jsonResult.symmetry_analysis[key];
+      }
+
+      if (jsonResult.shape_analysis?.[key] !== undefined) {
+        return jsonResult.shape_analysis[key];
+      }
+
+      return null;
+    };
+
+    // Calculate weighted average
+    let weightedSum = 0;
+    let totalWeight = 0;
+    let missingScores: string[] = [];
+
+    for (const [scoreKey, weight] of Object.entries(regionWeights)) {
+      const score = getScore(scoreKey);
+
+      if (score !== null && score !== undefined) {
+        weightedSum += score * weight;
+        totalWeight += weight;
+      } else {
+        missingScores.push(scoreKey);
+      }
+    }
+
+    // If we found any scores, calculate average
+    if (totalWeight > 0) {
+      const calculated = Math.round(weightedSum / totalWeight);
+      console.log(`✅ Calculated overall_score for ${regionId}: ${calculated} (from ${Object.keys(regionWeights).length - missingScores.length}/${Object.keys(regionWeights).length} sub-scores)`);
+
+      if (missingScores.length > 0) {
+        console.warn(`⚠️ Missing scores: ${missingScores.join(', ')}`);
+      }
+
+      return calculated;
+    }
+
+    // Fallback: Use AI's score if we couldn't find sub-scores
+    console.warn(`⚠️ Could not calculate overall_score for ${regionId}, using AI's value`);
+    return jsonResult.analysis_result?.overall_score ??
+           jsonResult.analysis_result?.confidence_score ??
+           0;
+  };
+
   const handleRegionAnalysis = async (region: FaceRegion, bypassPremiumCheck = false) => {
     // Premium check for non-premium users
     if (!isPremium && !bypassPremiumCheck) {
@@ -168,15 +296,480 @@ const AnalysisScreen = () => {
       setAnalyzingRegion(region.id);
       setSelectedRegion(region);
 
-      // Call OpenRouter API with all 468 landmarks
-      const result = await analyzeFaceRegion({
-        landmarks: faceData.landmarks,
-        region: region.id,
-        customPrompt: region.prompt,
-        language: i18n.language as 'en' | 'tr', // Pass current language
-      });
+      // ============================================
+      // 1. CALCULATE METRICS (TYPESCRIPT) - ALL REGIONS
+      // ============================================
+      let calculatedMetrics: any = null;
+
+      if (region.id === 'nose') {
+        // Import dynamically to avoid circular dependencies
+        const { calculateNoseMetrics } = await import('@/lib/calculations/nose');
+        calculatedMetrics = calculateNoseMetrics(faceData.landmarks);
+
+        console.log('🔢 Calculated nose metrics (TypeScript):', calculatedMetrics);
+      } else if (region.id === 'eyes') {
+        // Import dynamically to avoid circular dependencies
+        const { calculateEyeMetrics } = await import('@/lib/calculations/eyes');
+        calculatedMetrics = calculateEyeMetrics(faceData.landmarks);
+
+        console.log('🔢 Calculated eye metrics (TypeScript):', calculatedMetrics);
+      } else if (region.id === 'lips') {
+        // Import dynamically to avoid circular dependencies
+        const { calculateLipMetrics } = await import('@/lib/calculations/lips');
+        calculatedMetrics = calculateLipMetrics(faceData.landmarks);
+
+        console.log('🔢 Calculated lip metrics (TypeScript):', calculatedMetrics);
+      } else if (region.id === 'jawline') {
+        // Import dynamically to avoid circular dependencies
+        const { calculateJawlineMetrics } = await import('@/lib/calculations/jawline');
+        calculatedMetrics = calculateJawlineMetrics(faceData.landmarks);
+
+        console.log('🔢 Calculated jawline metrics (TypeScript):', calculatedMetrics);
+      } else if (region.id === 'eyebrows') {
+        // Import dynamically to avoid circular dependencies
+        const { calculateEyebrowMetrics } = await import('@/lib/calculations/eyebrows');
+        calculatedMetrics = calculateEyebrowMetrics(faceData.landmarks);
+
+        console.log('🔢 Calculated eyebrow metrics (TypeScript):', calculatedMetrics);
+      } else if (region.id === 'face_shape') {
+        // Import dynamically to avoid circular dependencies
+        const { calculateFaceShapeMetrics } = await import('@/lib/calculations/face-shape');
+        calculatedMetrics = calculateFaceShapeMetrics(faceData.landmarks);
+
+        console.log('🔢 Calculated face shape metrics (TypeScript):', calculatedMetrics);
+      }
+
+      // ============================================
+      // 2. PREPARE PROMPT (REPLACE TEMPLATE VARIABLES)
+      // ============================================
+      let finalPrompt = region.prompt;
+
+      if (region.id === 'nose' && calculatedMetrics) {
+        // Replace all template variables with calculated values
+        finalPrompt = finalPrompt
+          .replace(/{tipDeviation}/g, calculatedMetrics.tipDeviation.toFixed(2))
+          .replace(/{tipDeviationRatio}/g, calculatedMetrics.tipDeviationRatio.toFixed(2))
+          .replace(/{tipDirection}/g, calculatedMetrics.tipDirection)
+          .replace(/{tipScore}/g, calculatedMetrics.tipScore.toString())
+
+          .replace(/{nostrilAsymmetry}/g, calculatedMetrics.nostrilAsymmetry.toFixed(2))
+          .replace(/{nostrilAsymmetryRatio}/g, calculatedMetrics.nostrilAsymmetryRatio.toFixed(2))
+          .replace(/{nostrilScore}/g, calculatedMetrics.nostrilScore.toString())
+
+          .replace(/{rotationAngle}/g, calculatedMetrics.rotationAngle.toFixed(2))
+          .replace(/{rotationDirection}/g, calculatedMetrics.rotationDirection)
+          .replace(/{rotationScore}/g, calculatedMetrics.rotationScore.toString())
+
+          .replace(/{depthDifference}/g, calculatedMetrics.depthDifference.toFixed(3))
+          .replace(/{depthScore}/g, calculatedMetrics.depthScore.toString())
+
+          .replace(/{noseWidth}/g, calculatedMetrics.noseWidth.toFixed(2))
+          .replace(/{noseWidthRatio}/g, calculatedMetrics.noseWidthRatio.toFixed(2))
+          .replace(/{widthScore}/g, calculatedMetrics.widthScore.toString())
+          .replace(/{widthAssessment}/g, calculatedMetrics.widthAssessment)
+
+          .replace(/{noseLength}/g, calculatedMetrics.noseLength.toFixed(2))
+          .replace(/{noseLengthRatio}/g, calculatedMetrics.noseLengthRatio.toFixed(2))
+          .replace(/{lengthScore}/g, calculatedMetrics.lengthScore.toString())
+          .replace(/{lengthAssessment}/g, calculatedMetrics.lengthAssessment)
+
+          .replace(/{tipProjection}/g, calculatedMetrics.tipProjection.toFixed(3))
+          .replace(/{projectionScore}/g, calculatedMetrics.projectionScore.toString())
+          .replace(/{projectionAssessment}/g, calculatedMetrics.projectionAssessment)
+
+          .replace(/{nostrilHeightDiff}/g, calculatedMetrics.nostrilHeightDiff.toFixed(2))
+          .replace(/{nostrilHeightDiffRatio}/g, calculatedMetrics.nostrilHeightDiffRatio.toFixed(2))
+          .replace(/{nostrilSizeScore}/g, calculatedMetrics.nostrilSizeScore.toString())
+
+          .replace(/{bridgeDeviation}/g, calculatedMetrics.bridgeDeviation.toFixed(2))
+          .replace(/{bridgeDeviationRatio}/g, calculatedMetrics.bridgeDeviationRatio.toFixed(2))
+          .replace(/{bridgeStraightnessScore}/g, calculatedMetrics.bridgeStraightnessScore.toString())
+          .replace(/{bridgeAssessment}/g, calculatedMetrics.bridgeAssessment)
+
+          .replace(/{overallScore}/g, calculatedMetrics.overallScore.toString())
+          .replace(/{asymmetryLevel}/g, calculatedMetrics.asymmetryLevel);
+
+        console.log('✅ Nose template variables replaced in prompt');
+      } else if (region.id === 'eyes' && calculatedMetrics) {
+        // Replace all template variables for eyes
+        finalPrompt = finalPrompt
+          // Size symmetry
+          .replace(/{leftEyeWidth}/g, calculatedMetrics.leftEyeWidth.toFixed(2))
+          .replace(/{leftEyeHeight}/g, calculatedMetrics.leftEyeHeight.toFixed(2))
+          .replace(/{leftEyeArea}/g, calculatedMetrics.leftEyeArea.toFixed(2))
+          .replace(/{rightEyeWidth}/g, calculatedMetrics.rightEyeWidth.toFixed(2))
+          .replace(/{rightEyeHeight}/g, calculatedMetrics.rightEyeHeight.toFixed(2))
+          .replace(/{rightEyeArea}/g, calculatedMetrics.rightEyeArea.toFixed(2))
+          .replace(/{widthDifference}/g, calculatedMetrics.widthDifference.toFixed(2))
+          .replace(/{widthDifferenceRatio}/g, calculatedMetrics.widthDifferenceRatio.toFixed(2))
+          .replace(/{heightDifference}/g, calculatedMetrics.heightDifference.toFixed(2))
+          .replace(/{heightDifferenceRatio}/g, calculatedMetrics.heightDifferenceRatio.toFixed(2))
+          .replace(/{areaDifference}/g, calculatedMetrics.areaDifference.toFixed(2))
+          .replace(/{areaDifferenceRatio}/g, calculatedMetrics.areaDifferenceRatio.toFixed(2))
+          .replace(/{sizeSymmetryScore}/g, calculatedMetrics.sizeSymmetryScore.toString())
+
+          // Position symmetry
+          .replace(/{leftEyeCenterX}/g, calculatedMetrics.leftEyeCenterX.toFixed(2))
+          .replace(/{leftEyeCenterY}/g, calculatedMetrics.leftEyeCenterY.toFixed(2))
+          .replace(/{rightEyeCenterX}/g, calculatedMetrics.rightEyeCenterX.toFixed(2))
+          .replace(/{rightEyeCenterY}/g, calculatedMetrics.rightEyeCenterY.toFixed(2))
+          .replace(/{verticalMisalignment}/g, calculatedMetrics.verticalMisalignment.toFixed(2))
+          .replace(/{verticalMisalignmentRatio}/g, calculatedMetrics.verticalMisalignmentRatio.toFixed(2))
+          .replace(/{horizontalAsymmetry}/g, calculatedMetrics.horizontalAsymmetry.toFixed(2))
+          .replace(/{positionSymmetryScore}/g, calculatedMetrics.positionSymmetryScore.toString())
+
+          // Inter-eye distance
+          .replace(/{interEyeDistance}/g, calculatedMetrics.interEyeDistance.toFixed(2))
+          .replace(/{interEyeDistanceRatio}/g, calculatedMetrics.interEyeDistanceRatio.toFixed(2))
+          .replace(/{interEyeAssessment}/g, calculatedMetrics.interEyeAssessment)
+          .replace(/{interEyeScore}/g, calculatedMetrics.interEyeScore.toString())
+
+          // Shape & canthal tilt
+          .replace(/{leftEyeRatio}/g, calculatedMetrics.leftEyeRatio.toFixed(3))
+          .replace(/{leftCanthalTilt}/g, calculatedMetrics.leftCanthalTilt.toFixed(2))
+          .replace(/{leftCanthalTiltDirection}/g, calculatedMetrics.leftCanthalTiltDirection)
+          .replace(/{rightEyeRatio}/g, calculatedMetrics.rightEyeRatio.toFixed(3))
+          .replace(/{rightCanthalTilt}/g, calculatedMetrics.rightCanthalTilt.toFixed(2))
+          .replace(/{rightCanthalTiltDirection}/g, calculatedMetrics.rightCanthalTiltDirection)
+          .replace(/{tiltAsymmetry}/g, calculatedMetrics.tiltAsymmetry.toFixed(2))
+          .replace(/{shapeSymmetryScore}/g, calculatedMetrics.shapeSymmetryScore.toString())
+
+          // Eyebrow-to-eye distance
+          .replace(/{leftBrowEyeDistance}/g, calculatedMetrics.leftBrowEyeDistance.toFixed(2))
+          .replace(/{rightBrowEyeDistance}/g, calculatedMetrics.rightBrowEyeDistance.toFixed(2))
+          .replace(/{browEyeAsymmetry}/g, calculatedMetrics.browEyeAsymmetry.toFixed(2))
+          .replace(/{browEyeAsymmetryRatio}/g, calculatedMetrics.browEyeAsymmetryRatio.toFixed(2))
+          .replace(/{browEyeScore}/g, calculatedMetrics.browEyeScore.toString())
+
+          // Eyelid analysis
+          .replace(/{leftUpperLidExposure}/g, calculatedMetrics.leftUpperLidExposure.toFixed(2))
+          .replace(/{rightUpperLidExposure}/g, calculatedMetrics.rightUpperLidExposure.toFixed(2))
+          .replace(/{upperLidAsymmetry}/g, calculatedMetrics.upperLidAsymmetry.toFixed(2))
+          .replace(/{upperLidAsymmetryRatio}/g, calculatedMetrics.upperLidAsymmetryRatio.toFixed(2))
+          .replace(/{lowerLidAsymmetry}/g, calculatedMetrics.lowerLidAsymmetry.toFixed(2))
+          .replace(/{lowerLidAsymmetryRatio}/g, calculatedMetrics.lowerLidAsymmetryRatio.toFixed(2))
+          .replace(/{eyelidScore}/g, calculatedMetrics.eyelidScore.toString())
+
+          // 3D depth
+          .replace(/{depthDifference}/g, calculatedMetrics.depthDifference.toFixed(3))
+          .replace(/{depthScore}/g, calculatedMetrics.depthScore.toString())
+
+          // Overall
+          .replace(/{overallScore}/g, calculatedMetrics.overallScore.toString())
+          .replace(/{asymmetryLevel}/g, calculatedMetrics.asymmetryLevel);
+
+        console.log('✅ Eyes template variables replaced in prompt');
+      } else if (region.id === 'lips' && calculatedMetrics) {
+        // Replace all template variables for lips
+        finalPrompt = finalPrompt
+          // Corner alignment
+          .replace(/{leftCornerX}/g, calculatedMetrics.leftCornerX.toFixed(2))
+          .replace(/{leftCornerY}/g, calculatedMetrics.leftCornerY.toFixed(2))
+          .replace(/{rightCornerX}/g, calculatedMetrics.rightCornerX.toFixed(2))
+          .replace(/{rightCornerY}/g, calculatedMetrics.rightCornerY.toFixed(2))
+          .replace(/{cornerYDifference}/g, calculatedMetrics.cornerYDifference.toFixed(2))
+          .replace(/{cornerYDifferenceRatio}/g, calculatedMetrics.cornerYDifferenceRatio.toFixed(2))
+          .replace(/{lipLineTilt}/g, calculatedMetrics.lipLineTilt.toFixed(2))
+          .replace(/{lipLineTiltDirection}/g, calculatedMetrics.lipLineTiltDirection)
+          .replace(/{cornerAlignmentScore}/g, calculatedMetrics.cornerAlignmentScore.toString())
+
+          // Width symmetry
+          .replace(/{lipWidth}/g, calculatedMetrics.lipWidth.toFixed(2))
+          .replace(/{lipWidthRatio}/g, calculatedMetrics.lipWidthRatio.toFixed(2))
+          .replace(/{leftHalfWidth}/g, calculatedMetrics.leftHalfWidth.toFixed(2))
+          .replace(/{rightHalfWidth}/g, calculatedMetrics.rightHalfWidth.toFixed(2))
+          .replace(/{widthAsymmetry}/g, calculatedMetrics.widthAsymmetry.toFixed(2))
+          .replace(/{widthAsymmetryRatio}/g, calculatedMetrics.widthAsymmetryRatio.toFixed(2))
+          .replace(/{lipWidthSymmetryScore}/g, calculatedMetrics.lipWidthSymmetryScore.toString())
+          .replace(/{lipCenterDeviation}/g, calculatedMetrics.lipCenterDeviation.toFixed(2))
+          .replace(/{lipCenterDeviationRatio}/g, calculatedMetrics.lipCenterDeviationRatio.toFixed(2))
+          .replace(/{lipCenterScore}/g, calculatedMetrics.lipCenterScore.toString())
+
+          // Upper lip symmetry
+          .replace(/{leftUpperLipHeight}/g, calculatedMetrics.leftUpperLipHeight.toFixed(2))
+          .replace(/{rightUpperLipHeight}/g, calculatedMetrics.rightUpperLipHeight.toFixed(2))
+          .replace(/{upperLipHeightDifference}/g, calculatedMetrics.upperLipHeightDifference.toFixed(2))
+          .replace(/{upperLipHeightDifferenceRatio}/g, calculatedMetrics.upperLipHeightDifferenceRatio.toFixed(2))
+          .replace(/{upperLipSymmetryScore}/g, calculatedMetrics.upperLipSymmetryScore.toString())
+
+          // Lower lip symmetry
+          .replace(/{leftLowerLipHeight}/g, calculatedMetrics.leftLowerLipHeight.toFixed(2))
+          .replace(/{rightLowerLipHeight}/g, calculatedMetrics.rightLowerLipHeight.toFixed(2))
+          .replace(/{lowerLipHeightDifference}/g, calculatedMetrics.lowerLipHeightDifference.toFixed(2))
+          .replace(/{lowerLipHeightDifferenceRatio}/g, calculatedMetrics.lowerLipHeightDifferenceRatio.toFixed(2))
+          .replace(/{lowerLipSymmetryScore}/g, calculatedMetrics.lowerLipSymmetryScore.toString())
+
+          // Cupid's bow
+          .replace(/{leftCupidBowHeight}/g, calculatedMetrics.leftCupidBowHeight.toFixed(2))
+          .replace(/{rightCupidBowHeight}/g, calculatedMetrics.rightCupidBowHeight.toFixed(2))
+          .replace(/{cupidBowDifference}/g, calculatedMetrics.cupidBowDifference.toFixed(2))
+          .replace(/{cupidBowDifferenceRatio}/g, calculatedMetrics.cupidBowDifferenceRatio.toFixed(2))
+          .replace(/{cupidBowPresence}/g, calculatedMetrics.cupidBowPresence.toString())
+          .replace(/{cupidBowSymmetryScore}/g, calculatedMetrics.cupidBowSymmetryScore.toString())
+
+          // Upper/lower ratio
+          .replace(/{upperLipHeight}/g, calculatedMetrics.upperLipHeight.toFixed(2))
+          .replace(/{lowerLipHeight}/g, calculatedMetrics.lowerLipHeight.toFixed(2))
+          .replace(/{totalLipHeight}/g, calculatedMetrics.totalLipHeight.toFixed(2))
+          .replace(/{upperLowerRatio}/g, calculatedMetrics.upperLowerRatio.toFixed(3))
+          .replace(/{ratioAssessment}/g, calculatedMetrics.ratioAssessment)
+          .replace(/{upperLowerRatioScore}/g, calculatedMetrics.upperLowerRatioScore.toString())
+
+          // Vermillion border
+          .replace(/{leftLineY}/g, calculatedMetrics.leftLineY.toFixed(2))
+          .replace(/{rightLineY}/g, calculatedMetrics.rightLineY.toFixed(2))
+          .replace(/{lineYDifference}/g, calculatedMetrics.lineYDifference.toFixed(2))
+          .replace(/{lineYDifferenceRatio}/g, calculatedMetrics.lineYDifferenceRatio.toFixed(2))
+          .replace(/{lineSymmetryScore}/g, calculatedMetrics.lineSymmetryScore.toString())
+
+          // 3D depth
+          .replace(/{depthDifference}/g, calculatedMetrics.depthDifference.toFixed(3))
+          .replace(/{depthScore}/g, calculatedMetrics.depthScore.toString())
+
+          // Overall
+          .replace(/{overallScore}/g, calculatedMetrics.overallScore.toString())
+          .replace(/{asymmetryLevel}/g, calculatedMetrics.asymmetryLevel);
+
+        console.log('✅ Lips template variables replaced in prompt');
+      } else if (region.id === 'jawline' && calculatedMetrics) {
+        // Replace all template variables for jawline
+        finalPrompt = finalPrompt
+          // Chin centering
+          .replace(/{chinTipX}/g, calculatedMetrics.chinTipX.toFixed(2))
+          .replace(/{chinTipY}/g, calculatedMetrics.chinTipY.toFixed(2))
+          .replace(/{faceCenterX}/g, calculatedMetrics.faceCenterX.toFixed(2))
+          .replace(/{chinDeviation}/g, calculatedMetrics.chinDeviation.toFixed(2))
+          .replace(/{chinDeviationRatio}/g, calculatedMetrics.chinDeviationRatio.toFixed(2))
+          .replace(/{chinDirection}/g, calculatedMetrics.chinDirection)
+          .replace(/{chinCenteringScore}/g, calculatedMetrics.chinCenteringScore.toString())
+
+          // Jawline symmetry
+          .replace(/{leftJawLength}/g, calculatedMetrics.leftJawLength.toFixed(2))
+          .replace(/{rightJawLength}/g, calculatedMetrics.rightJawLength.toFixed(2))
+          .replace(/{jawLengthDifference}/g, calculatedMetrics.jawLengthDifference.toFixed(2))
+          .replace(/{jawLengthDifferenceRatio}/g, calculatedMetrics.jawLengthDifferenceRatio.toFixed(2))
+          .replace(/{leftJawAngleY}/g, calculatedMetrics.leftJawAngleY.toFixed(2))
+          .replace(/{rightJawAngleY}/g, calculatedMetrics.rightJawAngleY.toFixed(2))
+          .replace(/{jawAngleYDifference}/g, calculatedMetrics.jawAngleYDifference.toFixed(2))
+          .replace(/{jawlineSymmetryScore}/g, calculatedMetrics.jawlineSymmetryScore.toString())
+
+          // Jaw angle symmetry
+          .replace(/{leftJawAngle}/g, calculatedMetrics.leftJawAngle.toFixed(2))
+          .replace(/{rightJawAngle}/g, calculatedMetrics.rightJawAngle.toFixed(2))
+          .replace(/{jawAngleDifference}/g, calculatedMetrics.jawAngleDifference.toFixed(2))
+          .replace(/{leftAngleSharpness}/g, calculatedMetrics.leftAngleSharpness)
+          .replace(/{rightAngleSharpness}/g, calculatedMetrics.rightAngleSharpness)
+          .replace(/{jawAngleSymmetryScore}/g, calculatedMetrics.jawAngleSymmetryScore.toString())
+
+          // Jaw width
+          .replace(/{jawWidth}/g, calculatedMetrics.jawWidth.toFixed(2))
+          .replace(/{faceWidth}/g, calculatedMetrics.faceWidth.toFixed(2))
+          .replace(/{jawWidthRatio}/g, calculatedMetrics.jawWidthRatio.toFixed(2))
+          .replace(/{jawWidthAssessment}/g, calculatedMetrics.jawWidthAssessment)
+          .replace(/{jawWidthScore}/g, calculatedMetrics.jawWidthScore.toString())
+
+          // Chin projection
+          .replace(/{chinProjection}/g, calculatedMetrics.chinProjection.toFixed(3))
+          .replace(/{chinProjectionAssessment}/g, calculatedMetrics.chinProjectionAssessment)
+          .replace(/{chinProjectionScore}/g, calculatedMetrics.chinProjectionScore.toString())
+
+          // Jawline definition
+          .replace(/{leftJawlineLinearity}/g, calculatedMetrics.leftJawlineLinearity.toFixed(2))
+          .replace(/{rightJawlineLinearity}/g, calculatedMetrics.rightJawlineLinearity.toFixed(2))
+          .replace(/{jawlineDefinitionScore}/g, calculatedMetrics.jawlineDefinitionScore.toString())
+
+          // Vertical alignment
+          .replace(/{noseToChinDistance}/g, calculatedMetrics.noseToChinDistance.toFixed(2))
+          .replace(/{expectedChinY}/g, calculatedMetrics.expectedChinY.toFixed(2))
+          .replace(/{verticalDeviation}/g, calculatedMetrics.verticalDeviation.toFixed(2))
+          .replace(/{verticalAlignmentScore}/g, calculatedMetrics.verticalAlignmentScore.toString())
+
+          // Overall & metadata
+          .replace(/{faceHeight}/g, calculatedMetrics.faceHeight.toFixed(2))
+          .replace(/{overallScore}/g, calculatedMetrics.overallScore.toString())
+          .replace(/{asymmetryLevel}/g, calculatedMetrics.asymmetryLevel);
+
+        console.log('✅ Jawline template variables replaced in prompt');
+      } else if (region.id === 'eyebrows' && calculatedMetrics) {
+        // Replace all template variables for eyebrows
+        finalPrompt = finalPrompt
+          // Brow height symmetry
+          .replace(/{leftBrowHighestY}/g, calculatedMetrics.leftBrowHighestY.toFixed(2))
+          .replace(/{rightBrowHighestY}/g, calculatedMetrics.rightBrowHighestY.toFixed(2))
+          .replace(/{browHeightDifference}/g, calculatedMetrics.browHeightDifference.toFixed(2))
+          .replace(/{browHeightDifferenceRatio}/g, calculatedMetrics.browHeightDifferenceRatio.toFixed(2))
+          .replace(/{browHeightSymmetryScore}/g, calculatedMetrics.browHeightSymmetryScore.toString())
+
+          // Arch height symmetry
+          .replace(/{leftArchHeight}/g, calculatedMetrics.leftArchHeight.toFixed(2))
+          .replace(/{rightArchHeight}/g, calculatedMetrics.rightArchHeight.toFixed(2))
+          .replace(/{archHeightDifference}/g, calculatedMetrics.archHeightDifference.toFixed(2))
+          .replace(/{archHeightDifferenceRatio}/g, calculatedMetrics.archHeightDifferenceRatio.toFixed(2))
+          .replace(/{archHeightSymmetryScore}/g, calculatedMetrics.archHeightSymmetryScore.toString())
+
+          // Brow-eye distance
+          .replace(/{leftBrowEyeDistance}/g, calculatedMetrics.leftBrowEyeDistance.toFixed(2))
+          .replace(/{rightBrowEyeDistance}/g, calculatedMetrics.rightBrowEyeDistance.toFixed(2))
+          .replace(/{browEyeDistanceAsymmetry}/g, calculatedMetrics.browEyeDistanceAsymmetry.toFixed(2))
+          .replace(/{browEyeDistanceRatio}/g, calculatedMetrics.browEyeDistanceRatio.toFixed(2))
+          .replace(/{browEyeDistanceAssessment}/g, calculatedMetrics.browEyeDistanceAssessment)
+          .replace(/{browEyeDistanceScore}/g, calculatedMetrics.browEyeDistanceScore.toString())
+
+          // Inner corner distance (between brow inner corners)
+          .replace(/{innerCornerDistance}/g, calculatedMetrics.innerCornerDistance.toFixed(2))
+          .replace(/{leftInnerCornerDistance}/g, calculatedMetrics.leftInnerCornerDistance.toFixed(2))
+          .replace(/{rightInnerCornerDistance}/g, calculatedMetrics.rightInnerCornerDistance.toFixed(2))
+          .replace(/{innerCornerDistanceAsymmetry}/g, calculatedMetrics.innerCornerDistanceAsymmetry.toFixed(2))
+          .replace(/{innerCornerDistanceRatio}/g, calculatedMetrics.innerCornerDistanceRatio.toFixed(2))
+          .replace(/{innerCornerAssessment}/g, calculatedMetrics.innerCornerAssessment)
+          .replace(/{innerCornerDistanceAssessment}/g, calculatedMetrics.innerCornerAssessment)
+          .replace(/{innerCornerDistanceScore}/g, calculatedMetrics.innerCornerDistanceScore.toString())
+
+          // Brow angle
+          .replace(/{leftBrowAngle}/g, calculatedMetrics.leftBrowAngle.toFixed(2))
+          .replace(/{rightBrowAngle}/g, calculatedMetrics.rightBrowAngle.toFixed(2))
+          .replace(/{browAngleDifference}/g, calculatedMetrics.browAngleDifference.toFixed(2))
+          .replace(/{browAngleSymmetryScore}/g, calculatedMetrics.browAngleSymmetryScore.toString())
+
+          // Brow thickness
+          .replace(/{leftBrowThickness}/g, calculatedMetrics.leftBrowThickness.toFixed(2))
+          .replace(/{rightBrowThickness}/g, calculatedMetrics.rightBrowThickness.toFixed(2))
+          .replace(/{browThicknessDifference}/g, calculatedMetrics.browThicknessDifference.toFixed(2))
+          .replace(/{browThicknessDifferenceRatio}/g, calculatedMetrics.browThicknessDifferenceRatio.toFixed(2))
+          .replace(/{browThicknessSymmetryScore}/g, calculatedMetrics.browThicknessSymmetryScore.toString())
+
+          // Brow length
+          .replace(/{leftBrowLength}/g, calculatedMetrics.leftBrowLength.toFixed(2))
+          .replace(/{rightBrowLength}/g, calculatedMetrics.rightBrowLength.toFixed(2))
+          .replace(/{browLengthDifference}/g, calculatedMetrics.browLengthDifference.toFixed(2))
+          .replace(/{browLengthDifferenceRatio}/g, calculatedMetrics.browLengthDifferenceRatio.toFixed(2))
+          .replace(/{browLengthSymmetryScore}/g, calculatedMetrics.browLengthSymmetryScore.toString())
+
+          // Individual brow scores & directions
+          .replace(/{leftBrowScore}/g, calculatedMetrics.leftBrowScore.toString())
+          .replace(/{rightBrowScore}/g, calculatedMetrics.rightBrowScore.toString())
+          .replace(/{leftBrowDirection}/g, calculatedMetrics.leftBrowDirection)
+          .replace(/{rightBrowDirection}/g, calculatedMetrics.rightBrowDirection)
+
+          // Overall & metadata
+          .replace(/{faceHeight}/g, calculatedMetrics.faceHeight.toFixed(2))
+          .replace(/{overallScore}/g, calculatedMetrics.overallScore.toString())
+          .replace(/{asymmetryLevel}/g, calculatedMetrics.asymmetryLevel);
+
+        console.log('✅ Eyebrows template variables replaced in prompt');
+      } else if (region.id === 'face_shape' && calculatedMetrics) {
+        // Replace all template variables for face shape
+        finalPrompt = finalPrompt
+          // Face dimensions
+          .replace(/{faceLength}/g, calculatedMetrics.faceLength.toFixed(2))
+          .replace(/{faceWidth}/g, calculatedMetrics.faceWidth.toFixed(2))
+          .replace(/{cheekboneWidth}/g, calculatedMetrics.cheekboneWidth.toFixed(2))
+          .replace(/{jawlineWidth}/g, calculatedMetrics.jawlineWidth.toFixed(2))
+          .replace(/{foreheadWidth}/g, calculatedMetrics.foreheadWidth.toFixed(2))
+
+          // Face shape classification
+          .replace(/{lengthWidthRatio}/g, calculatedMetrics.lengthWidthRatio.toFixed(2))
+          .replace(/{jawCheekRatio}/g, calculatedMetrics.jawCheekRatio.toFixed(2))
+          .replace(/{foreheadJawRatio}/g, calculatedMetrics.foreheadJawRatio.toFixed(2))
+          .replace(/{faceShape}/g, calculatedMetrics.faceShape)
+          .replace(/{shapeConfidence}/g, calculatedMetrics.shapeConfidence.toString())
+          .replace(/{alternativeShape}/g, calculatedMetrics.alternativeShape || 'N/A')
+
+          // Facial thirds
+          .replace(/{upperThird}/g, calculatedMetrics.upperThird.toFixed(2))
+          .replace(/{middleThird}/g, calculatedMetrics.middleThird.toFixed(2))
+          .replace(/{lowerThird}/g, calculatedMetrics.lowerThird.toFixed(2))
+          .replace(/{upperThirdRatio}/g, calculatedMetrics.upperThirdRatio.toFixed(2))
+          .replace(/{middleThirdRatio}/g, calculatedMetrics.middleThirdRatio.toFixed(2))
+          .replace(/{lowerThirdRatio}/g, calculatedMetrics.lowerThirdRatio.toFixed(2))
+          .replace(/{thirdsDeviation}/g, calculatedMetrics.thirdsDeviation.toFixed(2))
+          .replace(/{facialThirdsScore}/g, calculatedMetrics.facialThirdsScore.toString())
+
+          // Horizontal symmetry
+          .replace(/{leftFaceWidth}/g, calculatedMetrics.leftFaceWidth.toFixed(2))
+          .replace(/{rightFaceWidth}/g, calculatedMetrics.rightFaceWidth.toFixed(2))
+          .replace(/{horizontalAsymmetry}/g, calculatedMetrics.horizontalAsymmetry.toFixed(2))
+          .replace(/{horizontalAsymmetryRatio}/g, calculatedMetrics.horizontalAsymmetryRatio.toFixed(2))
+          .replace(/{horizontalSymmetryScore}/g, calculatedMetrics.horizontalSymmetryScore.toString())
+
+          // Proportion scores
+          .replace(/{goldenRatioDeviation}/g, calculatedMetrics.goldenRatioDeviation.toFixed(3))
+          .replace(/{goldenRatioScore}/g, calculatedMetrics.goldenRatioScore.toString())
+          .replace(/{proportionScore}/g, calculatedMetrics.proportionScore.toString())
+
+          // Overall
+          .replace(/{overallScore}/g, calculatedMetrics.overallScore.toString())
+          .replace(/{proportionAssessment}/g, calculatedMetrics.proportionAssessment);
+
+        console.log('✅ Face shape template variables replaced in prompt');
+      }
+
+      console.log(finalPrompt, "final prompt")
+
+      // ============================================
+      // 3. TEST MODE OR AI CALL
+      // ============================================
+      let result: { success: boolean; analysis?: string; error?: string };
+
+      if (TEST_MODE) {
+        // 🧪 TEST MODE: AI çağrısı atlanıyor, sadece hesaplanan değerler gösteriliyor
+        console.log('🧪 ==========================================');
+        console.log('🧪 TEST MODE ACTIVE - AI CALL SKIPPED');
+        console.log('🧪 ==========================================');
+        console.log('📊 Calculated metrics for', region.id, ':', calculatedMetrics);
+
+        // Mock response - hesaplanan değerleri göster
+        result = {
+          success: true,
+          analysis: JSON.stringify({
+            analysis_result: {
+              overall_score: calculatedMetrics?.overallScore ?? 0,
+              asymmetry_level: calculatedMetrics?.asymmetryLevel ?? calculatedMetrics?.proportionAssessment ?? 'UNKNOWN',
+              general_assessment: '🧪 TEST MODE - AI devre dışı. TypeScript hesaplamaları gösteriliyor.',
+            },
+            user_friendly_summary: {
+              assessment: '🧪 Test Modu Aktif',
+              explanation: 'AI çağrısı yapılmadı. Aşağıda TypeScript tarafından hesaplanan ham değerler gösterilmektedir. Console\'u kontrol edin.',
+              key_findings: calculatedMetrics
+                ? Object.entries(calculatedMetrics)
+                    .filter(([_, value]) => typeof value === 'number' || typeof value === 'string')
+                    .filter(([key]) => !key.includes('landmarkIndices'))
+                    .slice(0, 12)
+                    .map(([key, value]) => `${key}: ${typeof value === 'number' ? (Number.isInteger(value) ? value : value.toFixed(2)) : value}`)
+                : ['Hesaplama yapılamadı']
+            },
+            calculated_metrics: calculatedMetrics,
+            metadata: {
+              test_mode: true,
+              calculation_method: 'typescript_precalculated',
+              ai_skipped: true,
+              region: region.id
+            }
+          })
+        };
+
+        console.log('🧪 Mock result created:', result);
+      } else {
+        // Normal AI call (para harcar)
+        result = await analyzeFaceRegion({
+          landmarks: faceData.landmarks,
+          region: region.id,
+          customPrompt: finalPrompt,
+          language: i18n.language as 'en' | 'tr',
+          gender: userGender,
+        });
+      }
 
       console.log('Analysis result for region', region.id, ':', result);
+
+      // Log detailed error if present
+      if (!result.success) {
+        console.error('❌ Analysis failed with details:', {
+          error: result.error,
+          // @ts-ignore - details might exist in error response
+          details: result.details,
+        });
+      }
 
       if (result.success && result.analysis) {
         // Try to parse as JSON first, fallback to plain text
@@ -198,6 +791,35 @@ const AnalysisScreen = () => {
             // If still fails, wrap as plain text
             jsonResult = { raw_text: result.analysis };
           }
+        }
+
+        // ============================================
+        // 4. VALIDATE AI RESPONSE (NOSE, EYES, LIPS, JAWLINE, EYEBROWS, FACE_SHAPE)
+        // ============================================
+        if ((region.id === 'nose' || region.id === 'eyes' || region.id === 'lips' || region.id === 'jawline' || region.id === 'eyebrows' || region.id === 'face_shape') && calculatedMetrics) {
+          const aiScore = jsonResult.analysis_result?.overall_score;
+
+          if (aiScore !== calculatedMetrics.overallScore) {
+            console.warn(`⚠️ AI returned wrong score for ${region.id}!`);
+            console.warn(`  Expected: ${calculatedMetrics.overallScore}`);
+            console.warn(`  AI returned: ${aiScore}`);
+            console.warn(`  Forcing correct score...`);
+
+            // Force correct score in response
+            if (!jsonResult.analysis_result) {
+              jsonResult.analysis_result = {};
+            }
+            jsonResult.analysis_result.overall_score = calculatedMetrics.overallScore;
+            jsonResult.analysis_result.asymmetry_level = calculatedMetrics.asymmetryLevel;
+          }
+
+          // Ensure metadata is correct
+          if (!jsonResult.metadata) {
+            jsonResult.metadata = {};
+          }
+          jsonResult.metadata.calculation_method = 'typescript_precalculated';
+
+          console.log(`✅ ${region.id} AI response validated and corrected if needed`);
         }
 
         // Show result immediately
@@ -222,9 +844,12 @@ const AnalysisScreen = () => {
           );
         }
       } else {
+        // Show error message
         Alert.alert(
-          'Analiz Hatası',
-          result.error || 'Analiz yapılırken bir hata oluştu'
+          i18n.language === 'tr' ? 'Analiz Hatası' : 'Analysis Error',
+          result.error || (i18n.language === 'tr'
+            ? 'Analiz yapılırken bir hata oluştu'
+            : 'An error occurred during analysis')
         );
       }
     } catch (error) {
@@ -250,15 +875,25 @@ const AnalysisScreen = () => {
         return null;
       }
 
+      // ✨ Calculate overall_score ourselves (don't trust AI)
+      const calculatedScore = calculateOverallScore(rawResponse, regionId);
+
+      // Override AI's overall_score with our calculation
+      if (rawResponse.analysis_result) {
+        const aiScore = rawResponse.analysis_result.overall_score ??
+                         rawResponse.analysis_result.confidence_score;
+
+        if (aiScore !== calculatedScore) {
+          console.warn(`🔧 Correcting AI score: ${aiScore} → ${calculatedScore}`);
+        }
+
+        rawResponse.analysis_result.overall_score = calculatedScore;
+        rawResponse.analysis_result.confidence_score = calculatedScore;
+      }
+
       // Extract metrics for comparison
       const metrics = extractMetrics(regionId, rawResponse);
-
-      // Get overall score
-      const overallScore =
-        rawResponse.analysis_result?.overall_score ??
-        rawResponse.analysis_result?.confidence_score ??
-        rawResponse.overall_score ??
-        0;
+      const overallScore = calculatedScore;
 
       // Insert into region_analysis table and return the inserted record
       const { data, error } = await supabase

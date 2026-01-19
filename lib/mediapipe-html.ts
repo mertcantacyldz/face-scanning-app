@@ -36,7 +36,7 @@ export const mediaPipeHTML = `
 </head>
 <body>
     <div id="status" class="loading">📥 MediaPipe Face Mesh yükleniyor...</div>
-    <canvas id="output_canvas" width="512" height="512"></canvas>
+    <canvas id="output_canvas" width="1024" height="1024"></canvas>
 
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
@@ -107,12 +107,12 @@ export const mediaPipeHTML = `
 
                 faceMesh.setOptions({
                     maxNumFaces: 1,
-                    refineLandmarks: false,
-                    minDetectionConfidence: 0.5,
-                    minTrackingConfidence: 0.0,
+                    refineLandmarks: true,  // İris detayı için aktif (468-477 landmarks)
+                    minDetectionConfidence: 0.7,  // Daha yüksek kalite kontrolü
+                    minTrackingConfidence: 0.5,
                     selfieMode: false,
                     staticImageMode: true,
-                    modelComplexity: 1
+                    modelComplexity: 1  // 0=lite, 1=full, 2=heavy (1 optimal)
 
                 });
 
@@ -195,64 +195,130 @@ export const mediaPipeHTML = `
                         }));
                 });
 
-                // Multi-factor confidence hesaplama
-                // Size dominant (base score), diğer faktörler penalty olarak
+                // ============================================
+                // YENİ CONFIDENCE PUANLAMA SİSTEMİ (100 Puan)
+                // ============================================
+                // Skor Aralıkları:
+                // 85-100: ✅ Yeşil - İyi veri
+                // 65-84:  ⚠️ Sarı  - Orta, yeniden çekilmesi tavsiye
+                // 0-64:   ❌ Kırmızı - Kötü, kesinlikle yeniden çekilmeli
 
-                // 1. Yüz boyutu faktörü (BASE SCORE)
-                let sizeScore = 1.0;
-                if (boxArea < 0.10) {
-                    sizeScore = 0.70; // Çok küçük yüz
-                } else if (boxArea > 0.85) {
-                    sizeScore = 0.75; // Çok büyük yüz
-                } else if (boxArea > 0.15 && boxArea < 0.80) {
-                    sizeScore = 1.0; // Optimal boyut
-                } else {
-                    sizeScore = 0.85; // Kabul edilebilir
-                }
-
-                // 2. Z-depth kalitesi (penalty maks -0.05)
-                const zValues = landmarks.map(function(lm) { return Math.abs(lm.z); });
-                const avgZ = zValues.reduce(function(a, b) { return a + b; }, 0) / zValues.length;
-                const maxZ = Math.max.apply(null, zValues);
-
-                let depthPenalty = 0;
-                if (maxZ > 0.25) {
-                    depthPenalty = 0.05; // Yüz çok açılı
-                } else if (avgZ > 0.08 || maxZ > 0.20) {
-                    depthPenalty = 0.02; // Az açılı
-                }
-
-                // 3. Yüz simetrisi (penalty maks -0.03)
-                const leftEye = landmarks[159];
-                const rightEye = landmarks[386];
+                // Referans noktaları
+                const leftEyeOuter = landmarks[33];
+                const rightEyeOuter = landmarks[263];
+                const leftEyeInner = landmarks[133];
+                const rightEyeInner = landmarks[362];
                 const noseTip = landmarks[1];
-                let symmetryPenalty = 0;
+                const nosePoint = landmarks[4];
+                const noseRoot = landmarks[168];
+                const forehead = landmarks[10];
+                const chin = landmarks[152];
+                const leftEar = landmarks[234];
+                const rightEar = landmarks[454];
 
-                if (leftEye && rightEye && noseTip) {
-                    const leftDist = Math.abs(leftEye.x - noseTip.x);
-                    const rightDist = Math.abs(rightEye.x - noseTip.x);
-                    const asymmetry = Math.abs(leftDist - rightDist);
+                // ---- 1. YAW (Sağa/Sola Dönüş) - 25 Puan ----
+                const eyeCenterX = (leftEyeOuter.x + rightEyeOuter.x) / 2;
+                const yawDeviation = noseTip.x - eyeCenterX;
+                const yawAmount = Math.abs(yawDeviation);
+                const yawDegrees = Math.atan(yawAmount / 0.15) * (180 / Math.PI);
 
-                    if (asymmetry > 0.15) {
-                        symmetryPenalty = 0.03; // Çok asimetrik
-                    } else if (asymmetry > 0.08) {
-                        symmetryPenalty = 0.01; // Az asimetrik
-                    }
+                let yawScore = 25;
+                if (yawDegrees > 12) {
+                    yawScore = 0;
+                } else if (yawDegrees > 8) {
+                    yawScore = 25 * (1 - (yawDegrees - 8) / 4);
                 }
 
-                // 4. Landmark coverage (penalty maks -0.02)
+                // ---- 2. GÖZ SİMETRİSİ - 20 Puan ----
+                const leftEyeWidth = Math.abs(leftEyeOuter.x - leftEyeInner.x);
+                const rightEyeWidth = Math.abs(rightEyeOuter.x - rightEyeInner.x);
+                const eyeWidthRatio = Math.min(leftEyeWidth, rightEyeWidth) /
+                                      Math.max(leftEyeWidth, rightEyeWidth);
+                const eyeDiffPercent = (1 - eyeWidthRatio) * 100;
+
+                let eyeSymmetryScore = 20;
+                if (eyeDiffPercent > 15) {
+                    eyeSymmetryScore = 0;
+                } else if (eyeDiffPercent > 10) {
+                    eyeSymmetryScore = 20 * (1 - (eyeDiffPercent - 10) / 5);
+                }
+
+                // ---- 3. PITCH (Yukarı/Aşağı Eğim) - 15 Puan ----
+                const faceHeight = chin.y - forehead.y;
+                const noseRelativeY = (noseTip.y - forehead.y) / faceHeight;
+                const pitchDeviation = Math.abs(noseRelativeY - 0.50);
+                const pitchDegrees = pitchDeviation * 150;
+
+                let pitchScore = 15;
+                if (pitchDegrees > 15) {
+                    pitchScore = 0;
+                } else if (pitchDegrees > 10) {
+                    pitchScore = 15 * (1 - (pitchDegrees - 10) / 5);
+                }
+
+                // ---- 4. YÜZ BOYUTU - 15 Puan ----
+                let sizeScore = 15;
+                if (boxArea < 0.15) {
+                    sizeScore = 0;
+                } else if (boxArea < 0.20) {
+                    sizeScore = 15 * ((boxArea - 0.15) / 0.05);
+                } else if (boxArea > 0.85) {
+                    sizeScore = 15 * 0.7;
+                }
+
+                // ---- 5a. DEPTH GLOBAL (Kulak-Burun) - 6 Puan ----
+                const avgEarZ = (leftEar.z + rightEar.z) / 2;
+                const globalDepthRange = Math.abs(noseTip.z - avgEarZ);
+
+                let depthGlobalScore = 6;
+                if (globalDepthRange < 0.05) {
+                    depthGlobalScore = 0;
+                } else if (globalDepthRange < 0.08) {
+                    depthGlobalScore = 6 * ((globalDepthRange - 0.05) / 0.03);
+                }
+
+                // ---- 5b. DEPTH LOCAL (Burun Ucu-Kök) - 4 Puan ----
+                const localDepthRange = noseRoot.z - nosePoint.z;
+
+                let depthLocalScore = 4;
+                if (localDepthRange < 0) {
+                    depthLocalScore = 0; // Z verisi ters, hatalı
+                } else if (localDepthRange < 0.01) {
+                    depthLocalScore = 0;
+                } else if (localDepthRange < 0.02) {
+                    depthLocalScore = 4 * ((localDepthRange - 0.01) / 0.01);
+                }
+
+                // ---- 6. ROLL (Yana Yatma) - 10 Puan ----
+                const eyeYDiff = leftEyeOuter.y - rightEyeOuter.y;
+                const eyeXDiff = Math.abs(leftEyeOuter.x - rightEyeOuter.x);
+                const rollAngle = Math.atan2(Math.abs(eyeYDiff), eyeXDiff) * (180 / Math.PI);
+
+                let rollScore = 10;
+                if (rollAngle > 10) {
+                    rollScore = 0;
+                } else if (rollAngle > 5) {
+                    rollScore = 10 * (1 - (rollAngle - 5) / 5);
+                }
+
+                // ---- 7. COVERAGE (Kapsama) - 5 Puan ----
                 const criticalPoints = [159, 145, 133, 386, 374, 263, 1, 2, 61, 291, 152, 10];
                 const validPoints = criticalPoints.filter(function(idx) {
                     const p = landmarks[idx];
                     return p && p.x >= 0 && p.x <= 1 && p.y >= 0 && p.y <= 1;
                 }).length;
-                const coverageRatio = validPoints / criticalPoints.length;
-                const coveragePenalty = coverageRatio < 1.0 ? (1.0 - coverageRatio) * 0.10 : 0;
 
-                // Final confidence = Base score - penalties
-                const detectionConfidence = Math.max(0.5,
-                    sizeScore - depthPenalty - symmetryPenalty - coveragePenalty
-                );
+                let coverageScore = 5;
+                if (validPoints < 12) {
+                    coverageScore = 0; // Tolerans yok, 12/12 zorunlu
+                }
+
+                // ---- FINAL SKOR (0-100) ----
+                const totalScore = yawScore + eyeSymmetryScore + pitchScore + sizeScore +
+                                   depthGlobalScore + depthLocalScore + rollScore + coverageScore;
+
+                // 0-1 aralığına normalize et (eski sistemle uyumluluk için)
+                const detectionConfidence = totalScore / 100;
 
                 // React Native'e TÜM VERİYİ gönder
                 const result = {
@@ -266,6 +332,17 @@ export const mediaPipeHTML = `
                         })),
                         totalPoints: landmarks.length,
                         confidence: detectionConfidence,
+                        confidenceDetails: {
+                            totalScore: totalScore,
+                            yaw: { score: yawScore, max: 25, degrees: yawDegrees },
+                            eyeSymmetry: { score: eyeSymmetryScore, max: 20, diffPercent: eyeDiffPercent },
+                            pitch: { score: pitchScore, max: 15, degrees: pitchDegrees },
+                            size: { score: sizeScore, max: 15, areaPercent: boxArea * 100 },
+                            depthGlobal: { score: depthGlobalScore, max: 6, range: globalDepthRange },
+                            depthLocal: { score: depthLocalScore, max: 4, range: localDepthRange },
+                            roll: { score: rollScore, max: 10, degrees: rollAngle },
+                            coverage: { score: coverageScore, max: 5, validPoints: validPoints }
+                        },
                         faceBox: {
                             x: minX * canvasElement.width,
                             y: minY * canvasElement.height,
@@ -290,13 +367,19 @@ export const mediaPipeHTML = `
                 };
 
                 console.log('[WEBVIEW] 📤 LANDMARKS gönderiliyor', {
-                    faceBoxX: result.data.faceBox.x.toFixed(0),
-                    faceBoxY: result.data.faceBox.y.toFixed(0),
-                    faceBoxWidth: result.data.faceBox.width.toFixed(0),
-                    faceBoxHeight: result.data.faceBox.height.toFixed(0),
-                    confidence: result.data.confidence.toFixed(2),
-                    canvasSize: canvasElement.width + 'x' + canvasElement.height,
-                    timestamp: result.data.timestamp
+                    totalScore: totalScore.toFixed(1) + '/100',
+                    scores: {
+                        yaw: yawScore.toFixed(1) + '/25 (' + yawDegrees.toFixed(1) + '°)',
+                        eyeSym: eyeSymmetryScore.toFixed(1) + '/20 (' + eyeDiffPercent.toFixed(1) + '%)',
+                        pitch: pitchScore.toFixed(1) + '/15 (' + pitchDegrees.toFixed(1) + '°)',
+                        size: sizeScore.toFixed(1) + '/15 (' + (boxArea * 100).toFixed(1) + '%)',
+                        depthG: depthGlobalScore.toFixed(1) + '/6',
+                        depthL: depthLocalScore.toFixed(1) + '/4',
+                        roll: rollScore.toFixed(1) + '/10 (' + rollAngle.toFixed(1) + '°)',
+                        coverage: coverageScore.toFixed(1) + '/5 (' + validPoints + '/12)'
+                    },
+                    faceBox: result.data.faceBox.width.toFixed(0) + 'x' + result.data.faceBox.height.toFixed(0),
+                    canvasSize: canvasElement.width + 'x' + canvasElement.height
                 });
 
                 window.ReactNativeWebView.postMessage(JSON.stringify(result));
@@ -414,8 +497,44 @@ export const mediaPipeHTML = `
             drawNoseBridge(ctx, landmarks);
 
             // 6. Tüm 468 noktayı çiz (PROFESYONEL RENK: açık gri/beyaz)
-            landmarks.forEach((point) => {
-                drawSimplePoint(ctx, point, '#FFFFFF', 1);  // Beyaz, biraz daha büyük
+            landmarks.forEach((point, index) => {
+                // JAWLINE LANDMARKS - Test için AI önerileri + mevcut noktalar
+
+                // MEVCUT NOKTALAR (önceden kullandıklarımız)
+                if (index === 152) {
+                    drawSimplePoint(ctx, point, '#FF0000', 10);  // P_152: KIRMIZI (chinTip)
+                } else if (index === 172) {
+                    drawSimplePoint(ctx, point, '#FFFF00', 10);  // P_172: SARI (leftJawStart)
+                } else if (index === 397) {
+                    drawSimplePoint(ctx, point, '#FFA500', 10);  // P_397: TURUNCU (rightJawStart)
+                } else if (index === 136) {
+                    drawSimplePoint(ctx, point, '#FF69B4', 10);  // P_136: PEMBE (leftJawMid)
+                } else if (index === 365) {
+                    drawSimplePoint(ctx, point, '#9400D3', 10);  // P_365: MOR (rightJawMid)
+
+                // AI ÖNERİLERİ (yeni test noktaları)
+                } else if (index === 127) {
+                    drawSimplePoint(ctx, point, '#00FFFF', 10);  // P_127: CYAN (AI: left ear level)
+                } else if (index === 356) {
+                    drawSimplePoint(ctx, point, '#00CED1', 10);  // P_356: DARK CYAN (AI: right ear level)
+                } else if (index === 132) {
+                    drawSimplePoint(ctx, point, '#00FF00', 10);  // P_132: YEŞİL (AI: left chin width)
+                } else if (index === 361) {
+                    drawSimplePoint(ctx, point, '#32CD32', 10);  // P_361: LIME (AI: right chin width)
+                } else if (index === 176) {
+                    drawSimplePoint(ctx, point, '#0000FF', 10);  // P_176: MAVİ (AI: left mandibular ramus)
+                } else if (index === 400) {
+                    drawSimplePoint(ctx, point, '#4169E1', 10);  // P_400: ROYAL BLUE (AI: right mandibular ramus)
+
+                // ESKI SORUNLU NOKTALAR (karşılaştırma için)
+                } else if (index === 234) {
+                    drawSimplePoint(ctx, point, '#FF1493', 8);  // P_234: DEEP PINK (eski leftJawAngle - kulak yanı)
+                } else if (index === 454) {
+                    drawSimplePoint(ctx, point, '#FF69B4', 8);  // P_454: HOT PINK (eski rightJawAngle - kulak yanı)
+
+                } else {
+                    drawSimplePoint(ctx, point, '#FFFFFF', 1);  // Beyaz, normal
+                }
             });
         }
 

@@ -53,6 +53,11 @@ export function extractFaceShapeMetrics(rawResponse: Record<string, any>): FaceS
     detailedAnalysis.facial_thirds_balance ??
     getNestedValue(rawResponse, 'facial_thirds_balance');
 
+  // Detect calculation source from metadata
+  const calculationMethod = rawResponse.metadata?.calculation_method;
+  const calculationSource =
+    calculationMethod === 'typescript_precalculated' ? 'typescript' : 'ai';
+
   return {
     overall_score: overallScore,
     general_assessment: analysisResult.general_assessment,
@@ -61,5 +66,6 @@ export function extractFaceShapeMetrics(rawResponse: Record<string, any>): FaceS
     symmetry_score: symmetryScore || undefined,
     proportion_score: proportionScore || undefined,
     facial_thirds_balance: facialThirdsBalance,
+    calculation_source: calculationSource as 'typescript' | 'ai',
   };
 }

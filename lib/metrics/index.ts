@@ -22,6 +22,7 @@ export interface EyebrowsMetrics extends BaseMetrics {
   left_arch_score?: number;
   right_arch_score?: number;
   thickness_uniformity?: string;
+  calculation_source?: 'typescript' | 'ai'; // NEW: Track calculation method
 }
 
 export interface EyesMetrics extends BaseMetrics {
@@ -31,6 +32,7 @@ export interface EyesMetrics extends BaseMetrics {
   right_eye_score?: number;
   eye_spacing?: string;
   eyelid_condition?: string;
+  calculation_source?: 'typescript' | 'ai'; // NEW: Track calculation method
 }
 
 export interface NoseMetrics extends BaseMetrics {
@@ -40,6 +42,7 @@ export interface NoseMetrics extends BaseMetrics {
   bridge_straightness?: string;
   tip_position?: string;
   nostril_symmetry?: string;
+  calculation_source?: 'typescript' | 'ai'; // NEW: Track calculation method
 }
 
 export interface LipsMetrics extends BaseMetrics {
@@ -49,6 +52,7 @@ export interface LipsMetrics extends BaseMetrics {
   lower_lip_score?: number;
   lip_ratio?: number;
   cupid_bow_definition?: string;
+  calculation_source?: 'typescript' | 'ai'; // NEW: Track calculation method
 }
 
 export interface JawlineMetrics extends BaseMetrics {
@@ -58,6 +62,7 @@ export interface JawlineMetrics extends BaseMetrics {
   right_jaw_score?: number;
   chin_alignment?: string;
   jaw_definition?: string;
+  calculation_source?: 'typescript' | 'ai'; // NEW: Track calculation method
 }
 
 export interface FaceShapeMetrics extends BaseMetrics {
@@ -66,6 +71,7 @@ export interface FaceShapeMetrics extends BaseMetrics {
   symmetry_score?: number;
   proportion_score?: number;
   facial_thirds_balance?: string;
+  calculation_source?: 'typescript' | 'ai'; // NEW: Track calculation method
 }
 
 // Union type for all metrics

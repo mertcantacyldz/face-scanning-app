@@ -289,16 +289,13 @@ const ProgressScreen = () => {
         </View>
 
         {/* Overall Stats Card */}
-        <Card className="p-4 mb-4 bg-primary/10 border-2 border-primary/20">
+        <Card className="p-3 mb-4 bg-primary/5 border border-primary/20">
           {/* Header - tek satır */}
           <View className="flex-row items-center justify-between mb-3">
             <Text className="text-base font-bold text-foreground">
               {t('overallProgress.title')}
             </Text>
-            <Text
-              className={`text-3xl font-bold ${overallProgress >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}
-            >
+            <Text className="text-2xl font-bold text-primary">
               {overallProgress >= 0 ? '+' : ''}
               {overallProgress}%
             </Text>
@@ -306,7 +303,7 @@ const ProgressScreen = () => {
 
           {/* Stats row - daha kompakt */}
           <View className="flex-row gap-2">
-            <View className="flex-1 bg-white/50 p-2 rounded-lg">
+            <View className="flex-1 bg-card p-2 rounded-lg border border-border">
               <Text className="text-xs text-muted-foreground">
                 {t('stats.totalAnalyses')}
               </Text>
@@ -314,7 +311,7 @@ const ProgressScreen = () => {
                 {totalAnalyses}
               </Text>
             </View>
-            <View className="flex-1 bg-white/50 p-2 rounded-lg">
+            <View className="flex-1 bg-card p-2 rounded-lg border border-border">
               <Text className="text-xs text-muted-foreground">
                 {t('stats.activeRegions')}
               </Text>
@@ -327,7 +324,7 @@ const ProgressScreen = () => {
 
         {/* Overall Progress Chart */}
         {overallChartData.length >= 2 && (
-          <View className="mb-4 bg-red-500">
+          <View className="mb-4">
             <ProgressChart
               data={overallChartData}
               titleTr={t('chartTitle')}
@@ -402,17 +399,17 @@ const ProgressScreen = () => {
         )}
 
         {/* Tips Card */}
-        <Card className="mt-4 p-4 bg-blue-50 border border-blue-200">
+        <Card className="mt-4 p-4 bg-primary/5 border border-primary/20">
           <View className="flex-row items-start">
-            <Ionicons name="bulb-outline" size={16} color="#1E3A8A" style={{ marginTop: 2 }} />
-            <Text className="text-sm text-blue-800 ml-2 flex-1">
+            <Ionicons name="bulb-outline" size={16} color="#8B5CF6" style={{ marginTop: 2 }} />
+            <Text className="text-sm text-foreground ml-2 flex-1">
               <Text className="font-semibold">{t('tip.title')}</Text> {t('tip.description')}
             </Text>
           </View>
         </Card>
 
         {/* Bottom spacing */}
-        <View className="h-8" />
+        <View className="h-24" />
       </ScrollView>
     </SafeAreaView>
   );

@@ -63,6 +63,11 @@ export function extractJawlineMetrics(rawResponse: Record<string, any>): Jawline
     symmetryAnalysis.jaw_definition ??
     getNestedValue(rawResponse, 'jaw_definition');
 
+  // Detect calculation source from metadata
+  const calculationMethod = rawResponse.metadata?.calculation_method;
+  const calculationSource =
+    calculationMethod === 'typescript_precalculated' ? 'typescript' : 'ai';
+
   return {
     overall_score: overallScore,
     general_assessment: analysisResult.general_assessment,
@@ -72,5 +77,6 @@ export function extractJawlineMetrics(rawResponse: Record<string, any>): Jawline
     right_jaw_score: rightJawScore || undefined,
     chin_alignment: chinAlignment,
     jaw_definition: jawDefinition,
+    calculation_source: calculationSource as 'typescript' | 'ai',
   };
 }

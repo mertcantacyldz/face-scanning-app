@@ -11,6 +11,7 @@ import { usePremium } from '@/hooks/use-premium';
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -319,7 +320,7 @@ export default function ProfileScreen() {
             <View className="flex-row justify-between items-center py-3 border-b border-border">
               <View className="flex-row items-center">
                 <View className="w-8 h-8 bg-primary/10 rounded-full items-center justify-center mr-3">
-                  <Ionicons name="analytics" size={16} className="text-primary" />
+                  <Ionicons name="analytics" size={16} color="#8B5CF6" />
                 </View>
                 <Text className="text-muted-foreground">{t('stats.totalAnalysis')}</Text>
               </View>
@@ -331,7 +332,7 @@ export default function ProfileScreen() {
             <View className="flex-row justify-between items-center py-3 border-b border-border">
               <View className="flex-row items-center">
                 <View className="w-8 h-8 bg-success/10 rounded-full items-center justify-center mr-3">
-                  <Ionicons name="calendar" size={16} className="text-success" />
+                  <Ionicons name="calendar" size={16} color="#10B981" />
                 </View>
                 <Text className="text-muted-foreground">{t('stats.thisMonth')}</Text>
               </View>
@@ -344,7 +345,7 @@ export default function ProfileScreen() {
               <View className="flex-row justify-between items-center py-3">
                 <View className="flex-row items-center">
                   <View className="w-8 h-8 bg-warning/10 rounded-full items-center justify-center mr-3">
-                    <Ionicons name="alert-circle" size={16} className="text-warning" />
+                    <Ionicons name="alert-circle" size={16} color="#F59E0B" />
                   </View>
                   <Text className="text-muted-foreground">{t('stats.remainingLimit')}</Text>
                 </View>
@@ -382,7 +383,7 @@ export default function ProfileScreen() {
             variant="outline"
             className="h-14 border-success/30 bg-success/10"
           >
-            <Ionicons name="camera" size={20} className="text-success" />
+            <Ionicons name="camera" size={20} color="#10B981" />
             <Text className="text-success font-semibold ml-2">
               {t('quickActions.newAnalysis')}
             </Text>
@@ -401,7 +402,7 @@ export default function ProfileScreen() {
           {/* Language Selector */}
           <View className="py-3">
             <View className="flex-row items-center gap-2 mb-4">
-              <Ionicons name="language-outline" size={20} className="text-primary" />
+              <Ionicons name="language-outline" size={20} color="#8B5CF6" />
               <Text className="text-foreground font-semibold">
                 Dil / Language
               </Text>
@@ -413,7 +414,7 @@ export default function ProfileScreen() {
 
           <TouchableOpacity className="flex-row items-center justify-between py-3">
             <View className="flex-row items-center">
-              <Ionicons name="notifications" size={20} className="text-muted-foreground" />
+              <Ionicons name="notifications" size={20} color="#8B5CF6" />
               <Text className="text-foreground ml-3">{t('settings.notifications')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} className="text-muted-foreground" />
@@ -421,9 +422,12 @@ export default function ProfileScreen() {
 
           <View className="h-px bg-border my-2" />
 
-          <TouchableOpacity className="flex-row items-center justify-between py-3">
+          <TouchableOpacity
+            className="flex-row items-center justify-between py-3"
+            onPress={() => WebBrowser.openBrowserAsync('https://faceloom.netlify.app/privacy')}
+          >
             <View className="flex-row items-center">
-              <Ionicons name="shield-checkmark" size={20} className="text-muted-foreground" />
+              <Ionicons name="shield-checkmark" size={20} color="#8B5CF6" />
               <Text className="text-foreground ml-3">{t('settings.privacy')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} className="text-muted-foreground" />
@@ -431,10 +435,13 @@ export default function ProfileScreen() {
 
           <View className="h-px bg-border my-2" />
 
-          <TouchableOpacity className="flex-row items-center justify-between py-3">
+          <TouchableOpacity
+            className="flex-row items-center justify-between py-3"
+            onPress={() => WebBrowser.openBrowserAsync('https://faceloom.netlify.app/terms')}
+          >
             <View className="flex-row items-center">
-              <Ionicons name="help-circle" size={20} className="text-muted-foreground" />
-              <Text className="text-foreground ml-3">{t('settings.help')}</Text>
+              <Ionicons name="document-text" size={20} color="#8B5CF6" />
+              <Text className="text-foreground ml-3">{t('settings.terms')}</Text>
             </View>
             <Ionicons name="chevron-forward" size={20} className="text-muted-foreground" />
           </TouchableOpacity>
@@ -457,12 +464,14 @@ export default function ProfileScreen() {
         {/* App Info */}
         <View className="items-center">
           <Text className="text-muted-foreground">
-            Face Analysis App v1.0
+            FaceLoom v1.0
           </Text>
           <Text className="text-muted-foreground/70 text-xs mt-1">
             Üyelik Tarihi: {new Date(profile.created_at).toLocaleDateString('tr-TR')}
           </Text>
         </View>
+
+        <View className="h-24" />
       </ScrollView>
     </SafeAreaView>
   );

@@ -51,6 +51,11 @@ export function extractEyebrowsMetrics(rawResponse: Record<string, any>): Eyebro
     getNestedValue(rawResponse, 'thickness_uniformity') ??
     'UNKNOWN';
 
+  // Detect calculation source from metadata
+  const calculationMethod = rawResponse.metadata?.calculation_method;
+  const calculationSource =
+    calculationMethod === 'typescript_precalculated' ? 'typescript' : 'ai';
+
   return {
     overall_score: overallScore,
     general_assessment: analysisResult.general_assessment,
@@ -59,5 +64,6 @@ export function extractEyebrowsMetrics(rawResponse: Record<string, any>): Eyebro
     left_arch_score: leftArchScore || undefined,
     right_arch_score: rightArchScore || undefined,
     thickness_uniformity: thicknessUniformity !== 'UNKNOWN' ? thicknessUniformity : undefined,
+    calculation_source: calculationSource as 'typescript' | 'ai',
   };
 }

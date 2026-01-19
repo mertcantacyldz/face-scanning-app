@@ -61,6 +61,11 @@ export function extractLipsMetrics(rawResponse: Record<string, any>): LipsMetric
     detailedAnalysis.cupid_bow_definition ??
     getNestedValue(rawResponse, 'cupid_bow_definition');
 
+  // Detect calculation source from metadata
+  const calculationMethod = rawResponse.metadata?.calculation_method;
+  const calculationSource =
+    calculationMethod === 'typescript_precalculated' ? 'typescript' : 'ai';
+
   return {
     overall_score: overallScore,
     general_assessment: analysisResult.general_assessment,
@@ -70,5 +75,6 @@ export function extractLipsMetrics(rawResponse: Record<string, any>): LipsMetric
     lower_lip_score: lowerLipScore || undefined,
     lip_ratio: typeof lipRatio === 'number' ? lipRatio : undefined,
     cupid_bow_definition: cupidBowDefinition,
+    calculation_source: calculationSource as 'typescript' | 'ai',
   };
 }
