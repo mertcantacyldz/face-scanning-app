@@ -553,12 +553,10 @@ const AnalysisScreen = () => {
           .replace(/{jawAngleYDifference}/g, calculatedMetrics.jawAngleYDifference.toFixed(2))
           .replace(/{jawlineSymmetryScore}/g, calculatedMetrics.jawlineSymmetryScore.toString())
 
-          // Jaw angle symmetry
+          // Jaw angle symmetry (angle only - sharpness removed)
           .replace(/{leftJawAngle}/g, calculatedMetrics.leftJawAngle.toFixed(2))
           .replace(/{rightJawAngle}/g, calculatedMetrics.rightJawAngle.toFixed(2))
           .replace(/{jawAngleDifference}/g, calculatedMetrics.jawAngleDifference.toFixed(2))
-          .replace(/{leftAngleSharpness}/g, calculatedMetrics.leftAngleSharpness)
-          .replace(/{rightAngleSharpness}/g, calculatedMetrics.rightAngleSharpness)
           .replace(/{jawAngleSymmetryScore}/g, calculatedMetrics.jawAngleSymmetryScore.toString())
 
           // Jaw width
@@ -567,16 +565,6 @@ const AnalysisScreen = () => {
           .replace(/{jawWidthRatio}/g, calculatedMetrics.jawWidthRatio.toFixed(2))
           .replace(/{jawWidthAssessment}/g, calculatedMetrics.jawWidthAssessment)
           .replace(/{jawWidthScore}/g, calculatedMetrics.jawWidthScore.toString())
-
-          // Chin projection
-          .replace(/{chinProjection}/g, calculatedMetrics.chinProjection.toFixed(3))
-          .replace(/{chinProjectionAssessment}/g, calculatedMetrics.chinProjectionAssessment)
-          .replace(/{chinProjectionScore}/g, calculatedMetrics.chinProjectionScore.toString())
-
-          // Jawline definition
-          .replace(/{leftJawlineLinearity}/g, calculatedMetrics.leftJawlineLinearity.toFixed(2))
-          .replace(/{rightJawlineLinearity}/g, calculatedMetrics.rightJawlineLinearity.toFixed(2))
-          .replace(/{jawlineDefinitionScore}/g, calculatedMetrics.jawlineDefinitionScore.toString())
 
           // Vertical alignment
           .replace(/{noseToChinDistance}/g, calculatedMetrics.noseToChinDistance.toFixed(2))

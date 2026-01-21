@@ -25,32 +25,20 @@ export interface JawlineCalculations {
   jawAngleYDifference: number;           // vertical misalignment
   jawlineSymmetryScore: number;          // 0-10
 
-  // === JAW ANGLE SYMMETRY (18% - sharpness) ===
+  // === JAW ANGLE SYMMETRY (35% - angle difference only, not sharpness) ===
   leftJawAngle: number;                  // degrees (mandibular angle)
   rightJawAngle: number;                 // degrees
   jawAngleDifference: number;            // absolute difference
-  leftAngleSharpness: 'SHARP' | 'MEDIUM' | 'ROUNDED';
-  rightAngleSharpness: 'SHARP' | 'MEDIUM' | 'ROUNDED';
   jawAngleSymmetryScore: number;         // 0-10
 
-  // === JAW WIDTH (12% - proportionality) ===
+  // === JAW WIDTH (25% - proportionality) ===
   jawWidth: number;                      // distance between angle points
   faceWidth: number;                     // eye-to-eye distance
   jawWidthRatio: number;                 // percentage of face width
   jawWidthAssessment: 'NARROW' | 'IDEAL' | 'WIDE';
   jawWidthScore: number;                 // 0-10
 
-  // === CHIN PROJECTION (8% - 3D depth) ===
-  chinProjection: number;                // z-axis value
-  chinProjectionAssessment: 'RECESSED' | 'NORMAL' | 'PROMINENT';
-  chinProjectionScore: number;           // 0-10
-
-  // === JAWLINE DEFINITION (5% - contour linearity) ===
-  leftJawlineLinearity: number;          // how straight the left contour is
-  rightJawlineLinearity: number;         // how straight the right contour is
-  jawlineDefinitionScore: number;        // 0-10
-
-  // === VERTICAL ALIGNMENT (2% - face balance) ===
+  // === VERTICAL ALIGNMENT (10% - face balance) ===
   noseToChinDistance: number;            // P_4 to P_152
   expectedChinY: number;                 // based on face proportions
   verticalDeviation: number;             // deviation from ideal
@@ -194,16 +182,7 @@ export function calculateJawlineMetrics(landmarks: Point3D[]): JawlineCalculatio
 
   const jawAngleDifference = Math.abs(leftJawAngleDegrees - rightJawAngleDegrees);
 
-  // Classify sharpness
-  const leftAngleSharpness: 'SHARP' | 'MEDIUM' | 'ROUNDED' =
-    leftJawAngleDegrees < 110 ? 'SHARP' :
-    leftJawAngleDegrees < 130 ? 'MEDIUM' : 'ROUNDED';
-
-  const rightAngleSharpness: 'SHARP' | 'MEDIUM' | 'ROUNDED' =
-    rightJawAngleDegrees < 110 ? 'SHARP' :
-    rightJawAngleDegrees < 130 ? 'MEDIUM' : 'ROUNDED';
-
-  // STRICT SCORING: Angle difference
+  // STRICT SCORING: Angle difference (no sharpness classification - requires side profile)
   const jawAngleSymmetryScore =
     jawAngleDifference < 3 ? 10 :
     jawAngleDifference < 6 ? 8 :
@@ -214,26 +193,31 @@ export function calculateJawlineMetrics(landmarks: Point3D[]): JawlineCalculatio
   // 4. JAW WIDTH (12% weight)
   // ========================================
 
-  // TEST: Compare 3 options for jaw width measurement
+  // TEST: Compare 4 options for jaw width measurement
   const leftJawLower = landmarks[176];   // P_176: Lower jaw corner (near chin)
   const rightJawLower = landmarks[400];  // P_400: Lower jaw corner (near chin)
+  const leftJawEar = landmarks[132];     // P_132: Ear lobe level (anatomically correct)
+  const rightJawEar = landmarks[361];    // P_361: Ear lobe level (anatomically correct)
 
   const jawWidthStart = Math.abs(rightJawStart.x - leftJawStart.x);  // P_172 - P_397 (SARI/TURUNCU)
   const jawWidthMid = Math.abs(rightJawMid.x - leftJawMid.x);        // P_136 - P_365 (PEMBE/MOR)
   const jawWidthLower = Math.abs(rightJawLower.x - leftJawLower.x);  // P_176 - P_400 (MAVİ)
+  const jawWidthEar = Math.abs(rightJawEar.x - leftJawEar.x);        // P_132 - P_361 (KAHVERENGİ) ✓ CORRECT
 
   const jawWidthStartRatio = (jawWidthStart / faceWidth) * 100;
   const jawWidthMidRatio = (jawWidthMid / faceWidth) * 100;
   const jawWidthLowerRatio = (jawWidthLower / faceWidth) * 100;
+  const jawWidthEarRatio = (jawWidthEar / faceWidth) * 100;
 
   console.log('🔍 JAW WIDTH OPTIONS:');
   console.log('  Start (P_172-P_397 SARI/TURUNCU):', jawWidthStart.toFixed(2), 'px (', jawWidthStartRatio.toFixed(2), '%)');
-  console.log('  Mid (P_136-P_365 PEMBE/MOR):', jawWidthMid.toFixed(2), 'px (', jawWidthMidRatio.toFixed(2), '%)');
+  console.log('  ✓ Mid (P_136-P_365 PEMBE/MOR):', jawWidthMid.toFixed(2), 'px (', jawWidthMidRatio.toFixed(2), '%) [SELECTED]');
   console.log('  Lower (P_176-P_400 MAVİ):', jawWidthLower.toFixed(2), 'px (', jawWidthLowerRatio.toFixed(2), '%)');
+  console.log('  Ear Level (P_132-P_361 KAHVERENGİ):', jawWidthEar.toFixed(2), 'px (', jawWidthEarRatio.toFixed(2), '%) - Too wide (cheek width)');
 
-  // Use START (P_172-P_397) as primary measurement - most anatomically correct
-  const jawWidth = jawWidthStart;
-  const jawWidthRatio = jawWidthStartRatio;
+  // Use MID (P_136-P_365) as primary measurement - best for frontal view (jaw bone start)
+  const jawWidth = jawWidthMid;
+  const jawWidthRatio = jawWidthMidRatio;
 
   // IDEAL RANGE: 80-95% of face width
   const jawWidthScore =
@@ -248,60 +232,7 @@ export function calculateJawlineMetrics(landmarks: Point3D[]): JawlineCalculatio
     jawWidthRatio < 95 ? 'IDEAL' : 'WIDE';
 
   // ========================================
-  // 5. CHIN PROJECTION (8% weight - 3D)
-  // ========================================
-
-  // Z-axis: How much chin protrudes forward
-  const chinProjection = Math.abs(chinTip.z - bridge.z);
-
-  // IDEAL RANGE: 0.08-0.12 units (based on frontal photos)
-  const chinProjectionScore =
-    chinProjection < 0.06 ? 6 :           // Recessed
-    chinProjection < 0.08 ? 8 :           // Slightly recessed
-    chinProjection < 0.12 ? 10 :          // Ideal projection
-    chinProjection < 0.15 ? 8 :           // Slightly prominent
-    chinProjection < 0.18 ? 6 : 4;        // Prominent/very prominent
-
-  const chinProjectionAssessment: 'RECESSED' | 'NORMAL' | 'PROMINENT' =
-    chinProjection < 0.08 ? 'RECESSED' :
-    chinProjection < 0.12 ? 'NORMAL' : 'PROMINENT';
-
-  // ========================================
-  // 6. JAWLINE DEFINITION (5% weight)
-  // ========================================
-
-  // Calculate linearity of jawline contour
-  // Use midpoint deviation from straight line (jaw start -> jaw angle)
-
-  // Left side linearity
-  const expectedLeftMidX = (leftJawStart.x + leftJawAngle.x) / 2;
-  const expectedLeftMidY = (leftJawStart.y + leftJawAngle.y) / 2;
-  const leftMidDeviation = distance2D(
-    leftJawMid,
-    { x: expectedLeftMidX, y: expectedLeftMidY, z: 0, index: -1 }
-  );
-
-  // Right side linearity
-  const expectedRightMidX = (rightJawStart.x + rightJawAngle.x) / 2;
-  const expectedRightMidY = (rightJawStart.y + rightJawAngle.y) / 2;
-  const rightMidDeviation = distance2D(
-    rightJawMid,
-    { x: expectedRightMidX, y: expectedRightMidY, z: 0, index: -1 }
-  );
-
-  const leftJawlineLinearity = leftMidDeviation;
-  const rightJawlineLinearity = rightMidDeviation;
-  const avgLinearity = (leftMidDeviation + rightMidDeviation) / 2;
-
-  // STRICT SCORING: Lower deviation = more defined
-  const jawlineDefinitionScore =
-    avgLinearity < 5 ? 10 :               // Very defined
-    avgLinearity < 10 ? 8 :               // Defined
-    avgLinearity < 15 ? 6 :               // Moderate
-    avgLinearity < 20 ? 4 : 2;            // Soft/undefined
-
-  // ========================================
-  // 7. VERTICAL ALIGNMENT (2% weight)
+  // 5. VERTICAL ALIGNMENT (10% weight)
   // ========================================
 
   const noseToChinDistance = distance2D(noseTip, chinTip);
@@ -322,14 +253,18 @@ export function calculateJawlineMetrics(landmarks: Point3D[]): JawlineCalculatio
   // OVERALL SCORE (WEIGHTED)
   // ========================================
 
+  // NEW WEIGHTS (frontal view only, total 100%):
+  // - Chin Centering: 30%
+  // - Jawline Symmetry: 25%
+  // - Jaw Angle Symmetry: 35%
+  // - Jaw Width: 25%
+  // - Vertical Alignment: 10%
   const overallScore = Math.round(
     chinCenteringScore * 0.30 +
     jawlineSymmetryScore * 0.25 +
-    jawAngleSymmetryScore * 0.18 +
-    jawWidthScore * 0.12 +
-    chinProjectionScore * 0.08 +
-    jawlineDefinitionScore * 0.05 +
-    verticalAlignmentScore * 0.02
+    jawAngleSymmetryScore * 0.20 +
+    jawWidthScore * 0.15 +
+    verticalAlignmentScore * 0.10
   );
 
   // ASYMMETRY LEVEL
@@ -365,10 +300,10 @@ export function calculateJawlineMetrics(landmarks: Point3D[]): JawlineCalculatio
   console.log('  │   Width:', jawWidth.toFixed(2), 'px (', jawWidthRatio.toFixed(2), '% of face) -', jawWidthAssessment);
   console.log('  │   Score:', jawWidthScore, '/10');
   console.log('  ├─────────────────────────────────────────────────────');
-  console.log('  │ JAWLINE DEFINITION (5% weight):');
-  console.log('  │   Left linearity:', leftJawlineLinearity.toFixed(2), 'px');
-  console.log('  │   Right linearity:', rightJawlineLinearity.toFixed(2), 'px');
-  console.log('  │   Score:', jawlineDefinitionScore, '/10');
+  console.log('  │ VERTICAL ALIGNMENT (10% weight):');
+  console.log('  │   Nose to chin:', noseToChinDistance.toFixed(2), 'px');
+  console.log('  │   Deviation:', verticalDeviation.toFixed(2), 'px (', verticalDeviationRatio.toFixed(2), '%)');
+  console.log('  │   Score:', verticalAlignmentScore, '/10');
   console.log('  └─────────────────────────────────────────────────────');
   console.log('🏆 OVERALL SCORE:', overallScore, '/10');
   console.log('📋 ASYMMETRY LEVEL:', asymmetryLevel);
@@ -400,8 +335,6 @@ export function calculateJawlineMetrics(landmarks: Point3D[]): JawlineCalculatio
     leftJawAngle: leftJawAngleDegrees,
     rightJawAngle: rightJawAngleDegrees,
     jawAngleDifference,
-    leftAngleSharpness,
-    rightAngleSharpness,
     jawAngleSymmetryScore,
 
     // Jaw width
@@ -410,16 +343,6 @@ export function calculateJawlineMetrics(landmarks: Point3D[]): JawlineCalculatio
     jawWidthRatio,
     jawWidthAssessment,
     jawWidthScore,
-
-    // Chin projection
-    chinProjection,
-    chinProjectionAssessment,
-    chinProjectionScore,
-
-    // Jawline definition
-    leftJawlineLinearity,
-    rightJawlineLinearity,
-    jawlineDefinitionScore,
 
     // Vertical alignment
     noseToChinDistance,

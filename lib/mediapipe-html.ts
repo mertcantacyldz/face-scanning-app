@@ -518,9 +518,9 @@ export const mediaPipeHTML = `
                 } else if (index === 356) {
                     drawSimplePoint(ctx, point, '#00CED1', 10);  // P_356: DARK CYAN (AI: right ear level)
                 } else if (index === 132) {
-                    drawSimplePoint(ctx, point, '#00FF00', 10);  // P_132: YEŞİL (AI: left chin width)
+                    drawSimplePoint(ctx, point, '#8B4513', 10);  // P_132: KAHVERENGİ (AI: left chin width)
                 } else if (index === 361) {
-                    drawSimplePoint(ctx, point, '#32CD32', 10);  // P_361: LIME (AI: right chin width)
+                    drawSimplePoint(ctx, point, '#A0522D', 10);  // P_361: AÇIK KAHVERENGİ (AI: right chin width)
                 } else if (index === 176) {
                     drawSimplePoint(ctx, point, '#0000FF', 10);  // P_176: MAVİ (AI: left mandibular ramus)
                 } else if (index === 400) {

@@ -862,28 +862,19 @@ JAWLINE SYMMETRY (25% weight):
 - Angle Y difference: {jawAngleYDifference} pixels
 - Jawline symmetry score: {jawlineSymmetryScore}/10
 
-JAW ANGLE SYMMETRY (18% weight - sharpness):
-- Left jaw angle: {leftJawAngle}° ({leftAngleSharpness})
-- Right jaw angle: {rightJawAngle}° ({rightAngleSharpness})
+JAW ANGLE SYMMETRY (20% weight - angle difference only):
+- Left jaw angle: {leftJawAngle}°
+- Right jaw angle: {rightJawAngle}°
 - Angle difference: {jawAngleDifference}°
 - Jaw angle symmetry score: {jawAngleSymmetryScore}/10
 
-JAW WIDTH (12% weight - proportionality):
+JAW WIDTH (15% weight - proportionality):
 - Jaw width: {jawWidth} pixels
 - Face width: {faceWidth} pixels
 - Jaw width ratio: {jawWidthRatio}% ({jawWidthAssessment})
 - Jaw width score: {jawWidthScore}/10
 
-CHIN PROJECTION (8% weight - 3D):
-- Chin projection: {chinProjection} units ({chinProjectionAssessment})
-- Chin projection score: {chinProjectionScore}/10
-
-JAWLINE DEFINITION (5% weight):
-- Left jawline linearity: {leftJawlineLinearity} pixels
-- Right jawline linearity: {rightJawlineLinearity} pixels
-- Jawline definition score: {jawlineDefinitionScore}/10
-
-VERTICAL ALIGNMENT (2% weight):
+VERTICAL ALIGNMENT (10% weight):
 - Nose to chin distance: {noseToChinDistance} pixels
 - Expected chin Y: {expectedChinY}
 - Vertical deviation: {verticalDeviation} pixels
@@ -973,26 +964,10 @@ OUTPUT JSON FORMAT
 
   "jaw_angles": {
     "left_angle": {leftJawAngle},
-    "left_sharpness": "{leftAngleSharpness}",
     "right_angle": {rightJawAngle},
-    "right_sharpness": "{rightAngleSharpness}",
     "angle_difference": {jawAngleDifference},
     "score": {jawAngleSymmetryScore},
-    "user_explanation": "string (Turkish)"
-  },
-
-  "chin_projection": {
-    "projection": {chinProjection},
-    "assessment": "{chinProjectionAssessment}",
-    "score": {chinProjectionScore},
-    "user_explanation": "string (Turkish)"
-  },
-
-  "jawline_definition": {
-    "left_linearity": {leftJawlineLinearity},
-    "right_linearity": {rightJawlineLinearity},
-    "score": {jawlineDefinitionScore},
-    "user_explanation": "string (Turkish)"
+    "user_explanation": "string (Turkish, explain angle difference only - sharpness requires side profile)"
   },
 
   "vertical_alignment": {
@@ -1006,7 +981,7 @@ OUTPUT JSON FORMAT
   "visual_assessment": {
     "prominent_asymmetry_areas": ["string (list areas with scores <7)"],
     "overall_balance": "string (describe jawline balance based on {overallScore})",
-    "aesthetic_notes": "string (based on sharpness, width, definition)"
+    "aesthetic_notes": "string (based on width and symmetry - frontal view only)"
   },
 
   "recommendations": {
