@@ -1,9 +1,13 @@
 // contexts/AuthContext.tsx
-import { getOrCreateDeviceId } from '@/lib/device-id';
+import { getOrCreateDeviceId } from '@/lib/device-id-with-fallback';
 import { supabase } from '@/lib/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Session } from '@supabase/supabase-js';
 import React, { createContext, useContext, useEffect, useState } from 'react';
+
+// Initialization lock to prevent race conditions
+let initializationInProgress = false;
+let initializationPromise: Promise<void> | null = null;
 
 interface AuthContextType {
   session: Session | null;
@@ -50,6 +54,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [initialized]);
 
   const initializeAuth = async () => {
+    // Prevent concurrent initialization
+    if (initializationInProgress && initializationPromise) {
+      console.log('🔐 Auth initialization already in progress, waiting...');
+      return initializationPromise;
+    }
+
+    initializationInProgress = true;
+    initializationPromise = (async () => {
     try {
       console.log('🔐 Initializing auth...');
 
@@ -161,13 +173,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await createProfile(data.user.id, data.user.email ?? null);
       }
 
-      // 6. Create device mapping in database
-      // Note: If device already has a mapping, we DON'T override it
-      // This preserves the FIRST user for premium restoration
-      if (data.user && !existingDevice?.supabase_user_id) {
-        await createDeviceMapping(deviceId, data.user.id);
-      } else if (existingDevice?.supabase_user_id) {
-        console.log('⚠️ Keeping existing device mapping (first user preserved for premium)');
+      // 6. Update device mapping in database
+      // Always update to point to the ACTIVE user (not preserve first user)
+      // Premium is now tied to device ID via RevenueCat, not device_users mapping
+      if (data.user) {
+        await upsertDeviceMapping(deviceId, data.user.id);
       }
 
       // 7. Save session for next app launch
@@ -183,7 +193,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       console.log('🏁 Auth initialization complete, setting loading to false');
       setLoading(false);
+      initializationInProgress = false;
     }
+    })();
+
+    return initializationPromise;
   };
 
   return (
@@ -261,24 +275,27 @@ async function createProfile(userId: string, email: string | null) {
 }
 
 /**
- * Create device-to-user mapping in database
+ * Upsert device-to-user mapping in database
+ * Always updates to point to the ACTIVE user
  */
-async function createDeviceMapping(deviceId: string, userId: string) {
+async function upsertDeviceMapping(deviceId: string, userId: string) {
   try {
     const { error } = await supabase
       .from('device_users')
-      .insert({
-        device_id: deviceId,
-        supabase_user_id: userId,
-      })
-      .select()
-      .single();
+      .upsert(
+        {
+          device_id: deviceId,
+          supabase_user_id: userId,
+        },
+        {
+          onConflict: 'device_id',
+        }
+      );
 
-    // Ignore unique constraint errors (device already mapped)
-    if (error && error.code !== '23505') {
-      console.error('Device mapping error:', error);
-    } else if (!error) {
-      console.log('✅ Device mapping created successfully');
+    if (error) {
+      console.error('Device mapping upsert error:', error);
+    } else {
+      console.log('✅ Device mapping updated successfully');
     }
   } catch (error) {
     console.error('Unexpected device mapping error:', error);

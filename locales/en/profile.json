@@ -49,5 +49,15 @@
   "alerts": {
     "profileUpdateSuccess": "Profile updated successfully",
     "profileUpdateError": "Failed to update profile"
+  },
+  "restore": {
+    "button": "Restore Purchases",
+    "loading": "Restoring...",
+    "successTitle": "Success",
+    "successMessage": "Your premium membership has been restored!",
+    "noSubscriptionTitle": "Not Found",
+    "noSubscriptionMessage": "No active subscription found.",
+    "errorTitle": "Error",
+    "errorMessage": "An error occurred while restoring purchases."
   }
 }

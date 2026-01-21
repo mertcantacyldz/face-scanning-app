@@ -532,6 +532,78 @@ export const mediaPipeHTML = `
                 } else if (index === 454) {
                     drawSimplePoint(ctx, point, '#FF69B4', 8);  // P_454: HOT PINK (eski rightJawAngle - kulak yanı)
 
+                // ========== ÜST KONTUR TEST NOKTALARI (FOREHEAD/HAIRLINE) ==========
+                // P_10: Alın merkezi - EN ÜST MERKEZ NOKTA
+                } else if (index === 10) {
+                    drawSimplePoint(ctx, point, '#FF0000', 12);  // KIRMIZI BÜYÜK
+                    // Label çiz
+                    ctx.fillStyle = '#FF0000';
+                    ctx.font = 'bold 14px Arial';
+                    ctx.fillText('P10', point.x * canvasElement.width + 15, point.y * canvasElement.height);
+
+                // P_109: Sol üst alın
+                } else if (index === 109) {
+                    drawSimplePoint(ctx, point, '#FF4500', 10);  // TURUNCU-KIRMIZI
+                    ctx.fillStyle = '#FF4500';
+                    ctx.font = '12px Arial';
+                    ctx.fillText('109', point.x * canvasElement.width + 10, point.y * canvasElement.height);
+
+                // P_338: Sağ üst alın
+                } else if (index === 338) {
+                    drawSimplePoint(ctx, point, '#FF4500', 10);  // TURUNCU-KIRMIZI
+                    ctx.fillStyle = '#FF4500';
+                    ctx.font = '12px Arial';
+                    ctx.fillText('338', point.x * canvasElement.width + 10, point.y * canvasElement.height);
+
+                // P_67: Sol alın kenarı
+                } else if (index === 67) {
+                    drawSimplePoint(ctx, point, '#FFD700', 8);  // ALTIN
+                    ctx.fillStyle = '#FFD700';
+                    ctx.font = '11px Arial';
+                    ctx.fillText('67', point.x * canvasElement.width + 8, point.y * canvasElement.height);
+
+                // P_297: Sağ alın kenarı
+                } else if (index === 297) {
+                    drawSimplePoint(ctx, point, '#FFD700', 8);  // ALTIN
+                    ctx.fillStyle = '#FFD700';
+                    ctx.font = '11px Arial';
+                    ctx.fillText('297', point.x * canvasElement.width + 8, point.y * canvasElement.height);
+
+                // P_103: Sol üst köşe
+                } else if (index === 103) {
+                    drawSimplePoint(ctx, point, '#00FF00', 8);  // YEŞİL
+                    ctx.fillStyle = '#00FF00';
+                    ctx.font = '11px Arial';
+                    ctx.fillText('103', point.x * canvasElement.width + 8, point.y * canvasElement.height);
+
+                // P_332: Sağ üst köşe
+                } else if (index === 332) {
+                    drawSimplePoint(ctx, point, '#00FF00', 8);  // YEŞİL
+                    ctx.fillStyle = '#00FF00';
+                    ctx.font = '11px Arial';
+                    ctx.fillText('332', point.x * canvasElement.width + 8, point.y * canvasElement.height);
+
+                // P_54: Sol şakak
+                } else if (index === 54) {
+                    drawSimplePoint(ctx, point, '#00FFFF', 8);  // CYAN
+                    ctx.fillStyle = '#00FFFF';
+                    ctx.font = '11px Arial';
+                    ctx.fillText('54', point.x * canvasElement.width + 8, point.y * canvasElement.height);
+
+                // P_284: Sağ şakak
+                } else if (index === 284) {
+                    drawSimplePoint(ctx, point, '#00FFFF', 8);  // CYAN
+                    ctx.fillStyle = '#00FFFF';
+                    ctx.font = '11px Arial';
+                    ctx.fillText('284', point.x * canvasElement.width + 8, point.y * canvasElement.height);
+
+                // P_151: Alın ortası (P_10 altında)
+                } else if (index === 151) {
+                    drawSimplePoint(ctx, point, '#FF00FF', 8);  // MAGENTA
+                    ctx.fillStyle = '#FF00FF';
+                    ctx.font = '11px Arial';
+                    ctx.fillText('151', point.x * canvasElement.width + 10, point.y * canvasElement.height);
+
                 } else {
                     drawSimplePoint(ctx, point, '#FFFFFF', 1);  // Beyaz, normal
                 }

@@ -12,6 +12,7 @@ import {
   getFreeAnalysisStatus,
   updateFreeAnalysisStatus
 } from '@/lib/premium-database';
+import { getOrCreateDeviceId } from '@/lib/device-id-with-fallback';
 import type { PremiumContextValue } from '@/types/premium';
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
@@ -83,14 +84,19 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
     setIsLoading(true);
 
     try {
+      // Get device ID first (stable identifier for RevenueCat)
+      const deviceId = await getOrCreateDeviceId();
+      console.log('📱 PremiumContext: Using device ID for RevenueCat:', deviceId);
+
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
 
       if (user) {
         console.log('🚀 Initializing premium status for user:', user.id);
 
-        // Initialize RevenueCat with user ID (this also logs in the user)
-        await initializeRevenueCat(user.id);
+        // Initialize RevenueCat with DEVICE ID (not user ID!)
+        // This ensures premium persists even when session expires and new user is created
+        await initializeRevenueCat(deviceId);
 
         // Check premium status from both sources
         const premiumStatus = await checkCombinedPremiumStatus(user.id);
@@ -101,18 +107,35 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
         setIsRevenueCatPremium(premiumStatus.revenueCat);
         setIsDatabasePremium(premiumStatus.database);
 
+        // AUTO-RESTORE: If not premium, try to restore purchases silently
+        if (!premiumStatus.combined) {
+          console.log('🔄 Auto-restore: Premium not found, trying silent restore...');
+          try {
+            const restoreResult = await restorePurchases();
+            if (restoreResult.isPremium) {
+              console.log('✅ Auto-restore: Premium restored successfully!');
+              setIsRevenueCatPremium(true);
+            } else {
+              console.log('ℹ️ Auto-restore: No subscription found');
+            }
+          } catch (restoreError) {
+            // Silent failure - don't bother user
+            console.log('⚠️ Auto-restore failed (silent):', restoreError);
+          }
+        }
+
         // Load offerings
         const currentOfferings = await getOfferings();
         setOfferings(currentOfferings);
 
-        // Check if free analysis was used (from Supabase)
-        const freeAnalysisStatus = await getFreeAnalysisStatus(user.id);
+        // Check if free analysis was used (from Supabase - both user and device level)
+        const freeAnalysisStatus = await getFreeAnalysisStatus(user.id, deviceId);
         setFreeAnalysisUsed(freeAnalysisStatus.used);
         setFreeAnalysisRegion(freeAnalysisStatus.region);
       } else {
         console.log('👤 No user logged in, setting premium to false');
-        // No user, initialize without login
-        await initializeRevenueCat();
+        // No user, initialize RevenueCat with device ID anyway
+        await initializeRevenueCat(deviceId);
         setIsRevenueCatPremium(false);
         setIsDatabasePremium(false);
       }
@@ -131,7 +154,11 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      await updateFreeAnalysisStatus(user.id, regionId);
+      // Get device ID for device-level tracking
+      const deviceId = await getOrCreateDeviceId();
+
+      // Update both user and device records
+      await updateFreeAnalysisStatus(user.id, regionId, deviceId);
       setFreeAnalysisUsed(true);
       setFreeAnalysisRegion(regionId);
     } catch (error) {
@@ -243,21 +270,27 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
         console.log('👤 User detected, refreshing premium status. Event:', event);
 
         // Chain promises to sequence calls without blocking
-        initializeRevenueCat(session.user.id)
-          .then(() => {
+        // Use device ID for RevenueCat (not user ID!)
+        getOrCreateDeviceId()
+          .then(async (deviceId) => {
+            console.log('📱 Auth state change: Using device ID for RevenueCat:', deviceId);
+            await initializeRevenueCat(deviceId);
+
             // Small delay to let RevenueCat settle
-            return new Promise(resolve => setTimeout(resolve, 150));
-          })
-          .then(() => refreshPremiumStatus())
-          .then(async () => {
-            const freeAnalysisStatus = await getFreeAnalysisStatus(session.user.id);
+            await new Promise(resolve => setTimeout(resolve, 150));
+
+            await refreshPremiumStatus();
+
+            // Check free analysis status with device ID
+            const freeAnalysisStatus = await getFreeAnalysisStatus(session.user.id, deviceId);
             setFreeAnalysisUsed(freeAnalysisStatus.used);
             setFreeAnalysisRegion(freeAnalysisStatus.region);
           })
           .catch(err => console.error('❌ Error in premium initialization chain:', err));
       } else if (event === 'SIGNED_OUT') {
         console.log('👋 User signed out in PremiumContext');
-        logoutRevenueCat();
+        // Don't logout from RevenueCat - keep device ID association
+        // This allows premium to persist across sign outs
         setIsRevenueCatPremium(false);
         setIsDatabasePremium(false);
         setFreeAnalysisUsed(false);

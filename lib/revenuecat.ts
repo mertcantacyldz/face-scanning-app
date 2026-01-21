@@ -26,8 +26,19 @@ export const PRODUCT_IDS = {
 let isRevenueCatInitialized = false;
 let initializationPromise: Promise<void> | null = null;
 
-// Initialize RevenueCat (singleton pattern to prevent multiple configurations)
-export async function initializeRevenueCat(userId?: string): Promise<void> {
+/**
+ * Initialize RevenueCat (singleton pattern to prevent multiple configurations)
+ *
+ * IMPORTANT: We use deviceId instead of userId for RevenueCat login.
+ * This ensures premium purchases persist even when Supabase session expires
+ * and a new anonymous user is created.
+ *
+ * Device ID is stable across app restarts (stored in iOS Keychain).
+ * User can still restore purchases on new device via App Store account.
+ *
+ * @param deviceId - The stable device identifier (from device-id-with-fallback.ts)
+ */
+export async function initializeRevenueCat(deviceId?: string): Promise<void> {
   const apiKey = Platform.OS === 'ios' ? REVENUECAT_API_KEY_IOS : REVENUECAT_API_KEY_ANDROID;
 
   if (!apiKey) {
@@ -35,13 +46,13 @@ export async function initializeRevenueCat(userId?: string): Promise<void> {
     return;
   }
 
-  // If already initialized, just login with new user if provided
+  // If already initialized, just login with device ID if provided
   if (isRevenueCatInitialized) {
     console.log('RevenueCat already initialized, skipping configure...');
-    if (userId) {
+    if (deviceId) {
       try {
-        await Purchases.logIn(userId);
-        console.log('RevenueCat: User logged in:', userId);
+        await Purchases.logIn(deviceId);
+        console.log('RevenueCat: Logged in with device ID:', deviceId);
       } catch (error) {
         console.error('RevenueCat login error:', error);
       }
@@ -53,9 +64,9 @@ export async function initializeRevenueCat(userId?: string): Promise<void> {
   if (initializationPromise) {
     console.log('RevenueCat initialization in progress, waiting...');
     await initializationPromise;
-    if (userId) {
+    if (deviceId) {
       try {
-        await Purchases.logIn(userId);
+        await Purchases.logIn(deviceId);
       } catch (error) {
         console.error('RevenueCat login error:', error);
       }
@@ -75,9 +86,10 @@ export async function initializeRevenueCat(userId?: string): Promise<void> {
       await Purchases.configure({ apiKey });
       isRevenueCatInitialized = true;
 
-      // If user is logged in, identify them
-      if (userId) {
-        await Purchases.logIn(userId);
+      // Identify with device ID (stable across sessions)
+      if (deviceId) {
+        await Purchases.logIn(deviceId);
+        console.log('RevenueCat: Logged in with device ID:', deviceId);
       }
 
       console.log('RevenueCat initialized successfully');

@@ -49,5 +49,15 @@
   "alerts": {
     "profileUpdateSuccess": "Profil güncellendi",
     "profileUpdateError": "Profil güncellenemedi"
+  },
+  "restore": {
+    "button": "Satın Alımları Geri Yükle",
+    "loading": "Geri yükleniyor...",
+    "successTitle": "Başarılı",
+    "successMessage": "Premium üyeliğiniz geri yüklendi!",
+    "noSubscriptionTitle": "Bulunamadı",
+    "noSubscriptionMessage": "Aktif bir abonelik bulunamadı.",
+    "errorTitle": "Hata",
+    "errorMessage": "Geri yükleme sırasında bir hata oluştu."
   }
 }

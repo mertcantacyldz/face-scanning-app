@@ -16,6 +16,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
+  ActivityIndicator,
   Alert,
   RefreshControl,
   ScrollView,
@@ -38,13 +39,14 @@ interface Profile {
 export default function ProfileScreen() {
   const { t } = useTranslation('profile');
   const { isAnonymous } = useAuth();
-  const { isPremium } = usePremium();
+  const { isPremium, restore } = usePremium();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState<string | null>(null);
+  const [restoring, setRestoring] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -112,6 +114,31 @@ export default function ProfileScreen() {
         },
       ]
     );
+  };
+
+  const handleRestorePurchases = async () => {
+    setRestoring(true);
+    try {
+      const result = await restore();
+      if (result.isPremium) {
+        Alert.alert(
+          t('restore.successTitle'),
+          t('restore.successMessage')
+        );
+      } else {
+        Alert.alert(
+          t('restore.noSubscriptionTitle'),
+          t('restore.noSubscriptionMessage')
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        t('restore.errorTitle'),
+        t('restore.errorMessage')
+      );
+    } finally {
+      setRestoring(false);
+    }
   };
 
   const onRefresh = () => {
@@ -445,6 +472,31 @@ export default function ProfileScreen() {
             </View>
             <Ionicons name="chevron-forward" size={20} className="text-muted-foreground" />
           </TouchableOpacity>
+
+          {/* Restore Purchases - Only show for non-premium users */}
+          {!isPremium && (
+            <>
+              <View className="h-px bg-border my-2" />
+
+              <TouchableOpacity
+                className="flex-row items-center justify-between py-3"
+                onPress={handleRestorePurchases}
+                disabled={restoring}
+              >
+                <View className="flex-row items-center">
+                  <Ionicons name="refresh" size={20} color="#8B5CF6" />
+                  <Text className="text-foreground ml-3">
+                    {restoring ? t('restore.loading') : t('restore.button')}
+                  </Text>
+                </View>
+                {restoring ? (
+                  <ActivityIndicator size="small" color="#8B5CF6" />
+                ) : (
+                  <Ionicons name="chevron-forward" size={20} className="text-muted-foreground" />
+                )}
+              </TouchableOpacity>
+            </>
+          )}
         </Card>
 
         {/* Sign Out - Only for authenticated (non-anonymous) users */}

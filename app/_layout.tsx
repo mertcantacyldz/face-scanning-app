@@ -5,10 +5,12 @@ import 'react-native-reanimated';
 
 import '@/global.css';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useSessionRefresh } from '@/hooks/use-session-refresh';
 import { supabase } from '@/lib/supabase';
 import { PortalHost } from '@rn-primitives/portal';
 import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
+import { DeviceProvider } from '@/contexts/DeviceContext';
 import { PremiumProvider } from '@/contexts/PremiumContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { initializeI18n } from '@/locales';
@@ -21,6 +23,9 @@ export const unstable_settings = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [i18nReady, setI18nReady] = useState(false);
+
+  // Proactive session refresh on app foreground
+  useSessionRefresh();
 
   useEffect(() => {
     // Initialize i18n
@@ -51,8 +56,9 @@ export default function RootLayout() {
         offsetTop={50}
         swipeEnabled={true}
       >
-        <AuthProvider>
-          <PremiumProvider>
+        <DeviceProvider>
+          <AuthProvider>
+            <PremiumProvider>
             <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
               <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
@@ -61,9 +67,10 @@ export default function RootLayout() {
               <Stack.Screen name="premium/subscribe" options={{ presentation: 'modal' }} />
             </Stack>
             <StatusBar style="auto" />
-            <PortalHost />
-          </PremiumProvider>
-        </AuthProvider>
+              <PortalHost />
+            </PremiumProvider>
+          </AuthProvider>
+        </DeviceProvider>
       </ToastProvider>
     </ThemeProvider>
   );
