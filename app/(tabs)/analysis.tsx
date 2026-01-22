@@ -186,10 +186,10 @@ const AnalysisScreen = () => {
         length_score: 0.20,
         angle_score: 0.15,
       },
-      face_shape: {
+      /* face_shape: {
         // Face shape uses confidence_score, not overall_score
         // No calculation needed
-      },
+      }, */
     };
 
     // Get weights for this region
@@ -197,8 +197,8 @@ const AnalysisScreen = () => {
     if (!regionWeights || Object.keys(regionWeights).length === 0) {
       // No weights defined (e.g., face_shape) - use AI's score
       return jsonResult.analysis_result?.overall_score ??
-             jsonResult.analysis_result?.confidence_score ??
-             0;
+        jsonResult.analysis_result?.confidence_score ??
+        0;
     }
 
     // Extract sub-scores from various possible locations in JSON
@@ -254,8 +254,8 @@ const AnalysisScreen = () => {
     // Fallback: Use AI's score if we couldn't find sub-scores
     console.warn(`⚠️ Could not calculate overall_score for ${regionId}, using AI's value`);
     return jsonResult.analysis_result?.overall_score ??
-           jsonResult.analysis_result?.confidence_score ??
-           0;
+      jsonResult.analysis_result?.confidence_score ??
+      0;
   };
 
   const handleRegionAnalysis = async (region: FaceRegion, bypassPremiumCheck = false) => {
@@ -331,13 +331,13 @@ const AnalysisScreen = () => {
         calculatedMetrics = calculateEyebrowMetrics(faceData.landmarks);
 
         console.log('🔢 Calculated eyebrow metrics (TypeScript):', calculatedMetrics);
-      } else if (region.id === 'face_shape') {
+      } /* else if (region.id === 'face_shape') {
         // Import dynamically to avoid circular dependencies
         const { calculateFaceShapeMetrics } = await import('@/lib/calculations/face-shape');
         calculatedMetrics = calculateFaceShapeMetrics(faceData.landmarks);
 
         console.log('🔢 Calculated face shape metrics (TypeScript):', calculatedMetrics);
-      }
+      } */
 
       // ============================================
       // 2. PREPARE PROMPT (REPLACE TEMPLATE VARIABLES)
@@ -645,7 +645,7 @@ const AnalysisScreen = () => {
           .replace(/{asymmetryLevel}/g, calculatedMetrics.asymmetryLevel);
 
         console.log('✅ Eyebrows template variables replaced in prompt');
-      } else if (region.id === 'face_shape' && calculatedMetrics) {
+      } /* else if (region.id === 'face_shape' && calculatedMetrics) {
         // Replace all template variables for face shape
         finalPrompt = finalPrompt
           // Face dimensions
@@ -690,7 +690,7 @@ const AnalysisScreen = () => {
           .replace(/{proportionAssessment}/g, calculatedMetrics.proportionAssessment);
 
         console.log('✅ Face shape template variables replaced in prompt');
-      }
+      } */
 
       console.log(finalPrompt, "final prompt")
 
@@ -720,10 +720,10 @@ const AnalysisScreen = () => {
               explanation: 'AI çağrısı yapılmadı. Aşağıda TypeScript tarafından hesaplanan ham değerler gösterilmektedir. Console\'u kontrol edin.',
               key_findings: calculatedMetrics
                 ? Object.entries(calculatedMetrics)
-                    .filter(([_, value]) => typeof value === 'number' || typeof value === 'string')
-                    .filter(([key]) => !key.includes('landmarkIndices'))
-                    .slice(0, 12)
-                    .map(([key, value]) => `${key}: ${typeof value === 'number' ? (Number.isInteger(value) ? value : value.toFixed(2)) : value}`)
+                  .filter(([_, value]) => typeof value === 'number' || typeof value === 'string')
+                  .filter(([key]) => !key.includes('landmarkIndices'))
+                  .slice(0, 12)
+                  .map(([key, value]) => `${key}: ${typeof value === 'number' ? (Number.isInteger(value) ? value : value.toFixed(2)) : value}`)
                 : ['Hesaplama yapılamadı']
             },
             calculated_metrics: calculatedMetrics,
@@ -869,7 +869,7 @@ const AnalysisScreen = () => {
       // Override AI's overall_score with our calculation
       if (rawResponse.analysis_result) {
         const aiScore = rawResponse.analysis_result.overall_score ??
-                         rawResponse.analysis_result.confidence_score;
+          rawResponse.analysis_result.confidence_score;
 
         if (aiScore !== calculatedScore) {
           console.warn(`🔧 Correcting AI score: ${aiScore} → ${calculatedScore}`);
@@ -1033,7 +1033,7 @@ const AnalysisScreen = () => {
 
         {/* Face Region Buttons */}
         <View className="flex-row flex-wrap justify-between">
-          {FACE_REGIONS.map((region) => {
+          {FACE_REGIONS.filter(region => region.id !== 'face_shape').map((region) => {
             // Check if this region is accessible for free users
             const isUnlocked = isPremium || (freeAnalysisUsed && freeAnalysisRegion === region.id);
             const isLocked = !isPremium && freeAnalysisUsed && freeAnalysisRegion !== region.id;

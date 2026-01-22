@@ -11,7 +11,7 @@ const lipsIcon = require('@/assets/icons/lips.png');
 const jawlineIcon = require('@/assets/icons/jawline.png');
 const faceShapeIcon = require('@/assets/icons/face-shape.png');
 
-export type RegionId = 'eyebrows' | 'eyes' | 'nose' | 'lips' | 'jawline' | 'face_shape';
+export type RegionId = 'eyebrows' | 'eyes' | 'nose' | 'lips' | 'jawline' /* | 'face_shape' */;
 
 export type ExerciseDifficulty = 'easy' | 'medium' | 'hard';
 
@@ -465,6 +465,7 @@ export const EXERCISES: Exercise[] = [
     icon: '↔️',
   },
 
+  /*
   // ============ FACE SHAPE (Yüz Şekli) ============
   {
     id: 'cheek_puff',
@@ -550,6 +551,7 @@ export const EXERCISES: Exercise[] = [
     difficulty: 'hard',
     icon: '✌️',
   },
+  */
 
   // ============ NEW EXERCISES - EYEBROWS (Additional) ============
   {
@@ -725,6 +727,7 @@ export const EXERCISES: Exercise[] = [
     icon: '👁️',
   },
 
+  /*
   // ============ NEW EXERCISES - FACE SHAPE (Additional - Cheeks) ============
   {
     id: 'o_shape_cheek_lift',
@@ -782,6 +785,7 @@ export const EXERCISES: Exercise[] = [
     difficulty: 'easy',
     icon: '💨',
   },
+  */
 
   // ============ NEW EXERCISES - JAWLINE (Additional - Neck) ============
   {
@@ -910,7 +914,7 @@ export function getExerciseById(id: string): Exercise | undefined {
 }
 
 export function getAllRegions(): RegionId[] {
-  return ['eyebrows', 'eyes', 'nose', 'lips', 'jawline', 'face_shape'];
+  return ['eyebrows', 'eyes', 'nose', 'lips', 'jawline' /*, 'face_shape' */];
 }
 
 export function getRegionTitle(regionId: RegionId): string {
@@ -920,7 +924,7 @@ export function getRegionTitle(regionId: RegionId): string {
     nose: 'Burun',
     lips: 'Dudaklar',
     jawline: 'Çene Hattı',
-    face_shape: 'Yüz Şekli',
+    // face_shape: 'Yüz Şekli',
   };
   return titles[regionId];
 }
@@ -932,7 +936,7 @@ export function getRegionTitleEn(regionId: RegionId): string {
     nose: 'Nose',
     lips: 'Lips',
     jawline: 'Jawline',
-    face_shape: 'Face Shape',
+    // face_shape: 'Face Shape',
   };
   return titles[regionId];
 }
@@ -944,7 +948,7 @@ export function getRegionIcon(regionId: RegionId): any {
     nose: noseIcon,
     lips: lipsIcon,
     jawline: jawlineIcon,
-    face_shape: faceShapeIcon,
+    // face_shape: faceShapeIcon,
   };
   return icons[regionId];
 }

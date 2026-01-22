@@ -1,3 +1,30 @@
+/* ============================================
+   FACE SHAPE CALCULATIONS - TEMPORARILY DISABLED
+   ============================================
+
+   This module is temporarily disabled because:
+   - MediaPipe Face Mesh does not detect hairline
+   - Face length calculation is inaccurate (uses P_10 forehead center)
+   - Face shape classification becomes unreliable
+
+   Current State: All code commented out but preserved
+
+   To re-enable:
+   1. Uncomment all functions below
+   2. Update face length calculation with hairline estimation
+   3. Add "frontal view limitation" warning to results
+   4. Re-enable in face-prompts.ts
+   5. Re-enable in analysis.tsx
+
+   Alternative approaches for future:
+   - Estimate hairline position (foreheadTop.y - faceHeight * 0.15)
+   - Use only width ratios (forehead/cheekbone/jaw)
+   - Remove length-based classification entirely
+
+   Last modified: 2026-01-21
+   ============================================ */
+
+/*
 // Face Shape Calculation Module
 // Calculates ALL face shape metrics from MediaPipe Face Mesh landmarks
 // AI will ONLY interpret these pre-calculated values
@@ -372,3 +399,4 @@ export function calculateFaceShapeMetrics(landmarks: Point3D[]): FaceShapeCalcul
     },
   };
 }
+*/

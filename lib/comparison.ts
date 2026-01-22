@@ -192,10 +192,10 @@ export function compareRegionMetrics(
       compareMetricField(current, previous, 'left_jaw_score', changes);
       compareMetricField(current, previous, 'right_jaw_score', changes);
       break;
-    case 'face_shape':
+    /* case 'face_shape':
       compareMetricField(current, previous, 'proportion_score', changes);
       compareMetricField(current, previous, 'confidence_score', changes);
-      break;
+      break; */
   }
 
   return changes;

@@ -23,7 +23,7 @@ interface SpinWheelProps {
   disabled?: boolean;
 }
 
-const REGIONS: RegionId[] = ['eyebrows', 'eyes', 'nose', 'lips', 'jawline', 'face_shape'];
+const REGIONS: RegionId[] = ['eyebrows', 'eyes', 'nose', 'lips', 'jawline' /*, 'face_shape' */];
 const SEGMENT_ANGLE = 360 / REGIONS.length;
 
 const COLORS = [
@@ -32,7 +32,7 @@ const COLORS = [
   '#3B82F6', // nose - blue
   '#10B981', // lips - emerald
   '#F59E0B', // jawline - amber
-  '#EC4899', // face_shape - pink
+  // '#EC4899', // face_shape - pink
 ];
 
 // Matematiksel Yardımcı Fonksiyonlar
@@ -61,10 +61,10 @@ const getTextCoordinates = (index: number, total: number, radius: number) => {
   const angle = 360 / total;
   const midAngle = index * angle + angle / 2;
   const rad = degToRad(midAngle - 90);
-  
+
   // Yarıçapın %65'i kadar uzağa koy (ikonun yeri)
   const dist = radius * 0.65;
-  
+
   return {
     x: radius + dist * Math.cos(rad),
     y: radius + dist * Math.sin(rad),
@@ -96,16 +96,16 @@ export function SpinWheel({ onSpinComplete, disabled = false }: SpinWheelProps) 
     // Bir dilim açısı: 60 derece.
     // 0. index (0-60 derece arası) -> Tepeye (270 veya -90) gelmesi lazım.
     // Basit mantık: Tam tur + (360 - (Index * Açı))
-    
+
     // Rastgelelik (dilimin tam ortasına değil, hafif sağına soluna da gelebilsin)
-    const randomOffset = (Math.random() - 0.5) * (SEGMENT_ANGLE * 0.8); 
-    
+    const randomOffset = (Math.random() - 0.5) * (SEGMENT_ANGLE * 0.8);
+
     const extraSpins = 5; // 5 tam tur
     // Dilimin merkez açısı
     const segmentAngle = randomIndex * SEGMENT_ANGLE;
-    
+
     // Reanimated rotasyonu
-    const finalRotation = 360 * extraSpins - segmentAngle - (SEGMENT_ANGLE/2) + randomOffset;
+    const finalRotation = 360 * extraSpins - segmentAngle - (SEGMENT_ANGLE / 2) + randomOffset;
 
     rotation.value = withSequence(
       withTiming(rotation.value - 20, { duration: 200, easing: Easing.linear }), // Geriye gerilme efekti
@@ -145,7 +145,7 @@ export function SpinWheel({ onSpinComplete, disabled = false }: SpinWheelProps) 
         {/* Pointer (İbre) - Sabit durur, çarkın üstünde */}
         <View className="absolute top-0 z-20 items-center justify-center pointer-events-none">
           {/* Üçgen İbre */}
-          <View 
+          <View
             style={{
               width: 0,
               height: 0,
@@ -249,14 +249,14 @@ export function SpinWheel({ onSpinComplete, disabled = false }: SpinWheelProps) 
 
         {/* Orta Göbek (Hareketsiz veya çarkla dönebilir, burada çarkla dönüyor) */}
         <View
-            className="absolute bg-white items-center justify-center rounded-full shadow-lg border-4 border-gray-100"
-            style={{
-                width: wheelSize * 0.18,
-                height: wheelSize * 0.18,
-                // Tam ortalamak için (position absolute, center center)
-            }}
+          className="absolute bg-white items-center justify-center rounded-full shadow-lg border-4 border-gray-100"
+          style={{
+            width: wheelSize * 0.18,
+            height: wheelSize * 0.18,
+            // Tam ortalamak için (position absolute, center center)
+          }}
         >
-             <Ionicons name="radio-button-on" size={24} color="#8B5CF6" />
+          <Ionicons name="radio-button-on" size={24} color="#8B5CF6" />
         </View>
       </View>
 
@@ -264,9 +264,8 @@ export function SpinWheel({ onSpinComplete, disabled = false }: SpinWheelProps) 
       <Pressable
         onPress={spin}
         disabled={isSpinning || disabled}
-        className={`mt-10 px-12 py-4 rounded-full shadow-md active:scale-95 transition-transform ${
-          isSpinning || disabled ? 'bg-gray-300' : 'bg-primary'
-        }`}
+        className={`mt-10 px-12 py-4 rounded-full shadow-md active:scale-95 transition-transform ${isSpinning || disabled ? 'bg-gray-300' : 'bg-primary'
+          }`}
       >
         <View className="flex-row items-center gap-2">
           <Ionicons
@@ -275,9 +274,8 @@ export function SpinWheel({ onSpinComplete, disabled = false }: SpinWheelProps) 
             color={isSpinning || disabled ? '#6B7280' : '#FFFFFF'}
           />
           <Text
-            className={`font-bold text-lg ${
-              isSpinning || disabled ? 'text-gray-500' : 'text-primary-foreground'
-            }`}
+            className={`font-bold text-lg ${isSpinning || disabled ? 'text-gray-500' : 'text-primary-foreground'
+              }`}
           >
             {isSpinning ? 'Çark Dönüyor...' : 'ÇARKI ÇEVİR'}
           </Text>
@@ -288,48 +286,48 @@ export function SpinWheel({ onSpinComplete, disabled = false }: SpinWheelProps) 
       {result && (
         <Animated.View
           entering={FadeInDown.duration(600).springify()}
-            className="w-full"
+          className="w-full"
         >
-            <Card className="mt-8 p-4 bg-green-50 border-2 border-green-200 w-full shadow-sm">
+          <Card className="mt-8 p-4 bg-green-50 border-2 border-green-200 w-full shadow-sm">
             <View className="flex-row items-center justify-center">
-                <View className="mr-4">
-                  {getRegionIconLibrary(result) === 'material-community' ? (
-                    <MaterialCommunityIcons
-                      name={getRegionIcon(result) as any}
-                      size={40}
-                      color="#10B981"
-                    />
-                  ) : (
-                    <Ionicons
-                      name={getRegionIcon(result) as any}
-                      size={40}
-                      color="#10B981"
-                    />
-                  )}
-                </View>
-                <View>
+              <View className="mr-4">
+                {getRegionIconLibrary(result) === 'material-community' ? (
+                  <MaterialCommunityIcons
+                    name={getRegionIcon(result) as any}
+                    size={40}
+                    color="#10B981"
+                  />
+                ) : (
+                  <Ionicons
+                    name={getRegionIcon(result) as any}
+                    size={40}
+                    color="#10B981"
+                  />
+                )}
+              </View>
+              <View>
                 <Text className="text-green-800 font-bold text-xl mb-1">
-                    {getRegionTitle(result)} Kazandınız!
+                  {getRegionTitle(result)} Kazandınız!
                 </Text>
                 <Text className="text-green-600 text-sm">
-                    Analiz sayfasına yönlendiriliyorsunuz...
+                  Analiz sayfasına yönlendiriliyorsunuz...
                 </Text>
-                </View>
+              </View>
             </View>
-            </Card>
+          </Card>
         </Animated.View>
       )}
 
       {/* Premium CTA */}
       {!result && (
-         <Card className="mt-8 p-4 bg-primary/5 border border-primary/20 w-full">
-            <View className="flex-row items-center justify-center gap-2">
-              <Ionicons name="diamond-outline" size={16} className="text-primary" />
-              <Text className="text-center text-sm text-muted-foreground">
-                <Text className="font-semibold">Tüm 6 bölgeyi</Text> analiz etmek için{' '}
-                <Text className="text-primary font-semibold">Premium'a geç</Text>
-              </Text>
-            </View>
+        <Card className="mt-8 p-4 bg-primary/5 border border-primary/20 w-full">
+          <View className="flex-row items-center justify-center gap-2">
+            <Ionicons name="diamond-outline" size={16} className="text-primary" />
+            <Text className="text-center text-sm text-muted-foreground">
+              <Text className="font-semibold">Tüm {REGIONS.length} bölgeyi</Text> analiz etmek için{' '}
+              <Text className="text-primary font-semibold">Premium'a geç</Text>
+            </Text>
+          </View>
         </Card>
       )}
     </View>

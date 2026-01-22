@@ -9,7 +9,8 @@ const eyesIcon = require('@/assets/icons/eyes.png');
 const noseIcon = require('@/assets/icons/nose.png');
 const lipsIcon = require('@/assets/icons/lips.png');
 const jawlineIcon = require('@/assets/icons/jawline.png');
-const faceShapeIcon = require('@/assets/icons/face-shape.png');
+// DISABLED: Face shape icon (feature temporarily disabled)
+// const faceShapeIcon = require('@/assets/icons/face-shape.png');
 
 export interface FaceRegion {
   id: 'eyebrows' | 'eyes' | 'nose' | 'lips' | 'jawline' | 'face_shape';
@@ -1007,6 +1008,24 @@ STRICT REQUIREMENTS:
 - All text in Turkish
 - Keep explanations simple and conversational`,
   },
+/* ============================================
+   FACE SHAPE - TEMPORARILY DISABLED
+   ============================================
+
+   Reason: MediaPipe Face Mesh does not provide hairline landmarks.
+   Face length cannot be accurately calculated (P_10 is forehead center, not hairline).
+   This causes incorrect face shape classification.
+
+   To re-enable:
+   1. Uncomment this section
+   2. Ensure calculation method handles missing hairline
+   3. Update prompt to mention "frontal view only" limitation
+   4. Test with various face types
+
+   Last modified: 2026-01-21
+   ============================================ */
+
+/*
   {
     id: 'face_shape',
     title: 'Yüz Şekli',
@@ -1202,6 +1221,7 @@ STRICT REQUIREMENTS:
 - Reference exact numbers in all text explanations
 - If you change a provided score, the system will reject your response`,
   },
+*/
 ];
 
 /**

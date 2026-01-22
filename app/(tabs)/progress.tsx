@@ -316,7 +316,7 @@ const ProgressScreen = () => {
                 {t('stats.activeRegions')}
               </Text>
               <Text className="text-lg font-bold text-foreground">
-                {regionSummaries.filter((r) => r.analysisCount > 0).length}/6
+                {regionSummaries.filter((r) => r.analysisCount > 0).length}/{getAllRegions().length}
               </Text>
             </View>
           </View>

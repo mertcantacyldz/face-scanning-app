@@ -17,7 +17,7 @@ const INITIAL_BACKOFF_MS = 1000
 
 interface RequestBody {
   landmarks: { x: number; y: number; z: number; index: number }[]
-  region: 'eyebrows' | 'eyes' | 'nose' | 'lips' | 'jawline' | 'face_shape'
+  region: 'eyebrows' | 'eyes' | 'nose' | 'lips' | 'jawline' /* | 'face_shape' */
   customPrompt: string
   language?: 'en' | 'tr'
   gender?: 'female' | 'male' | 'other' | null
@@ -111,7 +111,7 @@ serve(async (req) => {
       )
     }
 
-    if (!region || !['eyebrows', 'eyes', 'nose', 'lips', 'jawline', 'face_shape'].includes(region)) {
+    if (!region || !['eyebrows', 'eyes', 'nose', 'lips', 'jawline' /*, 'face_shape' */].includes(region)) {
       return new Response(
         JSON.stringify({ success: false, error: 'Invalid or missing region parameter' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -202,7 +202,7 @@ serve(async (req) => {
 - Focus on facial symmetry, skin health, and universal grooming tips`
     }
 
-    const systemPrompt = const systemPrompt = `You are an expert facial landmark analyst using MediaPipe Face Mesh data.
+    const systemPrompt = `You are an expert facial landmark analyst using MediaPipe Face Mesh data.
 
 ═══════════════════════════════════════════
 CRITICAL RULES
@@ -295,11 +295,11 @@ Show your work for key measurements:
 
 This helps you avoid calculation errors.`;
 
-// ============================================
-// OPTIMIZED USER PROMPT
-// ============================================
+    // ============================================
+    // OPTIMIZED USER PROMPT
+    // ============================================
 
-   const userPrompt = `Analyze these 468 MediaPipe Face Mesh landmarks:
+    const userPrompt = `Analyze these 468 MediaPipe Face Mesh landmarks:
 
 ${JSON.stringify(landmarks, null, 2)}
 
