@@ -9,7 +9,16 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mertcantacyildiz.faceloom",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "FaceLoom uses your camera to capture photos for face analysis.",
+        "NSPhotoLibraryUsageDescription": "FaceLoom needs access to your photo library to select photos for face analysis."
+      }
+    },
+    "locales": {
+      "tr": "./locales/ios/tr.json"
     },
     "android": {
       "adaptiveIcon": {

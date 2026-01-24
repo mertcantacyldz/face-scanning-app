@@ -27,6 +27,11 @@
       "restore": "Restore Purchases"
     },
     "terms": "Payment will be charged to your Apple/Google account. Subscription automatically renews at the end of the period. Cancel anytime.",
+    "termsPrefix": "By continuing, you agree to our ",
+    "termsOfUse": "Terms of Use",
+    "and": " and ",
+    "privacyPolicy": "Privacy Policy",
+    "termsSuffix": ". Payment will be charged to your Apple/Google account.",
     "alerts": {
       "noPackageTitle": "Error",
       "noPackageMessage": "Package not found. Please try again later.",

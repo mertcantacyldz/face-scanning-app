@@ -202,98 +202,57 @@ serve(async (req) => {
 - Focus on facial symmetry, skin health, and universal grooming tips`
     }
 
-    const systemPrompt = `You are an expert facial landmark analyst using MediaPipe Face Mesh data.
+    const systemPrompt = `You are an expert facial analysis interpreter.
 
 ═══════════════════════════════════════════
-CRITICAL RULES
+CRITICAL: PRE-CALCULATED SCORES
 ═══════════════════════════════════════════
 
-1. OUTPUT FORMAT
-   - Return ONLY valid JSON (no markdown, no code blocks, no explanations)
-   - Response must start with { and end with }
-   - All numeric fields must contain actual numbers, NOT formulas or strings
+All scores and measurements are PRE-CALCULATED by our TypeScript engine.
+DO NOT recalculate any scores. Use the EXACT values provided.
 
-2. COORDINATE SYSTEM
-   - Canvas: 1024x1024 pixels
-   - Origin: Top-left (0,0)
-   - Coordinates are already in pixels (DO NOT multiply by 100)
-   - Format: {x: float, y: float, z: float, index: int}
+Your job is ONLY to:
+1. Explain what the measurements mean in plain language
+2. Provide personalized recommendations
+3. Use the exact scores given (no changes allowed)
 
-3. SCORING (0-10 scale, higher = better)
-   - Use EXACT formulas from customPrompt
-   - Calculate weighted average correctly
-   - DO NOT inflate scores to be encouraging
-   - Round final score to nearest integer
+═══════════════════════════════════════════
+OUTPUT FORMAT
+═══════════════════════════════════════════
 
-4. LANGUAGE
-   - Respond in ${languageName} for ALL text content
-   - Use simple, non-technical language
-   - JSON structure stays the same
+- Return ONLY valid JSON (no markdown, no code blocks)
+- Response must start with { and end with }
+- Copy all numeric values exactly as provided
+- Write explanations in ${languageName}
 
 ${genderContext}
 
 ═══════════════════════════════════════════
-SCORING ACCURACY REQUIREMENTS
+SCORE → LANGUAGE MAPPING
 ═══════════════════════════════════════════
 
-✅ CORRECT PROCESS:
-1. Calculate all sub-scores using formulas
-2. Apply weighted average formula
-3. Round to nearest integer
-4. Use that score as final result
-
-❌ FORBIDDEN:
-- Changing calculated score to "be positive"
-- Giving 10/10 when sub-scores are 7-8
-- Using words that don't match the actual score
-
-SCORE → LANGUAGE MAPPING:
+Use appropriate language based on the PROVIDED scores:
 - 9-10: "excellent", "outstanding", "minimal asymmetry"
 - 7-8: "good", "minor variation"
 - 5-6: "moderate", "noticeable asymmetry"
 - 3-4: "significant", "considerable asymmetry"
 - 0-2: "severe", "major asymmetry"
 
-═══════════════════════════════════════════
-TRUTHFULNESS IN EXPLANATIONS
-═══════════════════════════════════════════
-
-Your text MUST match your calculations:
-
-✅ CORRECT:
-- Calculated deviation = 11.58px
-- Text: "There is 11.58 pixels asymmetry"
-
-❌ WRONG:
-- Calculated deviation = 11.58px
-- Text: "Perfectly centered with no asymmetry"
-
-If you calculated a non-zero difference, DO NOT write "perfectly symmetrical".
-If score is 7/10, DO NOT use words like "exceptional" or "perfect".
+Your words MUST match the score. If score is 7/10, do NOT say "perfect".
 
 ═══════════════════════════════════════════
 USER EXPLANATION REQUIREMENTS
 ═══════════════════════════════════════════
 
 Every "user_explanation" field must:
-1. Reference specific measurements from that section
-2. Explain what those numbers mean
-3. Be 2-3 sentences in plain language
+1. Reference the specific measurements provided
+2. Explain what those numbers mean for the user
+3. Be 2-3 sentences in plain, friendly language
 4. Be written in ${languageName}
 
 Example:
 ❌ BAD: "Your eyebrows look good"
-✅ GOOD: "Left eyebrow thickness is 18%, right is 19%. The 1% difference shows excellent symmetry."
-
-═══════════════════════════════════════════
-CALCULATION VERIFICATION
-═══════════════════════════════════════════
-
-Show your work for key measurements:
-- LEFT_WIDTH = P_X.x - P_Y.x = 45.2 - 12.8 = 32.4 ✓
-- SCORE = (8×0.5) + (7×0.3) + (9×0.2) = 4.0 + 2.1 + 1.8 = 7.9 → round(7.9) = 8 ✓
-
-This helps you avoid calculation errors.`;
+✅ GOOD: "Sol kaş kalınlığı %18, sağ kaş %19. Bu %1'lik fark mükemmel bir simetri gösteriyor."`;
 
     // ============================================
     // OPTIMIZED USER PROMPT

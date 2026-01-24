@@ -27,6 +27,11 @@
       "restore": "Satın Alımları Geri Yükle"
     },
     "terms": "Ödeme Apple/Google hesabınızdan alınır. Abonelik dönem sonunda otomatik yenilenir. İstediğiniz zaman iptal edebilirsiniz.",
+    "termsPrefix": "Devam ederek ",
+    "termsOfUse": "Kullanım Koşulları",
+    "and": " ve ",
+    "privacyPolicy": "Gizlilik Politikası",
+    "termsSuffix": "'nı kabul etmiş olursunuz. Ödeme Apple/Google hesabınızdan alınır.",
     "alerts": {
       "noPackageTitle": "Hata",
       "noPackageMessage": "Paket bulunamadı. Lütfen daha sonra tekrar deneyin.",

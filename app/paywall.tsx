@@ -14,6 +14,7 @@ import { Card } from '@/components/ui/card';
 import { Ionicons } from '@expo/vector-icons';
 import { usePremium } from '@/hooks/use-premium';
 import { calculateSavings } from '@/lib/revenuecat';
+import * as WebBrowser from 'expo-web-browser';
 
 const FEATURE_KEYS = [
   { iconName: 'search-outline', key: 'fullAnalysis' },
@@ -228,7 +229,21 @@ const PaywallScreen = () => {
         {/* Terms */}
         <View className="px-6 pb-6">
           <Text className="text-xs text-muted-foreground text-center">
-            {t('paywall.terms')}
+            {t('paywall.termsPrefix')}
+            <Text
+              className="text-primary underline"
+              onPress={() => WebBrowser.openBrowserAsync('https://faceloom.netlify.app/terms')}
+            >
+              {t('paywall.termsOfUse')}
+            </Text>
+            {t('paywall.and')}
+            <Text
+              className="text-primary underline"
+              onPress={() => WebBrowser.openBrowserAsync('https://faceloom.netlify.app/privacy')}
+            >
+              {t('paywall.privacyPolicy')}
+            </Text>
+            {t('paywall.termsSuffix')}
           </Text>
         </View>
       </ScrollView>
