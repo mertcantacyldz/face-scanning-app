@@ -190,22 +190,22 @@ export function calculateEyeMetrics(landmarks: Point3D[]): EyeCalculations {
 
   // Face reference points
   const rightEyeOuterRef = landmarks[33]; // P_33 (face left side)
-
-  console.log('👁️ LEFT EYE LANDMARKS (viewer perspective - screen RIGHT):');
-  console.log('  P_263 (outer):', leftEyeOuter ? `x=${leftEyeOuter.x.toFixed(2)}, y=${leftEyeOuter.y.toFixed(2)}` : 'MISSING');
-  console.log('  P_362 (inner):', leftEyeInner ? `x=${leftEyeInner.x.toFixed(2)}, y=${leftEyeInner.y.toFixed(2)}` : 'MISSING');
-  console.log('  P_386 (top):', leftEyeTop ? `x=${leftEyeTop.x.toFixed(2)}, y=${leftEyeTop.y.toFixed(2)}` : 'MISSING');
-  console.log('  P_374 (bottom):', leftEyeBottom ? `x=${leftEyeBottom.x.toFixed(2)}, y=${leftEyeBottom.y.toFixed(2)}` : 'MISSING');
-  console.log('👁️ RIGHT EYE LANDMARKS (viewer perspective - screen LEFT):');
-  console.log('  P_33 (outer):', rightEyeOuter ? `x=${rightEyeOuter.x.toFixed(2)}, y=${rightEyeOuter.y.toFixed(2)}` : 'MISSING');
-  console.log('  P_133 (inner):', rightEyeInner ? `x=${rightEyeInner.x.toFixed(2)}, y=${rightEyeInner.y.toFixed(2)}` : 'MISSING');
-  console.log('  P_159 (top):', rightEyeTop ? `x=${rightEyeTop.x.toFixed(2)}, y=${rightEyeTop.y.toFixed(2)}` : 'MISSING');
-  console.log('  P_145 (bottom):', rightEyeBottom ? `x=${rightEyeBottom.x.toFixed(2)}, y=${rightEyeBottom.y.toFixed(2)}` : 'MISSING');
   const leftEyeOuterRef = landmarks[263]; // P_263 (face right side)
+
+  console.log('🔍 RAW LANDMARK DATA (EYES):');
+  console.log('  P_33 (rightEyeOuter):', JSON.stringify({ x: rightEyeOuter.x, y: rightEyeOuter.y, z: rightEyeOuter.z }));
+  console.log('  P_263 (leftEyeOuter):', JSON.stringify({ x: leftEyeOuter.x, y: leftEyeOuter.y, z: leftEyeOuter.z }));
+  console.log('  P_362 (leftEyeInner):', JSON.stringify({ x: leftEyeInner.x, y: leftEyeInner.y }));
+  console.log('  P_133 (rightEyeInner):', JSON.stringify({ x: rightEyeInner.x, y: rightEyeInner.y }));
 
   // Calculate face dimensions
   const faceWidth = leftEyeOuterRef.x - rightEyeOuterRef.x;
   const faceCenterX = getCenterX(rightEyeOuterRef, leftEyeOuterRef);
+
+  console.log('📐 FACE DIMENSIONS:');
+  console.log('  Face width:', faceWidth.toFixed(2), 'px');
+  console.log('  Face center X:', faceCenterX.toFixed(2), 'px');
+  console.log('  DEBUG - Reference Points X: P_33(RightEyeOuterRef)=', rightEyeOuterRef.x.toFixed(2), 'P_263(LeftEyeOuterRef)=', leftEyeOuterRef.x.toFixed(2));
 
   // ============================================
   // B. EYE SIZE SYMMETRY
@@ -473,12 +473,12 @@ export function calculateEyeMetrics(landmarks: Point3D[]): EyeCalculations {
   // WEIGHTED SCORING: Size and position are most critical
   const overallScore = Math.round(
     sizeSymmetryScore * 0.28 + // Size symmetry (28% - most critical)
-      positionSymmetryScore * 0.24 + // Position alignment (24%)
-      interEyeScore * 0.18 + // Inter-eye distance (18%)
-      shapeSymmetryScore * 0.14 + // Eye shape (14%)
-      browEyeScore * 0.08 + // Eyebrow spacing (8%)
-      eyelidScore * 0.06 + // Eyelid symmetry (6%)
-      depthScore * 0.02 // Depth (2% - least reliable)
+    positionSymmetryScore * 0.24 + // Position alignment (24%)
+    interEyeScore * 0.18 + // Inter-eye distance (18%)
+    shapeSymmetryScore * 0.14 + // Eye shape (14%)
+    browEyeScore * 0.08 + // Eyebrow spacing (8%)
+    eyelidScore * 0.06 + // Eyelid symmetry (6%)
+    depthScore * 0.02 // Depth (2% - least reliable)
   );
 
   // REALISTIC ASYMMETRY LEVELS
@@ -611,27 +611,22 @@ export function calculateEyeMetrics(landmarks: Point3D[]): EyeCalculations {
     faceWidth,
     faceCenterX,
     landmarkIndices: {
-      // Left eye (viewer's perspective - screen RIGHT side)
-      leftEyeOuter: 263,
-      leftEyeInner: 362,
-      leftEyeTop: 386,
-      leftEyeBottom: 374,
-      // Right eye (viewer's perspective - screen LEFT side)
-      rightEyeOuter: 33,
-      rightEyeInner: 133,
-      rightEyeTop: 159,
-      rightEyeBottom: 145,
-      // Eyebrows (viewer's perspective)
-      leftBrowTop: 336,
-      leftBrowBottom: 296,
-      rightBrowTop: 107,
-      rightBrowBottom: 66,
-      // Eyelids (viewer's perspective)
-      leftUpperLid: 466,
-      leftLowerLid: 249,
-      rightUpperLid: 246,
-      rightLowerLid: 7,
-      // Face reference points
+      leftEyeOuter: 33,
+      leftEyeInner: 133,
+      leftEyeTop: 159,
+      leftEyeBottom: 145,
+      rightEyeOuter: 263,
+      rightEyeInner: 362,
+      rightEyeTop: 386,
+      rightEyeBottom: 374,
+      leftBrowTop: 107,
+      leftBrowBottom: 66,
+      rightBrowTop: 336,
+      rightBrowBottom: 296,
+      leftUpperLid: 246,
+      leftLowerLid: 7,
+      rightUpperLid: 466,
+      rightLowerLid: 249,
       leftEyeOuterRef: 263,
       rightEyeOuterRef: 33,
     },

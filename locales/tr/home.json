@@ -9,15 +9,24 @@
     "premium": "Premium üyeliğinizle",
     "free": "Ücretsiz hesabınızla"
   },
+  "hero": {
+    "tagline": "Gelişmiş Yüz Analizi",
+    "subtitle": "468 AI Tespit Noktası ile Güçlendirildi"
+  },
+  "features": {
+    "points": "468 Nokta",
+    "privacy": "100% Gizli",
+    "aiPowered": "AI Destekli"
+  },
   "aiStatus": {
     "title": "FaceAnalyzer AI Durumu",
-    "ready": "Hazır - 468 nokta",
-    "loading": "AI modeli yükleniyor..."
+    "ready": "AI Hazır",
+    "loading": "AI Yükleniyor..."
   },
   "cta": {
     "title": "Yüzünüzü Keşfedin",
     "description": "Özgün yüz analiz teknolojimiz ile yüzünüzün 468 özel noktasını gelişmiş AI algoritmaları kullanarak analiz edin.",
-    "button": "FaceAnalyzer ile Analiz Et",
+    "button": "Yüzünü Tara",
     "buttonLoading": "AI Yükleniyor...",
     "disclaimer": "Fotoğraflarınız yerel olarak işlenir. Gizlilik garantilidir."
   },
@@ -42,14 +51,14 @@
       "note": "\n\nDevam edebilirsiniz ama daha iyi sonuç için yeniden deneyebilirsiniz."
     }
   },
-  "disclaimer": "ℹ️ Sonuçlar yapay zeka tarafından üretilen yaklaşık değerlendirmelerdir. Fotoğraf kalitesi ve ışık sonuçları etkileyebilir.",
+  "disclaimer": "Sonuçlar yapay zeka tarafından üretilen yaklaşık değerlendirmelerdir. Fotoğraf kalitesi ve ışık sonuçları etkileyebilir.",
   "actions": {
     "retake": "Tekrar Çek",
     "confirm": "Onayla & Sonuçları Kaydet",
     "newAnalysis": "Yeni Analiz"
   },
   "premium": {
-    "title": "⭐ Premium ile Çok Daha Fazlası",
+    "title": "Premium ile Çok Daha Fazlası",
     "benefits": "• Sınırsız FaceAnalyzer analiz\n• Detaylı yüz şekli raporları\n• Kişiselleştirilmiş öneriler\n• Analiz geçmişi ve ilerleme takibi\n• Reklamsız deneyim",
     "button": "Premium'a Geç"
   },
@@ -57,11 +66,19 @@
     "title": "Fotoğraf Kuralları",
     "subtitle": "En iyi sonuç için lütfen bu kurallara uyun:",
     "rules": {
-      "title": "✓ Önemli Kurallar:",
+      "title": "Önemli Kurallar:",
       "list": "• Yüzünüz tamamen görünür olmalı\n• Kameraya doğrudan bakın\n• Saç veya el yüzü kapatmamalı\n• Işıklandırma yeterli olmalı"
     },
     "camera": "Fotoğraf Çek",
     "gallery": "Galeriden Seç",
     "cancel": "İptal"
+  },
+  "regions": {
+    "eyebrows": "Kaşlar",
+    "eyes": "Gözler",
+    "nose": "Burun",
+    "lips": "Dudaklar",
+    "jawline": "Çene Hattı",
+    "face_shape": "Yüz Şekli"
   }
 }

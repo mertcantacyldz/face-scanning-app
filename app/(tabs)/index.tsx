@@ -8,7 +8,8 @@ import {
   Pressable,
   ScrollView,
   TouchableOpacity,
-  View
+  View,
+  useColorScheme,
 } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -16,21 +17,31 @@ import Animated, {
   withRepeat,
   withSequence,
   withTiming,
+  FadeInDown,
 } from 'react-native-reanimated';
 import Carousel from 'react-native-reanimated-carousel';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { WebView } from 'react-native-webview';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
+import {
+  AnimatedBackground,
+  FaceScanVisual,
+  GlassCard,
+  PulsingButton,
+  StatusPill,
+  FeatureHighlight,
+  FeatureHighlightsRow,
+} from '@/components/home';
 import { useAuth } from '@/hooks/use-auth';
 import { useFaceMesh } from '@/hooks/use-face-mesh';
 import { usePremium } from '@/hooks/use-premium';
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const isSmallScreen = screenHeight < 700; // iPhone SE, small Android devices
 
 interface Profile {
   id: string;
@@ -43,6 +54,11 @@ export default function HomeScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const { session } = useAuth();
   const { isPremium } = usePremium();
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+
+  // Responsive layout - dynamic tab bar height
+  const tabBarHeight = useBottomTabBarHeight();
 
   // Face mesh analiz hook'u
   const {
@@ -60,7 +76,6 @@ export default function HomeScreen() {
     startNewAnalysis,
     takePhoto,
     pickImage,
-    showPhotoGuidelines,
     setShowImagePicker,
     mediaPipeHTML,
   } = useFaceMesh();
@@ -69,7 +84,7 @@ export default function HomeScreen() {
   const [hasInteracted, setHasInteracted] = useState<boolean>(false);
   const carouselRef = useRef<any>(null);
   const arrowScale = useSharedValue(1);
-  const arrowTranslateX = useSharedValue(0); // New: for horizontal slide
+  const arrowTranslateX = useSharedValue(0);
 
   // Kullanıcı profilini al - session hazır olduğunda
   useEffect(() => {
@@ -94,7 +109,6 @@ export default function HomeScreen() {
           setProfile(profileData);
         } else {
           console.log('Profile not found, error:', error);
-          // Anonymous user için default profile oluştur
           setProfile({
             id: userId,
             full_name: t('welcome.defaultUser', { ns: 'common' }),
@@ -103,7 +117,6 @@ export default function HomeScreen() {
         }
       } catch (error) {
         console.error('Profil yükleme hatası:', error);
-        // Hata durumunda da default profile kullan
         if (session?.user) {
           setProfile({
             id: session.user.id,
@@ -115,26 +128,24 @@ export default function HomeScreen() {
     };
 
     fetchProfile();
-  }, [session]); // session değiştiğinde yeniden çalışsın
+  }, [session]);
 
   // Enhanced arrow animation: pulse + slide
   useEffect(() => {
     if (!hasInteracted) {
-      // Scale animation (pulse) - more noticeable
       arrowScale.value = withRepeat(
         withSequence(
-          withTiming(1.3, { duration: 500 }),  // Bigger pulse
+          withTiming(1.3, { duration: 500 }),
           withTiming(1, { duration: 500 })
         ),
         -1,
         false
       );
 
-      // Horizontal slide animation - more movement
       arrowTranslateX.value = withRepeat(
         withSequence(
-          withTiming(12, { duration: 500 }),  // Slide more to the right
-          withTiming(0, { duration: 500 })    // Slide back
+          withTiming(12, { duration: 500 }),
+          withTiming(0, { duration: 500 })
         ),
         -1,
         false
@@ -150,9 +161,6 @@ export default function HomeScreen() {
     };
   }, [hasInteracted]);
 
-
-
-  // Animated arrow style with both scale and horizontal movement
   const animatedArrowStyle = useAnimatedStyle(() => ({
     transform: [
       { scale: arrowScale.value },
@@ -160,7 +168,6 @@ export default function HomeScreen() {
     ]
   }));
 
-  // Carousel render function
   const renderCarouselItem = ({ item }: { item: string }) => (
     <View className="flex-1 justify-center items-center">
       <Image
@@ -175,7 +182,6 @@ export default function HomeScreen() {
     </View>
   );
 
-  // Handle carousel index change
   const handleIndexChange = (index: number) => {
     setCurrentIndex(index);
     if (!hasInteracted) {
@@ -185,8 +191,9 @@ export default function HomeScreen() {
 
   if (!profile) {
     return (
-      <View className="flex-1 bg-background justify-center items-center">
-        <View className="items-center">
+      <View className="flex-1 justify-center items-center">
+        <AnimatedBackground />
+        <View className="items-center z-10">
           <Text className="text-lg text-muted-foreground mb-2">{t('loading.title')}</Text>
           <Text className="text-sm text-muted-foreground">{t('loading.subtitle')}</Text>
         </View>
@@ -194,9 +201,11 @@ export default function HomeScreen() {
     );
   }
 
-
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <View className="flex-1">
+      {/* Animated Background */}
+      <AnimatedBackground />
+
       {/* Hidden WebView for FaceAnalyzer AI */}
       <View style={{
         width: 0,
@@ -222,367 +231,497 @@ export default function HomeScreen() {
         />
       </View>
 
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ padding: 20 }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Hoşgeldin Mesajı - Sadece mesh yokken görünür */}
-        {!meshImageUri && (
-          <>
-            <View className="mb-8">
-              <View className="flex-row items-center gap-2 mb-2">
-                <Text className="text-2xl font-bold text-foreground">
-                  {t('welcome.greeting', { name: profile.full_name })}
-                </Text>
-                <Ionicons name="hand-right-outline" size={28} color="#8B5CF6" />
-              </View>
-              <Text className="text-muted-foreground">
-                {t('welcome.subtitle', {
-                  membership: isPremium ? t('welcome.premium') : t('welcome.free')
-                })}
-              </Text>
+      {/* Main Content Area */}
+      {!meshImageUri && !selectedImage ? (
+        /* STATIC HERO LAYOUT (No Scroll) */
+        <View className="flex-1 px-4 pb-5 justify-between">
+          <View className="flex-1 pt-2">
+            {/* Status Pill */}
+            <View className="mb-4">
+              <StatusPill
+                isReady={mediaPipeReady}
+                readyText={t('aiStatus.ready')}
+                loadingText={t('aiStatus.loading')}
+              />
             </View>
 
-            {/* FaceAnalyzer AI Durumu */}
-            <Card className="p-4 mb-6">
-              <CardHeader className="p-0 mb-2">
-                <View className="flex-row items-center gap-2">
-                  <Ionicons name="hardware-chip-outline" size={18} color="#8B5CF6" />
-                  <Text className="text-primary font-semibold">
-                    {t('aiStatus.title')}
-                  </Text>
-                </View>
-              </CardHeader>
-              <CardContent className="p-0">
-                <View className="flex-row items-center gap-2">
-                  <Ionicons
-                    name={mediaPipeReady ? 'checkmark-circle' : 'time-outline'}
-                    size={16}
-                    color={mediaPipeReady ? '#10B981' : '#F59E0B'}
-                  />
-                  <Text className="text-muted-foreground text-sm">
-                    {mediaPipeReady ? t('aiStatus.ready') : t('aiStatus.loading')}
-                  </Text>
-                </View>
-              </CardContent>
-            </Card>
-          </>
-        )}
+            {/* Face Scan Visual */}
+            <FaceScanVisual />
 
-        {/* Ana Analiz Kartı */}
-        {!selectedImage ? (
-          <Card className="p-6 mb-6">
-            <CardContent className="items-center p-0">
-              <View className="w-24 h-24 bg-muted rounded-full items-center justify-center mb-4">
-                <Ionicons name="hardware-chip-outline" size={56} color="#8B5CF6" />
-              </View>
-
-              <Text className="text-xl font-bold text-foreground mb-3 text-center">
-                {t('cta.title')}
+            {/* Hero Text - Responsive margins */}
+            <Animated.View
+              entering={FadeInDown.duration(500).delay(200)}
+              style={{ alignItems: 'center', marginTop: isSmallScreen ? 16 : 32, marginBottom: isSmallScreen ? 8 : 12 }}
+            >
+              <Text
+                style={{
+                  fontSize: 24,
+                  fontWeight: '800',
+                  color: isDark ? '#F1F5F9' : '#1E293B',
+                  textAlign: 'center',
+                  marginBottom: 4,
+                }}
+              >
+                {t('hero.tagline')}
               </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: isDark ? '#94A3B8' : '#64748B',
+                  textAlign: 'center',
+                }}
+              >
+                {t('hero.subtitle')}
+              </Text>
+            </Animated.View>
 
-              <Text className="text-muted-foreground text-center mb-6 leading-6">
+            {/* Feature Highlights */}
+            <View className="mt-2">
+              <FeatureHighlightsRow>
+                <FeatureHighlight
+                  icon="git-network-outline"
+                  label={t('features.points')}
+                  color="primary"
+                  delay={300}
+                />
+                <FeatureHighlight
+                  icon="shield-checkmark-outline"
+                  label={t('features.privacy')}
+                  color="accent"
+                  delay={400}
+                />
+                <FeatureHighlight
+                  icon="sparkles-outline"
+                  label={t('features.aiPowered')}
+                  color="premium"
+                  delay={500}
+                />
+              </FeatureHighlightsRow>
+            </View>
+          </View>
+
+          {/* CTA Section - Pushed to bottom with dynamic tab bar spacing */}
+          <View style={{ marginBottom: tabBarHeight + 20 }}>
+            <GlassCard
+              delay={600}
+              borderGradient="primary"
+              intensity="medium"
+              style={{ padding: 24 }}
+            >
+              <Text
+                style={{
+                  fontSize: 15,
+                  color: isDark ? '#94A3B8' : '#64748B',
+                  textAlign: 'center',
+                  marginBottom: 20,
+                  lineHeight: 22,
+                }}
+              >
                 {t('cta.description')}
               </Text>
 
-              <Button
-                onPress={showPhotoGuidelines}
+              <PulsingButton
+                onPress={() => setShowImagePicker(true)}
                 disabled={!mediaPipeReady}
-                className="w-full"
-              >
+                title={mediaPipeReady ? t('cta.button') : t('cta.buttonLoading')}
+                icon="scan-outline"
+              />
+
+              {/* Privacy note */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 16 }}>
+                <Ionicons name="lock-closed-outline" size={14} color={isDark ? '#64748B' : '#94A3B8'} />
+                <Text
+                  style={{
+                    fontSize: 12,
+                    color: isDark ? '#64748B' : '#94A3B8',
+                    marginLeft: 6,
+                  }}
+                >
+                  {t('cta.disclaimer')}
+                </Text>
+              </View>
+            </GlassCard>
+          </View>
+        </View>
+      ) : (
+        /* SCROLLABLE ANALYSIS LAYOUT */
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+          showsVerticalScrollIndicator={true}
+          indicatorStyle={isDark ? 'white' : 'black'}
+          scrollIndicatorInsets={{ right: 2 }}
+        >
+
+          {/* ANALYSIS RESULTS - When image selected */}
+          {selectedImage && (
+            <GlassCard
+              delay={0}
+              borderGradient="primary"
+              intensity="medium"
+              style={{ padding: 24 }}
+            >
+              <View className="flex-row items-center justify-between mb-4">
                 <View className="flex-row items-center gap-2">
-                  <Ionicons
-                    name={mediaPipeReady ? 'hardware-chip-outline' : 'time-outline'}
-                    size={20}
-                    color="#FFFFFF"
-                  />
-                  <Text className="text-primary-foreground font-semibold text-base">
-                    {mediaPipeReady ? t('cta.button') : t('cta.buttonLoading')}
+                  <Ionicons name="analytics-outline" size={20} color="#6366F1" />
+                  <Text className="text-lg font-bold text-foreground">
+                    {t('analysis.title')}
                   </Text>
                 </View>
-              </Button>
-
-              {!mediaPipeReady && (
-                <Text className="text-muted-foreground text-xs mt-2 text-center">
-                  {t('aiStatus.loading')}
-                </Text>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          // Analiz Sonuçları
-          <Card className="p-6 mb-6">
-            <CardHeader className="p-0 mb-4">
-              <View className="flex-row items-center gap-2">
-                <Ionicons name="hardware-chip-outline" size={20} color="#8B5CF6" />
-                <Text className="text-lg font-bold text-foreground">
-                  {t('analysis.title')}
-                </Text>
+                <Pressable
+                  onPress={handleRetake}
+                  style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: isDark ? 'rgba(100, 116, 139, 0.3)' : 'rgba(100, 116, 139, 0.15)',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Ionicons name="close" size={18} color={isDark ? '#94A3B8' : '#64748B'} />
+                </Pressable>
               </View>
-            </CardHeader>
 
-            {/* Loading veya Sonuç */}
-            {isAnalyzing ? (
-              <View className="items-center py-8">
-                <View className="w-16 h-16 bg-muted rounded-full items-center justify-center mb-4">
-                  <Ionicons name="hardware-chip-outline" size={32} color="#8B5CF6" />
+              {/* Loading or Results */}
+              {isAnalyzing ? (
+                <View className="items-center py-8">
+                  <View
+                    style={{
+                      width: 64,
+                      height: 64,
+                      borderRadius: 32,
+                      backgroundColor: isDark ? 'rgba(99, 102, 241, 0.2)' : 'rgba(99, 102, 241, 0.1)',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: 16,
+                    }}
+                  >
+                    <Ionicons name="scan-outline" size={32} color="#6366F1" />
+                  </View>
+                  <Text className="text-primary font-semibold mb-2 text-center">
+                    {t('analysis.analyzing')}
+                  </Text>
+                  <Text className="text-muted-foreground text-sm text-center">
+                    {t('analysis.analyzingSubtitle')}
+                  </Text>
                 </View>
-                <Text className="text-primary font-semibold mb-2 text-center">
-                  {t('analysis.analyzing')}
-                </Text>
-                <Text className="text-muted-foreground text-sm text-center">
-                  {t('analysis.analyzingSubtitle')}
-                </Text>
-              </View>
-            ) : faceLandmarks ? (
-              <View>
-                {/* Ana Sonuç Kartı */}
-                <Card className="bg-primary/10 p-4 rounded-lg mb-4 border-primary/20">
-                  <CardHeader className="p-0 mb-3">
-                    <View className="flex-row items-center gap-2">
-                      <Ionicons name="checkmark-circle" size={22} color="#8B5CF6" />
-                      <Text className="text-primary font-bold text-lg">
+              ) : faceLandmarks ? (
+                <View>
+                  {/* Success Card */}
+                  <View
+                    style={{
+                      backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
+                      borderRadius: 16,
+                      padding: 16,
+                      marginBottom: 16,
+                      borderWidth: 1,
+                      borderColor: isDark ? 'rgba(16, 185, 129, 0.3)' : 'rgba(16, 185, 129, 0.2)',
+                    }}
+                  >
+                    <View className="flex-row items-center gap-2 mb-3">
+                      <Ionicons name="checkmark-circle" size={22} color="#10B981" />
+                      <Text style={{ color: '#10B981', fontWeight: '700', fontSize: 16 }}>
                         {t('analysis.success')}
                       </Text>
                     </View>
-                  </CardHeader>
-                  <CardContent className="p-0 space-y-2">
-                    <View className="flex-row items-center gap-2">
-                      <Ionicons name="hardware-chip-outline" size={16} color="#8B5CF6" />
-                      <Text className="text-primary text-sm">
-                        {t('analysis.pointsDetected', { count: faceLandmarks.totalPoints })}
-                      </Text>
+                    <View className="space-y-2">
+                      <View className="flex-row items-center gap-2">
+                        <Ionicons name="git-network-outline" size={16} color="#10B981" />
+                        <Text style={{ color: isDark ? '#A7F3D0' : '#065F46', fontSize: 14 }}>
+                          {t('analysis.pointsDetected', { count: faceLandmarks.totalPoints })}
+                        </Text>
+                      </View>
+                      <View className="flex-row items-center gap-2">
+                        <Ionicons name="resize-outline" size={16} color="#10B981" />
+                        <Text style={{ color: isDark ? '#A7F3D0' : '#065F46', fontSize: 14 }}>
+                          {t('analysis.faceSize', {
+                            width: Math.round(faceLandmarks.faceBox.width),
+                            height: Math.round(faceLandmarks.faceBox.height)
+                          })}
+                        </Text>
+                      </View>
+                      <View className="flex-row items-center gap-2">
+                        <Ionicons name="analytics-outline" size={16} color="#10B981" />
+                        <Text style={{ color: isDark ? '#A7F3D0' : '#065F46', fontSize: 14 }}>
+                          {t('analysis.accuracy', { accuracy: (faceLandmarks.confidence * 100).toFixed(1) })}
+                        </Text>
+                      </View>
                     </View>
-                    <View className="flex-row items-center gap-2">
-                      <Ionicons name="resize-outline" size={16} color="#8B5CF6" />
-                      <Text className="text-primary text-sm">
-                        {t('analysis.faceSize', {
-                          width: Math.round(faceLandmarks.faceBox.width),
-                          height: Math.round(faceLandmarks.faceBox.height)
-                        })}
-                      </Text>
-                    </View>
-                    <View className="flex-row items-center gap-2">
-                      <Ionicons name="analytics-outline" size={16} color="#8B5CF6" />
-                      <Text className="text-primary text-sm">
-                        {t('analysis.accuracy', { accuracy: (faceLandmarks.confidence * 100).toFixed(1) })}
-                      </Text>
-                    </View>
-                  </CardContent>
-                </Card>
+                  </View>
+                </View>
+              ) : null}
 
-              </View>
-            ) : null}
-
-            {/* Mesh Önizleme */}
-            {meshImageUri && (
-              <View className="mt-6">
-                {/* Carousel Container */}
-                <View className="items-center mb-4">
-                  <View
-                    className="relative"
-                    style={{
-                      width: screenWidth - 80,
-                      height: screenWidth - 80,
-                      borderRadius: 16,
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <Carousel
-                      ref={carouselRef}
-                      data={[meshImageUri, selectedImage || meshImageUri]}
-                      renderItem={renderCarouselItem}
-                      width={screenWidth - 80}
-                      height={screenWidth - 80}
-                      mode="parallax"
-                      modeConfig={{
-                        parallaxScrollingScale: 0.95,
-                        parallaxScrollingOffset: 50,
+              {/* Mesh Preview */}
+              {meshImageUri && (
+                <View className="mt-4">
+                  {/* Carousel Container */}
+                  <View className="items-center mb-4">
+                    <View
+                      style={{
+                        width: screenWidth - 80,
+                        height: screenWidth - 80,
+                        borderRadius: 16,
+                        overflow: 'hidden',
                       }}
-                      defaultIndex={0}
-                      loop={false}
-                      enabled={true}
-                      onSnapToItem={handleIndexChange}
-                    />
+                    >
+                      <Carousel
+                        ref={carouselRef}
+                        data={[meshImageUri, selectedImage || meshImageUri]}
+                        renderItem={renderCarouselItem}
+                        width={screenWidth - 80}
+                        height={screenWidth - 80}
+                        mode="parallax"
+                        modeConfig={{
+                          parallaxScrollingScale: 0.95,
+                          parallaxScrollingOffset: 50,
+                        }}
+                        defaultIndex={0}
+                        loop={false}
+                        enabled={true}
+                        onSnapToItem={handleIndexChange}
+                      />
 
-                    {/* Right Arrow (show on mesh image - index 0) */}
-                    {currentIndex === 0 && (
-                      <Animated.View
-                        style={[
-                          {
-                            position: 'absolute',
-                            right: 16,
-                            top: '50%',
-                            marginTop: -20,
-                            zIndex: 10,
-                          },
-                          animatedArrowStyle
-                        ]}
-                      >
-                        <Pressable
-                          onPress={() => carouselRef.current?.next({ animated: true })}
-                          className="bg-black/40 dark:bg-white/20 rounded-full w-10 h-10 items-center justify-center"
+                      {/* Right Arrow */}
+                      {currentIndex === 0 && (
+                        <Animated.View
+                          style={[
+                            {
+                              position: 'absolute',
+                              right: 16,
+                              top: '50%',
+                              marginTop: -20,
+                              zIndex: 10,
+                            },
+                            animatedArrowStyle
+                          ]}
                         >
-                          <Ionicons name="chevron-forward-outline" size={24} color="#FFFFFF" />
-                        </Pressable>
-                      </Animated.View>
-                    )}
+                          <Pressable
+                            onPress={() => carouselRef.current?.next({ animated: true })}
+                            style={{
+                              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                              borderRadius: 20,
+                              width: 40,
+                              height: 40,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Ionicons name="chevron-forward-outline" size={24} color="#FFFFFF" />
+                          </Pressable>
+                        </Animated.View>
+                      )}
 
-                    {/* Left Arrow (show on original image - index 1) */}
-                    {currentIndex === 1 && (
-                      <Animated.View
-                        style={[
-                          {
-                            position: 'absolute',
-                            left: 16,
-                            top: '50%',
-                            marginTop: -20,
-                            zIndex: 10,
-                          },
-                          animatedArrowStyle
-                        ]}
-                      >
-                        <Pressable
-                          onPress={() => carouselRef.current?.prev({ animated: true })}
-                          className="bg-black/40 dark:bg-white/20 rounded-full w-10 h-10 items-center justify-center"
+                      {/* Left Arrow */}
+                      {currentIndex === 1 && (
+                        <Animated.View
+                          style={[
+                            {
+                              position: 'absolute',
+                              left: 16,
+                              top: '50%',
+                              marginTop: -20,
+                              zIndex: 10,
+                            },
+                            animatedArrowStyle
+                          ]}
                         >
-                          <Ionicons name="chevron-back-outline" size={24} color="#FFFFFF" />
-                        </Pressable>
-                      </Animated.View>
-                    )}
+                          <Pressable
+                            onPress={() => carouselRef.current?.prev({ animated: true })}
+                            style={{
+                              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                              borderRadius: 20,
+                              width: 40,
+                              height: 40,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}
+                          >
+                            <Ionicons name="chevron-back-outline" size={24} color="#FFFFFF" />
+                          </Pressable>
+                        </Animated.View>
+                      )}
+                    </View>
+
+                    <Text className="text-muted-foreground text-xs mt-2">
+                      {t('analysis.swipeHint')}
+                    </Text>
                   </View>
 
-                  {/* Label */}
-                  <Text className="text-muted-foreground text-xs mt-2">
-                    {t('analysis.swipeHint')}
+                  {/* Validation Result */}
+                  {meshValidation.quality === 'excellent' ? (
+                    <View
+                      style={{
+                        backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
+                        borderRadius: 16,
+                        padding: 16,
+                        marginBottom: 16,
+                        borderWidth: 1,
+                        borderColor: isDark ? 'rgba(16, 185, 129, 0.3)' : 'rgba(16, 185, 129, 0.2)',
+                      }}
+                    >
+                      <View className="flex-row items-center">
+                        <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                        <View className="ml-3 flex-1">
+                          <Text className="text-foreground font-semibold">
+                            {t('validation.excellent.title')}
+                          </Text>
+                          <Text className="text-muted-foreground text-xs mt-1">
+                            {t('validation.excellent.details')}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  ) : meshValidation.quality === 'good' ? (
+                    <View
+                      style={{
+                        backgroundColor: isDark ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.1)',
+                        borderRadius: 16,
+                        padding: 16,
+                        marginBottom: 16,
+                        borderWidth: 1,
+                        borderColor: isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.2)',
+                      }}
+                    >
+                      <View className="flex-row items-center">
+                        <Ionicons name="checkmark-circle-outline" size={24} color="#3B82F6" />
+                        <View className="ml-3 flex-1">
+                          <Text className="text-foreground font-semibold">
+                            {t('validation.acceptable.title')}
+                          </Text>
+                          <Text className="text-muted-foreground text-xs mt-1">
+                            {t('validation.acceptable.issue', { message: meshValidation.message })}
+                            {t('validation.acceptable.note')}
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  ) : (
+                    <View
+                      style={{
+                        backgroundColor: isDark ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.1)',
+                        borderRadius: 16,
+                        padding: 16,
+                        marginBottom: 16,
+                        borderWidth: 1,
+                        borderColor: isDark ? 'rgba(245, 158, 11, 0.3)' : 'rgba(245, 158, 11, 0.2)',
+                      }}
+                    >
+                      <View className="flex-row items-center">
+                        <Ionicons name="warning" size={24} color="#F59E0B" />
+                        <View className="ml-3 flex-1">
+                          <Text className="text-foreground font-semibold">
+                            {meshValidation.quality === 'warning' ? 'Dikkat!' : 'Düşük Kalite'}
+                          </Text>
+                          <Text className="text-muted-foreground text-xs mt-1">
+                            {meshValidation.message}{'\n\n'}
+                            Daha iyi sonuç için "Tekrar Çek" yapabilirsiniz.
+                          </Text>
+                        </View>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* AI Disclaimer */}
+                  <View className="flex-row justify-center items-start mb-3 px-2">
+                    <Ionicons name="information-circle-outline" size={16} color="#6B7280" style={{ marginRight: 4, marginTop: 1 }} />
+                    <Text className="text-xs text-muted-foreground text-center flex-1">
+                      {t('disclaimer')}
+                    </Text>
+                  </View>
+
+                  {/* Action Buttons */}
+                  <View className="flex-row gap-3">
+                    <Pressable onPress={handleRetake} className="flex-1">
+                      <View
+                        style={{
+                          backgroundColor: isDark ? 'rgba(100, 116, 139, 0.3)' : 'rgba(100, 116, 139, 0.1)',
+                          borderRadius: 16,
+                          padding: 16,
+                          minHeight: 80,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderWidth: 1,
+                          borderColor: isDark ? 'rgba(100, 116, 139, 0.4)' : 'rgba(100, 116, 139, 0.2)',
+                        }}
+                      >
+                        <Ionicons name="refresh-outline" size={24} color={isDark ? '#94A3B8' : '#64748B'} />
+                        <Text className="text-foreground mt-2 font-medium">{t('actions.retake')}</Text>
+                      </View>
+                    </Pressable>
+
+                    <Pressable onPress={handleConfirmMesh} className="flex-1">
+                      <View
+                        style={{
+                          backgroundColor: '#6366F1',
+                          borderRadius: 16,
+                          padding: 16,
+                          minHeight: 80,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <Ionicons name="checkmark-circle" size={24} color="white" />
+                        <Text style={{ color: 'white', marginTop: 8, fontWeight: '600' }}>
+                          {t('actions.confirm')}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  </View>
+                </View>
+              )}
+
+            </GlassCard>
+          )}
+
+          {/* Premium Promotion */}
+          {!isPremium && !selectedImage && (
+            <GlassCard
+              delay={800}
+              borderGradient="premium"
+              intensity="medium"
+              style={{ padding: 24, marginTop: 24 }}
+            >
+              <View className="items-center">
+                <View className="flex-row items-center justify-center gap-2 mb-3">
+                  <Ionicons name="diamond-outline" size={20} color="#F59E0B" />
+                  <Text
+                    style={{
+                      color: isDark ? '#FCD34D' : '#D97706',
+                      fontWeight: '700',
+                      fontSize: 18,
+                    }}
+                  >
+                    {t('premium.title')}
                   </Text>
                 </View>
-
-                {/* Validation Sonucu - Quality-based */}
-                {meshValidation.quality === 'excellent' ? (
-                  // 🟢 Mükemmel Kalite (Confidence >= 95%)
-                  <Card className="bg-green-500/10 border-green-500/40 p-4 mb-4">
-                    <View className="flex-row items-center">
-                      <Ionicons name="checkmark-circle" size={24} color="#10B981" />
-                      <View className="ml-3 flex-1">
-                        <Text className="text-foreground font-semibold">
-                          Mükemmel Kalite!
-                        </Text>
-                        <Text className="text-muted-foreground text-xs mt-1">
-                          • Tüm yüz bölgeleri tespit edildi{'\n'}
-                          • Noktalar doğru konumlanmış{'\n'}
-                          • Analiz için hazır
-                        </Text>
-                      </View>
-                    </View>
-                  </Card>
-                ) : meshValidation.quality === 'good' ? (
-                  // 🔵 İyi Kalite (Confidence 80-94%)
-                  <Card className="bg-blue-500/10 border-blue-500/40 p-4 mb-4">
-                    <View className="flex-row items-center">
-                      <Ionicons name="checkmark-circle-outline" size={24} color="#3B82F6" />
-                      <View className="ml-3 flex-1">
-                        <Text className="text-foreground font-semibold">
-                          İyi Kalite
-                        </Text>
-                        <Text className="text-muted-foreground text-xs mt-1">
-                          {meshValidation.message}{'\n'}
-                          Devam edebilirsiniz.
-                        </Text>
-                      </View>
-                    </View>
-                  </Card>
-                ) : (
-                  // 🟡 Düşük Kalite / Uyarı (Confidence < 80%)
-                  <Card className="bg-yellow-500/10 border-yellow-500/40 p-4 mb-4">
-                    <View className="flex-row items-center">
-                      <Ionicons name="warning" size={24} color="#F59E0B" />
-                      <View className="ml-3 flex-1">
-                        <Text className="text-foreground font-semibold">
-                          {meshValidation.quality === 'warning' ? 'Dikkat!' : 'Düşük Kalite'}
-                        </Text>
-                        <Text className="text-muted-foreground text-xs mt-1">
-                          {meshValidation.message}{'\n\n'}
-                          Daha iyi sonuç için "Tekrar Çek" yapabilirsiniz.
-                        </Text>
-                      </View>
-                    </View>
-                  </Card>
-                )}
-
-                {/* AI Disclaimer */}
-                <Text className="text-xs text-muted-foreground text-center mb-3 px-2">
-                  {t('disclaimer')}
+                <Text
+                  style={{
+                    color: isDark ? '#94A3B8' : '#64748B',
+                    textAlign: 'center',
+                    marginBottom: 16,
+                    lineHeight: 22,
+                  }}
+                >
+                  {t('premium.benefits')}
                 </Text>
-
-                {/* Butonlar */}
-                <View className="flex-row gap-3">
-                  {/* Tekrar Çek */}
-                  <Pressable
-                    onPress={handleRetake}
-                    className="flex-1"
-                  >
-                    <Card className="p-4 items-center bg-muted">
-                      <Ionicons name="camera-reverse" size={24} color="#111827" />
-                      <Text className="text-foreground mt-2 font-medium">{t('actions.retake')}</Text>
-                    </Card>
-                  </Pressable>
-
-                  {/* Devam Et */}
-                  <Pressable
-                    onPress={handleConfirmMesh}
-                    className="flex-1"
-                  >
-                    <Card className="p-4 items-center bg-primary">
-                      <Ionicons name="checkmark-circle" size={24} color="white" />
-                      <Text className="text-primary-foreground mt-2 font-medium">
-                        {t('actions.confirm')}
-                      </Text>
-                    </Card>
-                  </Pressable>
-                </View>
+                <Button
+                  onPress={() => {/* Navigate to premium */ }}
+                  style={{
+                    backgroundColor: '#F59E0B',
+                    width: '100%',
+                  }}
+                >
+                  <Text style={{ color: '#1E293B', fontWeight: '700' }}>
+                    {t('premium.button')}
+                  </Text>
+                </Button>
               </View>
-            )}
-
-            {/* Yeni Analiz Butonu */}
-            <Button
-              onPress={startNewAnalysis}
-              variant="outline"
-              className="mt-6"
-            >
-              <View className="flex-row items-center gap-2">
-                <Ionicons name="refresh-outline" size={18} color="#8B5CF6" />
-                <Text className="text-primary font-semibold">
-                  {t('actions.newAnalysis')}
-                </Text>
-              </View>
-            </Button>
-          </Card>
-        )}
-
-        {/* Premium Tanıtımı */}
-        {!isPremium && (
-          <Card className="p-6">
-            <CardContent className="items-center p-0">
-              <Text className="text-foreground font-bold text-lg mb-3 text-center">
-                {t('premium.title')}
-              </Text>
-              <Text className="text-muted-foreground mb-4 text-center leading-6">
-                {t('premium.benefits')}
-              </Text>
-              <Button
-                onPress={() => {/* Navigate to premium */ }}
-                className="w-full"
-              >
-                <Text className="text-primary-foreground font-bold">
-                  {t('premium.button')}
-                </Text>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-      </ScrollView>
+            </GlassCard>
+          )}
+        </ScrollView>
+      )
+      }
 
       {/* Image Picker Modal */}
       <Modal
@@ -598,44 +737,103 @@ export default function HomeScreen() {
         >
           <View style={{ flex: 1, justifyContent: 'flex-end' }}>
             <TouchableOpacity activeOpacity={1}>
-              <View className="bg-background rounded-t-3xl p-6">
-                <View className="w-12 h-1 bg-muted rounded-full self-center mb-6" />
+              <View
+                style={{
+                  backgroundColor: isDark ? '#1E293B' : '#FFFFFF',
+                  borderTopLeftRadius: 24,
+                  borderTopRightRadius: 24,
+                  padding: 24,
+                }}
+              >
+                <View
+                  style={{
+                    width: 48,
+                    height: 4,
+                    backgroundColor: isDark ? '#475569' : '#E2E8F0',
+                    borderRadius: 2,
+                    alignSelf: 'center',
+                    marginBottom: 24,
+                  }}
+                />
 
-                <Text className="text-xl font-bold text-foreground mb-2 text-center">
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: '700',
+                    color: isDark ? '#F1F5F9' : '#1E293B',
+                    textAlign: 'center',
+                    marginBottom: 8,
+                  }}
+                >
                   {t('photoGuidelines.title')}
                 </Text>
-                <Text className="text-muted-foreground text-sm text-center mb-4">
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: isDark ? '#94A3B8' : '#64748B',
+                    textAlign: 'center',
+                    marginBottom: 16,
+                  }}
+                >
                   {t('photoGuidelines.subtitle')}
                 </Text>
 
-                {/* İpuçları */}
-                <View className="bg-muted/30 rounded-xl p-4 mb-4">
-                  <Text className="text-foreground font-semibold text-sm mb-2">
-                    {t('photoGuidelines.rules.title')}
-                  </Text>
-                  <Text className="text-muted-foreground text-xs">
-                    {t('photoGuidelines.rules.list')}
-                  </Text>
+                <View
+                  style={{
+                    backgroundColor: isDark ? 'rgba(99, 102, 241, 0.1)' : 'rgba(99, 102, 241, 0.05)',
+                    borderRadius: 16,
+                    padding: 16,
+                    marginBottom: 20,
+                  }}
+                >
+                  <View className="flex-row items-center mb-3 gap-2">
+                    <Ionicons name="checkmark-circle-outline" size={18} color="#10B981" />
+                    <Text
+                      style={{
+                        color: isDark ? '#F1F5F9' : '#1E293B',
+                        fontWeight: '600',
+                        fontSize: 14,
+                      }}
+                    >
+                      {t('photoGuidelines.rules.title')}
+                    </Text>
+                  </View>
+                  <View className="gap-2">
+                    {t('photoGuidelines.rules.list').split('\n').map((rule, index) => (
+                      <View key={index} className="flex-row items-start">
+                        <Ionicons name="ellipse" size={6} color="#6B7280" style={{ marginTop: 7, marginRight: 8 }} />
+                        <Text
+                          style={{
+                            color: isDark ? '#94A3B8' : '#64748B',
+                            fontSize: 13,
+                            lineHeight: 20,
+                            flex: 1,
+                          }}
+                        >
+                          {rule.replace(/^•\s*/, '')}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
 
-                <View className=" flex justify-center gap-3">
-                  <Button
-                    onPress={takePhoto}
-                    className="w-full"
-                  >
-                    <Text className="text-primary-foreground font-semibold text-base">
-                      📷 {t('photoGuidelines.camera')}
-                    </Text>
+                <View className="gap-3">
+                  <Button onPress={takePhoto} className="w-full">
+                    <View className="flex-row items-center justify-center gap-2">
+                      <Ionicons name="camera-outline" size={20} color="#FFFFFF" />
+                      <Text className="text-primary-foreground font-semibold text-base">
+                        {t('photoGuidelines.camera')}
+                      </Text>
+                    </View>
                   </Button>
 
-                  <Button
-                    onPress={pickImage}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    <Text className="text-primary font-semibold text-base">
-                      🖼️ {t('photoGuidelines.gallery')}
-                    </Text>
+                  <Button onPress={pickImage} variant="outline" className="w-full">
+                    <View className="flex-row items-center justify-center gap-2">
+                      <Ionicons name="image-outline" size={20} color="#6366F1" />
+                      <Text className="text-primary font-semibold text-base">
+                        {t('photoGuidelines.gallery')}
+                      </Text>
+                    </View>
                   </Button>
 
                   <Button
@@ -653,7 +851,6 @@ export default function HomeScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
-
-    </SafeAreaView>
+    </View>
   );
 }

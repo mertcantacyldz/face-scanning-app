@@ -9,6 +9,8 @@ import { Text } from '@/components/ui/text';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePremium } from '@/hooks/use-premium';
 import { supabase } from '@/lib/supabase';
+import { getFreeAnalysisStatus } from '@/lib/premium-database';
+import { getOrCreateDeviceId } from '@/lib/device-id-with-fallback';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -48,6 +50,11 @@ export default function ProfileScreen() {
   const [gender, setGender] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
 
+  // Statistics state
+  const [totalAnalyses, setTotalAnalyses] = useState(0);
+  const [monthAnalyses, setMonthAnalyses] = useState(0);
+  const [usedCount, setUsedCount] = useState(0); // Used analysis count for free users
+
   const fetchProfile = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -65,6 +72,35 @@ export default function ProfileScreen() {
         setGender(profileData.gender);
       } else {
         Alert.alert(t('errors.title', { ns: 'errors' }), t('notFound'));
+      }
+
+      // Fetch analysis statistics from face_analysis table (not region_analysis)
+      // because region_analysis has multiple rows per analysis (one per region)
+      const { data: analysesData } = await supabase
+        .from('face_analysis')
+        .select('id, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (analysesData) {
+        // Total analyses count
+        setTotalAnalyses(analysesData.length);
+
+        // Analyses this month
+        const now = new Date();
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const monthCount = analysesData.filter(a => {
+          const analysisDate = new Date(a.created_at);
+          return analysisDate >= firstDayOfMonth;
+        }).length;
+        setMonthAnalyses(monthCount);
+      }
+
+      // Get free analysis status for non-premium users
+      if (!isPremium) {
+        const deviceId = await getOrCreateDeviceId(); // Get stable device ID
+        const freeStatus = await getFreeAnalysisStatus(user.id, deviceId);
+        setUsedCount(freeStatus.count); // Store used count instead of remaining
       }
     } catch (error) {
       console.error('Error:', error);
@@ -180,7 +216,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <View className="flex-1 bg-background">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 16 }}
@@ -344,40 +380,48 @@ export default function ProfileScreen() {
           </View>
 
           <View className="space-y-4">
-            <View className="flex-row justify-between items-center py-3 border-b border-border">
-              <View className="flex-row items-center">
-                <View className="w-8 h-8 bg-primary/10 rounded-full items-center justify-center mr-3">
-                  <Ionicons name="analytics" size={16} color="#8B5CF6" />
+            {isPremium && (
+              <View className="flex-row justify-between items-center py-3 border-b border-border">
+                <View className="flex-row items-center">
+                  <View className="w-8 h-8 bg-primary/10 rounded-full items-center justify-center mr-3">
+                    <Ionicons name="analytics" size={16} color="#8B5CF6" />
+                  </View>
+                  <Text className="text-muted-foreground">{t('stats.totalAnalysis')}</Text>
                 </View>
-                <Text className="text-muted-foreground">{t('stats.totalAnalysis')}</Text>
+                <Text className="text-lg font-bold text-primary">
+                  {totalAnalyses}
+                </Text>
               </View>
-              <Text className="text-lg font-bold text-primary">
-                12
-              </Text>
-            </View>
+            )}
 
-            <View className="flex-row justify-between items-center py-3 border-b border-border">
-              <View className="flex-row items-center">
-                <View className="w-8 h-8 bg-success/10 rounded-full items-center justify-center mr-3">
-                  <Ionicons name="calendar" size={16} color="#10B981" />
+            {isPremium && (
+              <View className="flex-row justify-between items-center py-3 border-b border-border">
+                <View className="flex-row items-center">
+                  <View className="w-8 h-8 bg-success/10 rounded-full items-center justify-center mr-3">
+                    <Ionicons name="calendar" size={16} color="#10B981" />
+                  </View>
+                  <Text className="text-muted-foreground">{t('stats.thisMonth')}</Text>
                 </View>
-                <Text className="text-muted-foreground">{t('stats.thisMonth')}</Text>
+                <Text className="text-lg font-bold text-success">
+                  {monthAnalyses}
+                </Text>
               </View>
-              <Text className="text-lg font-bold text-success">
-                3
-              </Text>
-            </View>
+            )}
 
             {!isPremium && (
               <View className="flex-row justify-between items-center py-3">
                 <View className="flex-row items-center">
-                  <View className="w-8 h-8 bg-warning/10 rounded-full items-center justify-center mr-3">
-                    <Ionicons name="alert-circle" size={16} color="#F59E0B" />
+                  <View className={`w-8 h-8 ${usedCount >= 3 ? 'bg-destructive/10' : 'bg-warning/10'} rounded-full items-center justify-center mr-3`}>
+                    <Ionicons
+                      name="alert-circle"
+                      size={16}
+                      color={usedCount >= 3 ? "#EF4444" : "#F59E0B"}
+                    />
                   </View>
                   <Text className="text-muted-foreground">{t('stats.remainingLimit')}</Text>
                 </View>
-                <Text className="text-lg font-bold text-warning">
-                  2/5
+                <Text className={`text-lg font-bold ${usedCount >= 3 ? 'text-destructive' : 'text-warning'}`}>
+                  {usedCount}/3
                 </Text>
               </View>
             )}
@@ -437,7 +481,7 @@ export default function ProfileScreen() {
             <LanguageSelector />
           </View>
 
-          <View className="h-px bg-border my-2" />
+          {/* <View className="h-px bg-border my-2" />
 
           <TouchableOpacity className="flex-row items-center justify-between py-3">
             <View className="flex-row items-center">
@@ -447,7 +491,7 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} className="text-muted-foreground" />
           </TouchableOpacity>
 
-          <View className="h-px bg-border my-2" />
+          <View className="h-px bg-border my-2" /> */}
 
           <TouchableOpacity
             className="flex-row items-center justify-between py-3"
@@ -525,6 +569,6 @@ export default function ProfileScreen() {
 
         <View className="h-24" />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

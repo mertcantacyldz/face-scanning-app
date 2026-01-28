@@ -3,12 +3,14 @@ import { View, Pressable } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
 import { JsonRenderer } from './JsonRenderer';
+import { useTranslation } from 'react-i18next';
 
 interface MetadataSectionProps {
   data: Record<string, any>;
 }
 
 export function MetadataSection({ data }: MetadataSectionProps) {
+  const { t } = useTranslation('analysis');
   const [expanded, setExpanded] = useState(false);
 
   if (!data || Object.keys(data).length === 0) {
@@ -25,7 +27,7 @@ export function MetadataSection({ data }: MetadataSectionProps) {
         <View className="flex-row items-center gap-2">
           <Text className="text-lg">ⓘ</Text>
           <Text className="font-semibold text-muted-foreground text-base">
-            Technical Details
+            {t('ui.metadata')}
           </Text>
         </View>
         <Text className="text-muted-foreground text-xl">

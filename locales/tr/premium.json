@@ -35,7 +35,7 @@
     "alerts": {
       "noPackageTitle": "Hata",
       "noPackageMessage": "Paket bulunamadı. Lütfen daha sonra tekrar deneyin.",
-      "successTitle": "Başarılı! 🎉",
+      "successTitle": "Başarılı!",
       "successMessage": "Premium üyeliğiniz aktif edildi!",
       "successButton": "Harika!",
       "restoreSuccessTitle": "Başarılı!",

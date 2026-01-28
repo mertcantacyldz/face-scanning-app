@@ -3,7 +3,7 @@ import type { PurchasesOffering, PurchasesPackage } from 'react-native-purchases
 export type PremiumSource = 'revenuecat' | 'database' | 'both' | 'none';
 
 export interface FreeAnalysisState {
-  used: boolean;
+  count: number;
   region: string | null;
 }
 
@@ -17,8 +17,9 @@ export interface PremiumContextValue {
   isDatabasePremium: boolean;
 
   // Free tier status
-  freeAnalysisUsed: boolean;
+  freeAnalysisCount: number;
   freeAnalysisRegion: string | null;
+  remainingRights: number;
 
   // Offerings
   offerings: PurchasesOffering | null;
@@ -26,8 +27,9 @@ export interface PremiumContextValue {
   yearlyPackage: PurchasesPackage | null;
 
   // Actions
-  refreshPremiumStatus: () => Promise<void>;
+  refreshPremiumStatus: () => Promise<boolean>;
   purchase: (pkg: PurchasesPackage) => Promise<{ success: boolean; error?: string }>;
   restore: () => Promise<{ success: boolean; isPremium: boolean; error?: string }>;
-  markFreeAnalysisUsed: (regionId: string) => Promise<void>;
+  incrementFreeAnalysisCount: (regionId: string) => Promise<void>;
+  setFreeAnalysisRegion: (regionId: string) => Promise<void>;
 }

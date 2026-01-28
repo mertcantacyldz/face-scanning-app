@@ -272,7 +272,7 @@ const ProgressScreen = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <View className="flex-1 bg-background">
       <ScrollView
         className="flex-1"
         contentContainerStyle={{ padding: 16 }}
@@ -411,7 +411,7 @@ const ProgressScreen = () => {
         {/* Bottom spacing */}
         <View className="h-24" />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

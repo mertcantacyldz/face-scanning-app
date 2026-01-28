@@ -128,6 +128,21 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
   const leftWing = landmarks[98]; // P_98 (left wing outer)
   const rightWing = landmarks[327]; // P_327 (right wing outer)
   const midBridge = landmarks[168]; // P_168 (mid bridge point)
+  const leftNostrilBottom = landmarks[2]; // P_2 (bottom reference)
+
+  console.log('🔍 RAW LANDMARK DATA (NOSE):');
+  console.log('  P_4 (noseTip):', JSON.stringify({ x: noseTip.x, y: noseTip.y, z: noseTip.z }));
+  console.log('  P_6 (bridge):', JSON.stringify({ x: bridge.x, y: bridge.y, z: bridge.z }));
+  console.log('  P_100 (leftNostril):', JSON.stringify({ x: leftNostril.x, y: leftNostril.y, z: leftNostril.z }));
+  console.log('  P_329 (rightNostril):', JSON.stringify({ x: rightNostril.x, y: rightNostril.y, z: rightNostril.z }));
+  console.log('  P_98 (leftWing):', JSON.stringify({ x: leftWing.x, y: leftWing.y, z: leftWing.z }));
+  console.log('  P_327 (rightWing):', JSON.stringify({ x: rightWing.x, y: rightWing.y, z: rightWing.z }));
+  console.log('  P_168 (midBridge):', JSON.stringify({ x: midBridge.x, y: midBridge.y, z: midBridge.z }));
+  console.log('  P_2 (leftNostrilBottom):', JSON.stringify({ x: leftNostrilBottom.x, y: leftNostrilBottom.y, z: leftNostrilBottom.z }));
+
+  console.log('🔍 RAW LANDMARK DATA (EYES):');
+  console.log('  P_33 (rightEyeOuter):', JSON.stringify({ x: rightEyeOuter.x, y: rightEyeOuter.y, z: rightEyeOuter.z }));
+  console.log('  P_263 (leftEyeOuter):', JSON.stringify({ x: leftEyeOuter.x, y: leftEyeOuter.y, z: leftEyeOuter.z }));
 
   console.log('👃 NOSE LANDMARKS:');
   console.log('  P_4 (noseTip):', noseTip ? `x=${noseTip.x.toFixed(2)}, y=${noseTip.y.toFixed(2)}, z=${noseTip.z.toFixed(4)}` : 'MISSING');
@@ -148,6 +163,15 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
   console.log('📐 FACE DIMENSIONS:');
   console.log('  Face width:', faceWidth.toFixed(2), 'px');
   console.log('  Face center X:', faceCenterX.toFixed(2), 'px');
+  console.log('  DEBUG - Reference Points X: P_33(RightEyeOuter)=', rightEyeOuter.x.toFixed(2), 'P_263(LeftEyeOuter)=', leftEyeOuter.x.toFixed(2));
+
+  // DEBUG-MIRROR: Kritik hesaplama kontrolü
+  console.log('🔍 [DEBUG-MIRROR] KRİTİK HESAPLAMA:');
+  console.log('  rightEyeOuter (P33) x:', rightEyeOuter.x.toFixed(2));
+  console.log('  leftEyeOuter (P263) x:', leftEyeOuter.x.toFixed(2));
+  console.log('  faceWidth (P263.x - P33.x):', faceWidth.toFixed(2));
+  console.log('  faceCenterX:', faceCenterX.toFixed(2));
+  console.log('  AYNA KONTROLÜ:', rightEyeOuter.x < leftEyeOuter.x ? '✅ NORMAL (P33 < P263)' : '⚠️ AYNALI (P33 > P263)');
 
   // ============================================
   // B. NOSE TIP DEVIATION (HORIZONTAL CENTERING)
@@ -156,6 +180,20 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
   const tipDeviation = noseTip.x - faceCenterX; // Signed pixels
   const tipDeviationRatio = toPercentageOfWidth(tipDeviation, faceWidth);
   const tipDirection = getDirection(tipDeviation, 2);
+
+  console.log('🔍 DEBUG TIP CALCULATION:');
+  console.log('  noseTip.x:', noseTip.x.toFixed(2));
+  console.log('  faceCenterX:', faceCenterX.toFixed(2));
+  console.log('  tipDeviation (x - center):', tipDeviation.toFixed(2));
+  console.log('  tipDirection assigned:', tipDirection);
+
+  // DEBUG-MIRROR: Tip deviation sonucu
+  console.log('👃 [DEBUG-MIRROR] TIP DEVIATION SONUCU:');
+  console.log('  noseTip.x:', noseTip.x.toFixed(2));
+  console.log('  faceCenterX:', faceCenterX.toFixed(2));
+  console.log('  tipDeviation (noseTip.x - faceCenterX):', tipDeviation.toFixed(2));
+  console.log('  tipDirection:', tipDirection);
+  console.log('  BEKLENTİ: Aynalı resimde tipDirection TERSİNE dönmeli!');
 
   // STRICT SCORING: %4 is the "breaking point" for visible asymmetry
   const tipScore =
@@ -195,6 +233,7 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
   const dx = bridge.x - noseTip.x;
   const dy = noseTip.y - bridge.y;
   const rotationAngle = Math.atan2(dx, dy) * (180 / Math.PI);
+  // Kişinin kendi perspektifinden: pozitif açı = kişinin soluna eğik
   const rotationDirection =
     Math.abs(rotationAngle) < 3
       ? 'STRAIGHT'
@@ -305,7 +344,6 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
           : 'PROMINENT';
 
   // G4. Nostril Size & Shape
-  const leftNostrilBottom = landmarks[2]; // P_2 (bottom reference)
   const leftNostrilHeight = Math.abs(leftNostrilBottom.y - leftWing.y);
   const rightNostrilHeight = Math.abs(leftNostrilBottom.y - rightWing.y);
 
@@ -350,9 +388,9 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
   // WEIGHTED SCORING: Tip deviation is most critical
   const overallScore = Math.round(
     tipScore * 0.4 + // Tip deviation (40% - most critical)
-      rotationScore * 0.3 + // Rotation angle (30%)
-      nostrilScore * 0.2 + // Nostril asymmetry (20%)
-      depthScore * 0.1 // Depth difference (10% - least reliable)
+    rotationScore * 0.3 + // Rotation angle (30%)
+    nostrilScore * 0.2 + // Nostril asymmetry (20%)
+    depthScore * 0.1 // Depth difference (10% - least reliable)
   );
 
   // REALISTIC ASYMMETRY LEVELS

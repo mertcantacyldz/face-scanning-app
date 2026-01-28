@@ -10,7 +10,8 @@ import { supabase } from '@/lib/supabase';
 import {
   checkDatabasePremiumStatus,
   getFreeAnalysisStatus,
-  updateFreeAnalysisStatus
+  incrementFreeAnalysisCount,
+  setFreeAnalysisRegion
 } from '@/lib/premium-database';
 import { getOrCreateDeviceId } from '@/lib/device-id-with-fallback';
 import type { PremiumContextValue } from '@/types/premium';
@@ -31,8 +32,14 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
   const [isDatabasePremium, setIsDatabasePremium] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [offerings, setOfferings] = useState<PurchasesOffering | null>(null);
-  const [freeAnalysisUsed, setFreeAnalysisUsed] = useState(false);
-  const [freeAnalysisRegion, setFreeAnalysisRegion] = useState<string | null>(null);
+
+  // Free tier state
+  // Free tier state
+  const [freeAnalysisCount, setFreeAnalysisCount] = useState(0);
+  const [freeAnalysisRegion, setFreeAnalysisRegionState] = useState<string | null>(null);
+
+  // Derived state: 3 is the limit
+  const remainingRights = Math.max(0, 3 - freeAnalysisCount);
 
   const toast = useToast();
 
@@ -130,8 +137,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
 
         // Check if free analysis was used (from Supabase - both user and device level)
         const freeAnalysisStatus = await getFreeAnalysisStatus(user.id, deviceId);
-        setFreeAnalysisUsed(freeAnalysisStatus.used);
-        setFreeAnalysisRegion(freeAnalysisStatus.region);
+        setFreeAnalysisCount(freeAnalysisStatus.count);
       } else {
         console.log('👤 No user logged in, setting premium to false');
         // No user, initialize RevenueCat with device ID anyway
@@ -148,33 +154,17 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
     }
   }, [checkCombinedPremiumStatus]);
 
-  // Mark free analysis as used
-  const markFreeAnalysisUsed = async (regionId: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
 
-      // Get device ID for device-level tracking
-      const deviceId = await getOrCreateDeviceId();
-
-      // Update both user and device records
-      await updateFreeAnalysisStatus(user.id, regionId, deviceId);
-      setFreeAnalysisUsed(true);
-      setFreeAnalysisRegion(regionId);
-    } catch (error) {
-      console.error('Error marking free analysis used:', error);
-    }
-  };
 
   // Refresh premium status
-  const refreshPremiumStatus = useCallback(async () => {
+  const refreshPremiumStatus = useCallback(async (): Promise<boolean> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         console.log('🔄 Refresh: No user, setting all to false');
         setIsRevenueCatPremium(false);
         setIsDatabasePremium(false);
-        return;
+        return false;
       }
 
       console.log('🔄 Refreshing premium status for user:', user.id);
@@ -184,8 +174,11 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       // Set individual statuses (useEffect will update combined)
       setIsRevenueCatPremium(premiumStatus.revenueCat);
       setIsDatabasePremium(premiumStatus.database);
+
+      return premiumStatus.combined;
     } catch (error) {
       console.error('❌ Error refreshing premium status:', error);
+      return false;
     }
   }, [checkCombinedPremiumStatus]);
 
@@ -283,8 +276,8 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
 
             // Check free analysis status with device ID
             const freeAnalysisStatus = await getFreeAnalysisStatus(session.user.id, deviceId);
-            setFreeAnalysisUsed(freeAnalysisStatus.used);
-            setFreeAnalysisRegion(freeAnalysisStatus.region);
+            setFreeAnalysisCount(freeAnalysisStatus.count);
+            setFreeAnalysisRegionState(freeAnalysisStatus.region);
           })
           .catch(err => console.error('❌ Error in premium initialization chain:', err));
       } else if (event === 'SIGNED_OUT') {
@@ -293,8 +286,8 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
         // This allows premium to persist across sign outs
         setIsRevenueCatPremium(false);
         setIsDatabasePremium(false);
-        setFreeAnalysisUsed(false);
-        setFreeAnalysisRegion(null);
+        setFreeAnalysisCount(0);
+        setFreeAnalysisRegionState(null);
       }
     });
 
@@ -313,6 +306,32 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
     return () => subscription.remove();
   }, [refreshPremiumStatus]);
 
+  const incrementAnalysisCount = async (regionId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const deviceId = await getOrCreateDeviceId();
+      await incrementFreeAnalysisCount(user.id, regionId, deviceId);
+      // Optimistic update
+      setFreeAnalysisCount(prev => prev + 1);
+    } catch (error) {
+      console.error('Error incrementing analysis count:', error);
+    }
+  };
+
+  const updateFreeAnalysisRegion = async (regionId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const deviceId = await getOrCreateDeviceId();
+      await setFreeAnalysisRegion(user.id, regionId, deviceId);
+      setFreeAnalysisRegionState(regionId);
+      setFreeAnalysisCount(0); // Reset count for new region
+    } catch (error) {
+      console.error('Error setting analysis region:', error);
+    }
+  };
+
   return (
     <PremiumContext.Provider
       value={{
@@ -320,15 +339,17 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
         isRevenueCatPremium,
         isDatabasePremium,
         isLoading,
-        freeAnalysisUsed,
+        freeAnalysisCount,
         freeAnalysisRegion,
+        remainingRights,
         offerings,
         monthlyPackage,
         yearlyPackage,
         refreshPremiumStatus,
         purchase,
         restore,
-        markFreeAnalysisUsed,
+        incrementFreeAnalysisCount: incrementAnalysisCount,
+        setFreeAnalysisRegion: updateFreeAnalysisRegion,
       }}
     >
       {children}

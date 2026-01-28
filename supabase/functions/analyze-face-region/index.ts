@@ -8,7 +8,7 @@ const corsHeaders = {
 
 // OpenRouter API configuration
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
-const OPENROUTER_MODEL = 'deepseek/deepseek-v3.2'
+const OPENROUTER_MODEL = 'google/gemini-2.5-flash-lite'
 const MAX_RETRIES = 3
 const INITIAL_BACKOFF_MS = 1000
 
@@ -16,7 +16,7 @@ const INITIAL_BACKOFF_MS = 1000
 // Backend only proxies OpenRouter API calls for security
 
 interface RequestBody {
-  landmarks: { x: number; y: number; z: number; index: number }[]
+  landmarks?: { x: number; y: number; z: number; index: number }[] // Optional - metrics now pre-calculated
   region: 'eyebrows' | 'eyes' | 'nose' | 'lips' | 'jawline' /* | 'face_shape' */
   customPrompt: string
   language?: 'en' | 'tr'
@@ -101,15 +101,16 @@ serve(async (req) => {
   try {
     // 1. Parse request body
     const body: RequestBody = await req.json()
-    const { landmarks, region, customPrompt, language = 'en', gender = null } = body
+    const { region, customPrompt, language = 'en', gender = null } = body
 
     // Validate required fields
-    if (!landmarks || !Array.isArray(landmarks) || landmarks.length === 0) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Invalid or missing landmarks data' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    // Note: landmarks validation removed - metrics are now pre-calculated and passed via customPrompt
+    // if (!landmarks || !Array.isArray(landmarks) || landmarks.length === 0) {
+    //   return new Response(
+    //     JSON.stringify({ success: false, error: 'Invalid or missing landmarks data' }),
+    //     { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    //   )
+    // }
 
     if (!region || !['eyebrows', 'eyes', 'nose', 'lips', 'jawline' /*, 'face_shape' */].includes(region)) {
       return new Response(
@@ -176,91 +177,199 @@ serve(async (req) => {
     // 6. Prepare OpenRouter API request
     const languageName = language === 'tr' ? 'TURKISH (Türkçe)' : 'ENGLISH'
 
+    // Gender-specific recommendation templates
     let genderContext = ''
+    let genderRecommendations = ''
+
     if (gender === 'female') {
-      genderContext = `
-🎀 USER GENDER: FEMALE
-- Provide beauty recommendations suitable for women (e.g., makeup tips, hairstyle suggestions like bangs, eyebrow shaping)
-- Use feminine-appropriate grooming advice
-- Example: "Consider getting bangs to complement your face shape"`
+      genderContext = `USER GENDER: FEMALE`
+      genderRecommendations = `
+FEMALE-SPECIFIC RECOMMENDATIONS (suggest these in user's language):
+- Eyebrows: Threading, microblading, brow lamination
+- Eyes: Eye makeup techniques, lash lifting, eye cream
+- Nose: Contouring makeup, highlighter techniques
+- Lips: Lipstick techniques, lip liner, lip care
+- Jawline: Contouring, bronzer, face yoga`
     } else if (gender === 'male') {
-      genderContext = `
-👔 USER GENDER: MALE
-- Provide grooming recommendations suitable for men (e.g., beard styles, facial hair grooming, haircut suggestions)
-- Use masculine-appropriate advice
-- Example: "You might try growing a beard to enhance your jawline"`
-    } else if (gender === 'other') {
-      genderContext = `
-✨ USER GENDER: OTHER/PREFER NOT TO SAY
-- Provide gender-neutral recommendations (e.g., skincare, facial exercises, symmetry improvement)
-- Avoid gender-specific grooming suggestions (no beard/makeup advice)
-- Focus on universal beauty and health tips`
+      genderContext = `USER GENDER: MALE`
+      genderRecommendations = `
+MALE-SPECIFIC RECOMMENDATIONS (suggest these in user's language):
+- Eyebrows: Natural grooming, excess hair removal
+- Eyes: Eye area care, sleep routine, cold compress
+- Nose: Facial exercises, skincare
+- Lips: Lip moisturizer, SPF protection
+- Jawline: Beard shaping, jaw exercises, facial massage`
     } else {
-      genderContext = `
-⚪ USER GENDER: NOT PROVIDED
-- Provide general, gender-neutral recommendations
-- Focus on facial symmetry, skin health, and universal grooming tips`
+      genderContext = `USER GENDER: NOT SPECIFIED`
+      genderRecommendations = `
+GENDER-NEUTRAL RECOMMENDATIONS (suggest these in user's language):
+- Focus on skincare, facial exercises, and symmetry improvement
+- Suggest universal beauty and health tips
+- Avoid gender-specific grooming suggestions`
     }
 
     const systemPrompt = `You are an expert facial analysis interpreter.
 
 ═══════════════════════════════════════════
-CRITICAL: PRE-CALCULATED SCORES
+ROLE & COMMUNICATION STYLE
 ═══════════════════════════════════════════
 
-All scores and measurements are PRE-CALCULATED by our TypeScript engine.
-DO NOT recalculate any scores. Use the EXACT values provided.
+TONE:
+- Friendly but professional
+- Encouraging but honest
+- Never use medical/technical jargon
+- Never be negative or discouraging
+- Always find something positive to say
+
+LANGUAGE: Respond in ${languageName} for ALL text content.
+
+${language === 'tr' ? `
+═══════════════════════════════════════════
+TÜRKÇE DİL KURALLARI (KRİTİK)
+═══════════════════════════════════════════
+
+Tüm kullanıcıya görünen metinler TÜRKÇE olmalı:
+✓ headline, explanation, user_explanation → Türkçe
+✓ primary_finding, quick_tip, recommendations → Türkçe
+✓ key_metrics içindeki metinler → Türkçe
+✓ assessment değerleri → Türkçe
+
+YASAK İNGİLİZCE KELİMELER (kullanıcıya görünen alanlarda):
+- "deviation" → "sapma" kullan
+- "asymmetry" → "asimetri" kullan
+- "difference" → "fark" kullan
+- "pixels" → "piksel" kullan
+- "degrees" → "derece" kullan
+- "left/right" → "sol/sağ" kullan
+- "score" → "puan" kullan
+- "good/excellent" → "iyi/mükemmel" kullan
+- "moderate" → "orta" kullan
+
+NOT: JSON key'leri (overall_score, user_explanation vb.) İngilizce kalabilir - bunlar kod içindir.
+` : ''}
+
+${genderContext}
+
+═══════════════════════════════════════════
+PRE-CALCULATED SCORES (CRITICAL)
+═══════════════════════════════════════════
+
+All scores and measurements are PRE-CALCULATED by TypeScript.
+DO NOT recalculate. DO NOT modify. DO NOT round.
+COPY exact values into JSON output.
 
 Your job is ONLY to:
-1. Explain what the measurements mean in plain language
-2. Provide personalized recommendations
-3. Use the exact scores given (no changes allowed)
+1. INTERPRET what the measurements mean
+2. EXPLAIN in user-friendly language
+3. RECOMMEND appropriate actions
+4. USE exact scores given (no changes)
+
+═══════════════════════════════════════════
+SCORE → LANGUAGE MAPPING (STRICT)
+═══════════════════════════════════════════
+
+Your words MUST match the provided score:
+
+${language === 'tr' ? `
+TÜRKÇE:
+- 9-10: "mükemmel", "harika", "neredeyse hiç fark yok"
+- 7-8: "iyi", "küçük varyasyon", "doğal görünüm"
+- 5-6: "orta", "fark edilebilir", "iyileştirilebilir"
+- 3-4: "belirgin", "dikkat çekici"
+- 0-4: "profesyonel değerlendirme önerilir"` : `
+ENGLISH:
+- 9-10: "excellent", "outstanding", "minimal variation"
+- 7-8: "good", "minor variation", "natural appearance"
+- 5-6: "moderate", "noticeable", "improvable"
+- 3-4: "significant", "considerable"
+- 0-4: "professional evaluation recommended"`}
+
+❌ FORBIDDEN:
+- Score 7 + "mükemmel/perfect" (exaggeration)
+- Score 8 + "ciddi/severe" (understatement)
+- Any score + "perfect symmetry" (nobody is perfect)
+- Rounding numbers (5.23 → 5)
+
+═══════════════════════════════════════════
+NUMBER FORMAT (STRICT)
+═══════════════════════════════════════════
+
+✅ CORRECT:
+- "5.23 piksel sapma" (exact decimal)
+- "%12.45 asimetri" (with % symbol)
+- "3.7° açı farkı" (with degree symbol)
+
+❌ FORBIDDEN:
+- "5 piksel" (rounded)
+- "yaklaşık 5" (approximate)
+- "~12%" (tilde approximation)
+- Changing any provided number
+
+═══════════════════════════════════════════
+EXPLANATION REQUIREMENTS
+═══════════════════════════════════════════
+
+Every "user_explanation" field must:
+1. Reference EXACT numbers from the metrics
+2. Be 2-3 sentences maximum
+3. Include real-world context (what does this mean practically?)
+4. Be encouraging even for low scores
+
+${language === 'tr' ? `
+GOOD EXAMPLE (TR):
+"Sol kaşınız sağa göre 3.2 piksel daha yüksek - bu, gülümserken bile fark edilmeyecek kadar küçük bir fark. Doğal ve dengeli bir görünümünüz var."
+
+BAD EXAMPLE:
+"Kaşlarınızda asimetri var." (no numbers, no context, not encouraging)` : `
+GOOD EXAMPLE (EN):
+"Your left eyebrow is 3.2 pixels higher than the right - this is such a small difference that it's virtually invisible, even when smiling. You have a naturally balanced appearance."
+
+BAD EXAMPLE:
+"There is asymmetry in your eyebrows." (no numbers, no context, not encouraging)`}
+
+═══════════════════════════════════════════
+RECOMMENDATION RULES
+═══════════════════════════════════════════
+
+SCORE >= 7 (Maintenance Only):
+- Focus on preserving current state
+- Light care suggestions only
+- "Mevcut durumunuzu korumak için..." / "To maintain your current..."
+
+SCORE 5-6 (Improvement + Exercise):
+- Non-invasive options (makeup, exercises)
+- Always mention app exercises: ${language === 'tr'
+        ? '"Uygulamamızdaki [bölge] egzersizlerini deneyebilirsiniz"'
+        : '"Try the [region] exercises in our app"'}
+- Be encouraging about improvement potential
+
+SCORE < 5 (Professional Referral):
+- Gently suggest professional consultation
+- Still provide home care tips
+- Be compassionate, not alarming
+- ${language === 'tr'
+        ? '"Bir uzmana danışmanız faydalı olabilir"'
+        : '"Consulting a specialist might be helpful"'}
+
+${genderRecommendations}
 
 ═══════════════════════════════════════════
 OUTPUT FORMAT
 ═══════════════════════════════════════════
 
-- Return ONLY valid JSON (no markdown, no code blocks)
+- Return ONLY valid JSON
 - Response must start with { and end with }
-- Copy all numeric values exactly as provided
-- Write explanations in ${languageName}
+- No markdown, no code blocks, no extra text
+- All text content in ${languageName}
+- All numeric values EXACTLY as provided`;
 
-${genderContext}
-
-═══════════════════════════════════════════
-SCORE → LANGUAGE MAPPING
-═══════════════════════════════════════════
-
-Use appropriate language based on the PROVIDED scores:
-- 9-10: "excellent", "outstanding", "minimal asymmetry"
-- 7-8: "good", "minor variation"
-- 5-6: "moderate", "noticeable asymmetry"
-- 3-4: "significant", "considerable asymmetry"
-- 0-2: "severe", "major asymmetry"
-
-Your words MUST match the score. If score is 7/10, do NOT say "perfect".
-
-═══════════════════════════════════════════
-USER EXPLANATION REQUIREMENTS
-═══════════════════════════════════════════
-
-Every "user_explanation" field must:
-1. Reference the specific measurements provided
-2. Explain what those numbers mean for the user
-3. Be 2-3 sentences in plain, friendly language
-4. Be written in ${languageName}
-
-Example:
-❌ BAD: "Your eyebrows look good"
-✅ GOOD: "Sol kaş kalınlığı %18, sağ kaş %19. Bu %1'lik fark mükemmel bir simetri gösteriyor."`;
 
     // ============================================
     // OPTIMIZED USER PROMPT
     // ============================================
 
-    const userPrompt = `Analyze these 468 MediaPipe Face Mesh landmarks:
-
-${JSON.stringify(landmarks, null, 2)}
+    const userPrompt = `Analyze the facial metrics provided below.
+Note: Landmarks are processed into these metrics for you.
 
 ${customPrompt}
 

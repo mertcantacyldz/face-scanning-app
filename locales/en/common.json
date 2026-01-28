@@ -23,5 +23,6 @@
   },
   "welcome": {
     "defaultUser": "User"
-  }
+  },
+  "locked": "Locked"
 }

@@ -11,7 +11,7 @@
 import { supabase } from './supabase';
 
 export interface FaceAnalysisRequest {
-  landmarks: { x: number; y: number; z: number; index: number }[];
+  landmarks?: { x: number; y: number; z: number; index: number }[];
   region: 'eyebrows' | 'eyes' | 'nose' | 'lips' | 'jawline' | 'face_shape';
   customPrompt: string;
   language?: 'en' | 'tr';
@@ -55,7 +55,7 @@ export async function analyzeFaceRegion(
     // Call Supabase Edge Function
     const { data, error } = await supabase.functions.invoke('analyze-face-region', {
       body: {
-        landmarks: request.landmarks,
+        // landmarks: request.landmarks, // REMOVED for optimization
         region: request.region,
         customPrompt: request.customPrompt,
         language: request.language || 'en',

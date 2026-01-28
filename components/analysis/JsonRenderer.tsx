@@ -2,6 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
+import { useTranslation } from 'react-i18next';
 
 // Types
 type ValueType =
@@ -22,8 +23,18 @@ interface JsonRendererProps {
   excludeKeys?: string[];
 }
 
-// Helper: Format key name
-function formatKeyName(key: string): string {
+// Helper: Format key name - now uses i18n translations
+function formatKeyName(key: string, t: (key: string) => string): string {
+  // Try to get translation from fields namespace
+  const translationKey = `fields.${key}`;
+  const translated = t(translationKey);
+
+  // If translation exists (not same as key), use it
+  if (translated !== translationKey) {
+    return translated;
+  }
+
+  // Fallback: convert snake_case to Title Case
   return key
     .split('_')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -177,7 +188,8 @@ function CoordinateDisplay({ value }: { value: Record<string, number> }) {
 function renderValue(
   key: string,
   value: any,
-  depth: number
+  depth: number,
+  t: (key: string) => string
 ): React.ReactElement | null {
   // SPECIAL CASE: user_explanation (display prominently before scores)
   if (key === 'user_explanation' && typeof value === 'string') {
@@ -233,7 +245,7 @@ function renderValue(
             value ? 'text-green-800' : 'text-red-800'
           }`}
         >
-          {value ? '✓ Yes' : '✗ No'}
+          {value ? `✓ ${t('ui.yes')}` : `✗ ${t('ui.no')}`}
         </Text>
       </View>
     );
@@ -247,7 +259,7 @@ function renderValue(
   // Array of primitives
   if (type === 'array-primitive') {
     if (value.length === 0) {
-      return <Text className="text-muted-foreground text-sm italic">None</Text>;
+      return <Text className="text-muted-foreground text-sm italic">{t('ui.none')}</Text>;
     }
 
     return (
@@ -268,7 +280,7 @@ function renderValue(
       <View className="gap-2">
         {value.map((item: any, idx: number) => (
           <Card key={idx} className="p-3 bg-muted/50">
-            <JsonRenderer data={item} depth={depth + 1} />
+            <JsonRendererInner data={item} depth={depth + 1} t={t} />
           </Card>
         ))}
       </View>
@@ -279,7 +291,7 @@ function renderValue(
   if (type === 'object') {
     return (
       <View className="gap-2 ml-3">
-        <JsonRenderer data={value} depth={depth + 1} />
+        <JsonRendererInner data={value} depth={depth + 1} t={t} />
       </View>
     );
   }
@@ -287,12 +299,13 @@ function renderValue(
   return null;
 }
 
-// Main component
-export function JsonRenderer({
+// Inner component (used for recursion with t function)
+function JsonRendererInner({
   data,
   depth = 0,
   excludeKeys = [],
-}: JsonRendererProps) {
+  t,
+}: JsonRendererProps & { t: (key: string) => string }) {
   if (!data || typeof data !== 'object') {
     return null;
   }
@@ -317,13 +330,31 @@ export function JsonRenderer({
                 : 'text-sm font-semibold mb-1 text-foreground'
             }
           >
-            {formatKeyName(key)}
+            {formatKeyName(key, t)}
           </Text>
 
           {/* Field value */}
-          <View>{renderValue(key, value, depth)}</View>
+          <View>{renderValue(key, value, depth, t)}</View>
         </View>
       ))}
     </View>
+  );
+}
+
+// Main component (exported, uses useTranslation hook)
+export function JsonRenderer({
+  data,
+  depth = 0,
+  excludeKeys = [],
+}: JsonRendererProps) {
+  const { t } = useTranslation('analysis');
+
+  return (
+    <JsonRendererInner
+      data={data}
+      depth={depth}
+      excludeKeys={excludeKeys}
+      t={t}
+    />
   );
 }

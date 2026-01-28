@@ -3,7 +3,8 @@ import { Text } from '@/components/ui/text';
 import type { RegionId } from '@/lib/exercises';
 import { getRegionIcon, getRegionIconLibrary, getRegionTitle } from '@/lib/exercises';
 import React, { useCallback, useState } from 'react';
-import { Dimensions, Pressable, View } from 'react-native';
+import { Dimensions, Pressable, useColorScheme, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Animated, {
   Easing,
   FadeInDown // <-- Bunu ekleyin
@@ -127,6 +128,15 @@ export function SpinWheel({ onSpinComplete, disabled = false }: SpinWheelProps) 
     transform: [{ rotate: `${rotation.value}deg` }],
   }));
 
+  /* 
+   * Localized text rendering logic.
+   * Icon logic was broken (passing images to Ionicons), replaced with Text as requested.
+   */
+  const { t } = useTranslation('home'); // Specify 'home' namespace
+  const colorScheme = useColorScheme() ?? 'light';
+  // Use text color for pointer (White in Dark, Black in Light) or a high contrast generic color
+  const pointerColor = colorScheme === 'dark' ? '#FFFFFF' : '#1a1a1a';
+
   return (
     <View className="items-center">
       {/* Title */}
@@ -154,7 +164,7 @@ export function SpinWheel({ onSpinComplete, disabled = false }: SpinWheelProps) 
               borderTopWidth: 24, // Aşağı bakan üçgen
               borderLeftColor: 'transparent',
               borderRightColor: 'transparent',
-              borderTopColor: '#1a1a1a', // Koyu renk ibre
+              borderTopColor: pointerColor, // Dynamic color based on theme
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 2 },
               shadowOpacity: 0.25,
@@ -200,48 +210,41 @@ export function SpinWheel({ onSpinComplete, disabled = false }: SpinWheelProps) 
             </G>
           </Svg>
 
-          {/* İkonlar - SVG dışında absolute pozisyonlu */}
+          {/* Yazılar - SVG dışında absolute pozisyonlu */}
           {REGIONS.map((region, index) => {
-            const { x, y } = getTextCoordinates(index, REGIONS.length, radius);
-            const iconLibrary = getRegionIconLibrary(region);
-            const iconName = getRegionIcon(region);
+            const { x, y, rotation } = getTextCoordinates(index, REGIONS.length, radius);
+            // Default value as fallback, but t('home:regions...') or t('regions...') with ns='home' should work
+            const label = t(`regions.${region}`, { defaultValue: region.toUpperCase() });
 
             return (
               <View
-                key={`icon-${region}`}
+                key={`text-${region}`}
                 style={{
                   position: 'absolute',
-                  left: x - 20, // İkon genişliğinin yarısı kadar sola kaydır
-                  top: y - 20, // İkon yüksekliğinin yarısı kadar yukarı kaydır
-                  width: 40,
-                  height: 40,
+                  left: x - 45, // Increase width offset slightly
+                  top: y - 12, // Adjust vertically for larger text
+                  width: 90, // Increase width
+                  height: 24, // Increase height
                   alignItems: 'center',
                   justifyContent: 'center',
+                  transform: [
+                    // Yazıyı merkeze bakacak şekilde döndür
+                    { rotate: `${rotation + 90}deg` }
+                  ]
                 }}
               >
-                {iconLibrary === 'material-community' ? (
-                  <MaterialCommunityIcons
-                    name={iconName as any}
-                    size={32}
-                    color="white"
-                    style={{
-                      textShadowColor: 'rgba(0,0,0,0.3)',
-                      textShadowOffset: { width: 1, height: 1 },
-                      textShadowRadius: 2,
-                    }}
-                  />
-                ) : (
-                  <Ionicons
-                    name={iconName as any}
-                    size={32}
-                    color="white"
-                    style={{
-                      textShadowColor: 'rgba(0,0,0,0.3)',
-                      textShadowOffset: { width: 1, height: 1 },
-                      textShadowRadius: 2,
-                    }}
-                  />
-                )}
+                <Text
+                  className="text-white text-center"
+                  style={{
+                    fontSize: 13,
+                    fontWeight: '900', // Extra Bold
+                    textShadowColor: 'rgba(0,0,0,0.8)', // Stronger shadow for contrast
+                    textShadowOffset: { width: 1, height: 1 },
+                    textShadowRadius: 3,
+                  }}
+                >
+                  {label.toUpperCase()}
+                </Text>
               </View>
             );
           })}

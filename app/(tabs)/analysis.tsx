@@ -10,12 +10,12 @@ import { Text } from '@/components/ui/text';
 import { usePremium } from '@/hooks/use-premium';
 import { calculateAttractivenessScore, getScoreLabelTr } from '@/lib/attractiveness';
 import type { RegionId } from '@/lib/exercises';
-import { FACE_REGIONS, type FaceRegion } from '@/lib/face-prompts';
+import { FACE_REGIONS, METRIC_TRANSLATIONS, type FaceRegion, type SupportedLanguage } from '@/lib/face-prompts';
 import { extractMetrics } from '@/lib/metrics';
 import { analyzeFaceRegion, isOpenRouterConfigured } from '@/lib/openrouter';
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -33,7 +33,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // TEST MODE: AI çağrısını atla, sadece hesaplamaları test et
 // Para harcamamak için true yap, AI'ı açmak için false yap
 // ============================================
-const TEST_MODE = true;
+const TEST_MODE = false;
 
 interface FaceAnalysisData {
   id: string;
@@ -42,7 +42,8 @@ interface FaceAnalysisData {
 }
 
 const AnalysisScreen = () => {
-  const { t, i18n } = useTranslation('analysis');
+  const { t, i18n } = useTranslation(['analysis', 'common']);
+  const { faceAnalysisId } = useLocalSearchParams<{ faceAnalysisId?: string }>();
   const [loading, setLoading] = useState(true);
   const [faceData, setFaceData] = useState<FaceAnalysisData | null>(null);
   const [analyzingRegion, setAnalyzingRegion] = useState<string | null>(null);
@@ -55,21 +56,77 @@ const AnalysisScreen = () => {
   const [userGender, setUserGender] = useState<'female' | 'male' | 'other' | null>(null);
 
   // Premium hook
-  const { isPremium, freeAnalysisUsed, freeAnalysisRegion, markFreeAnalysisUsed } = usePremium();
+  const {
+    isPremium,
+    freeAnalysisCount,
+    freeAnalysisRegion,
+    remainingRights,
+    incrementFreeAnalysisCount,
+    setFreeAnalysisRegion,
+    refreshPremiumStatus
+  } = usePremium();
 
   useEffect(() => {
-    loadLatestFaceAnalysis();
-  }, []);
+    loadLatestFaceAnalysis(faceAnalysisId);
+  }, [faceAnalysisId]);
 
   // Calculate attractiveness score when face data is loaded
+  // Now includes regional scores for more accurate assessment
   useEffect(() => {
     if (faceData?.landmarks) {
-      const result = calculateAttractivenessScore(faceData.landmarks);
+      calculateAttractivenessWithRegional();
+    }
+  }, [faceData, userGender]);
+
+  // New function to calculate attractiveness with regional scores
+  const calculateAttractivenessWithRegional = async () => {
+    if (!faceData?.landmarks) return;
+
+    try {
+      // Calculate all regional scores
+      const [eyebrowsCalc, noseCalc, eyesCalc, lipsCalc, jawlineCalc] = await Promise.all([
+        import('@/lib/calculations/eyebrows').then(m => m.calculateEyebrowMetrics(faceData.landmarks)),
+        import('@/lib/calculations/nose').then(m => m.calculateNoseMetrics(faceData.landmarks)),
+        import('@/lib/calculations/eyes').then(m => m.calculateEyeMetrics(faceData.landmarks)),
+        import('@/lib/calculations/lips').then(m => m.calculateLipMetrics(faceData.landmarks)),
+        import('@/lib/calculations/jawline').then(m => m.calculateJawlineMetrics(faceData.landmarks)),
+      ]);
+
+      // Extract overall scores from each region
+      const regionalScores = {
+        eyebrows: eyebrowsCalc.overallScore,
+        nose: noseCalc.overallScore,
+        eyes: eyesCalc.overallScore,
+        lips: lipsCalc.overallScore,
+        jawline: jawlineCalc.overallScore,
+      };
+
+      console.log('📊 Regional Scores:', regionalScores);
+
+      // Calculate attractiveness with regional integration
+      const result = calculateAttractivenessScore(
+        faceData.landmarks,
+        userGender,
+        regionalScores  // NEW: Pass regional scores
+      );
+
+      console.log('🎯 Attractiveness Result:', {
+        score: result.overallScore,
+        confidence: result.confidence,
+        hasRegionalData: !!result.breakdown.regional,
+        penaltyMultiplier: result.breakdown.regional?.penaltyMultiplier,
+      });
+
+      setAttractivenessScore(result.overallScore);
+    } catch (error) {
+      console.error('Error calculating attractiveness with regional scores:', error);
+      // Fallback to simple calculation
+      const result = calculateAttractivenessScore(faceData.landmarks, userGender);
       setAttractivenessScore(result.overallScore);
     }
-  }, [faceData]);
+  };
 
-  const loadLatestFaceAnalysis = async () => {
+  const loadLatestFaceAnalysis = async (specificId?: string) => {
     try {
       setLoading(true);
 
@@ -84,7 +141,7 @@ const AnalysisScreen = () => {
         return;
       }
 
-      console.log('Loading face analysis for user:', user.id);
+      console.log('Loading face analysis for user:', user.id, 'specificId:', specificId);
 
       // Fetch user's gender from profile
       const { data: profileData } = await supabase
@@ -98,14 +155,21 @@ const AnalysisScreen = () => {
         console.log('User gender loaded:', profileData.gender);
       }
 
-      // Fetch latest face analysis
-      const { data, error } = await supabase
+      // Fetch face analysis - by specific ID if provided, otherwise latest
+      let query = supabase
         .from('face_analysis')
         .select('id, landmarks, created_at')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
+        .eq('user_id', user.id);
+
+      if (specificId) {
+        // Load specific face analysis by ID
+        query = query.eq('id', specificId);
+      } else {
+        // Load latest face analysis
+        query = query.order('created_at', { ascending: false }).limit(1);
+      }
+
+      const { data, error } = await query.single();
 
       if (error) {
         if (error.code === 'PGRST116') {
@@ -125,6 +189,17 @@ const AnalysisScreen = () => {
         throw error;
       }
 
+      // DEBUG-MIRROR: DB'den yüklenen veriyi kontrol et
+      console.log('📥 [DEBUG-MIRROR] DB\'DEN YÜKLENDİ:', {
+        faceAnalysisId: data?.id,
+        requestedId: specificId || 'latest',
+        P4_noseTip_x: data?.landmarks[4]?.x.toFixed(2),
+        P33_rightEyeOuter_x: data?.landmarks[33]?.x.toFixed(2),
+        P263_leftEyeOuter_x: data?.landmarks[263]?.x.toFixed(2),
+        mirrorCheck: data?.landmarks[263]?.x > data?.landmarks[33]?.x ? 'NORMAL' : 'MIRRORED',
+        createdAt: data?.created_at
+      });
+
       setFaceData(data);
     } catch (error) {
       console.error('Error loading face analysis:', error);
@@ -138,15 +213,23 @@ const AnalysisScreen = () => {
   };
 
   // Handle spin wheel completion
-  const handleSpinComplete = async (regionId: RegionId) => {
-    // Find the region from FACE_REGIONS
-    const region = FACE_REGIONS.find(r => r.id === regionId);
-    if (region) {
-      await markFreeAnalysisUsed(regionId);
+  const handleSpinComplete = async (regionId: string) => { // Using string to allow broader types, though effectively ID
+    // 1. Set the won region and reset count (0)
+    await setFreeAnalysisRegion(regionId);
+
+    // 2. Close modal after delay
+    setTimeout(() => {
       setShowSpinWheel(false);
-      // Perform the analysis for the won region
-      handleRegionAnalysis(region, true);
-    }
+
+      // 3. Show success alert
+      Alert.alert(
+        t('spinWheel.title'),
+        t('freeAnalysisUsed', { region: t(`regions.${regionId}.title`) }),
+        [
+          { text: "OK" }
+        ]
+      );
+    }, 1000);
   };
 
   /**
@@ -259,22 +342,52 @@ const AnalysisScreen = () => {
   };
 
   const handleRegionAnalysis = async (region: FaceRegion, bypassPremiumCheck = false) => {
+    // 1. JIT (Just-In-Time) Premium Check
+    // Force a sync with RevenueCat/DB and get the FRESH status
+    const isStillPremium = await refreshPremiumStatus();
+
     // Premium check for non-premium users
-    if (!isPremium && !bypassPremiumCheck) {
-      // Check if this is the free analysis region they won
-      if (freeAnalysisUsed && freeAnalysisRegion === region.id) {
-        // They already analyzed this region - navigate to exercises instead
-        router.push(`/exercises/${region.id}`);
-        return;
-      } else if (!freeAnalysisUsed) {
-        // Show spin wheel
-        setShowSpinWheel(true);
-        return;
+    if (!isStillPremium) {
+      // If manually bypassing (e.g. from spin wheel), check if we have remaining rights
+      if (bypassPremiumCheck) {
+        if (remainingRights <= 0) {
+          // Should not happen if bypassed correctly, but failsafe
+          setShowPremiumModal(true);
+          return;
+        }
+        // Consuming a right happens AFTER successful analysis or when spin completes?
+        // Plan said: Spin -> Win Region -> Consume 1 Right -> Analyze
+        // Here we just proceed. We need to increment the counter.
+        // Let's increment it NOW to ensure it's counted before analysis starts/fails
+        await incrementFreeAnalysisCount(region.id);
       } else {
-        // Show premium modal
-        setSelectedRegion(region);
-        setShowPremiumModal(true);
-        return;
+        // User clicked a card directly
+
+        // 1. If we already have a won region
+        if (freeAnalysisRegion) {
+          if (region.id === freeAnalysisRegion && remainingRights > 0) {
+            // Correct region and rights available -> Proceed directly
+            await incrementFreeAnalysisCount(region.id);
+            // Continue to analysis logic below...
+          } else {
+            // Wrong region or no rights left -> Locked
+            setSelectedRegion(region);
+            setShowPremiumModal(true);
+            return;
+          }
+        }
+        // 2. No region selected yet, but rights available
+        else if (remainingRights > 0) {
+          // Show spin wheel to win a region
+          setShowSpinWheel(true);
+          return;
+        }
+        // 3. No rights left at all
+        else {
+          setSelectedRegion(region);
+          setShowPremiumModal(true);
+          return;
+        }
       }
     }
 
@@ -302,6 +415,15 @@ const AnalysisScreen = () => {
       let calculatedMetrics: any = null;
 
       if (region.id === 'nose') {
+        // DEBUG-MIRROR: Nose analizi başlamadan önce kontrol
+        console.log('🔢 [DEBUG-MIRROR] NOSE ANALİZİ BAŞLIYOR:', {
+          landmarks_count: faceData.landmarks.length,
+          P4_noseTip_x: faceData.landmarks[4]?.x.toFixed(2),
+          P33_rightEyeOuter_x: faceData.landmarks[33]?.x.toFixed(2),
+          P263_leftEyeOuter_x: faceData.landmarks[263]?.x.toFixed(2),
+          mirrorCheck: faceData.landmarks[263]?.x > faceData.landmarks[33]?.x ? 'NORMAL' : 'MIRRORED'
+        });
+
         // Import dynamically to avoid circular dependencies
         const { calculateNoseMetrics } = await import('@/lib/calculations/nose');
         calculatedMetrics = calculateNoseMetrics(faceData.landmarks);
@@ -586,6 +708,7 @@ const AnalysisScreen = () => {
           .replace(/{rightBrowHighestY}/g, calculatedMetrics.rightBrowHighestY.toFixed(2))
           .replace(/{browHeightDifference}/g, calculatedMetrics.browHeightDifference.toFixed(2))
           .replace(/{browHeightDifferenceRatio}/g, calculatedMetrics.browHeightDifferenceRatio.toFixed(2))
+          .replace(/{browHeightDirection}/g, calculatedMetrics.browHeightDirection || 'EQUAL')
           .replace(/{browHeightSymmetryScore}/g, calculatedMetrics.browHeightSymmetryScore.toString())
 
           // Arch height symmetry
@@ -692,6 +815,39 @@ const AnalysisScreen = () => {
         console.log('✅ Face shape template variables replaced in prompt');
       } */
 
+      // ============================================
+      // 2.5. REPLACE LANGUAGE-SPECIFIC LABELS
+      // ============================================
+      const currentLang = (i18n.language || 'en') as SupportedLanguage;
+      const labels = METRIC_TRANSLATIONS[currentLang] || METRIC_TRANSLATIONS.en;
+
+      // Replace all label placeholders with localized strings
+      finalPrompt = finalPrompt
+        // Units
+        .replace(/{unit_pixels}/g, labels.pixels)
+        .replace(/{unit_degrees}/g, labels.degrees)
+        // Eyebrow labels
+        .replace(/{label_height_difference}/g, labels.height_difference)
+        .replace(/{label_arch_difference}/g, labels.arch_difference)
+        .replace(/{label_angle_difference}/g, labels.angle_difference)
+        // Eye labels
+        .replace(/{label_width_difference}/g, labels.width_difference)
+        .replace(/{label_vertical_misalignment}/g, labels.vertical_misalignment)
+        .replace(/{label_inter_eye_distance}/g, labels.inter_eye_distance)
+        // Nose labels
+        .replace(/{label_nose_tip_deviation}/g, labels.nose_tip_deviation)
+        .replace(/{label_nostril_asymmetry}/g, labels.nostril_asymmetry)
+        .replace(/{label_rotation_angle}/g, labels.rotation_angle)
+        // Lip labels
+        .replace(/{label_corner_alignment}/g, labels.corner_alignment)
+        .replace(/{label_width_asymmetry}/g, labels.width_asymmetry)
+        .replace(/{label_upper_lower_ratio}/g, labels.upper_lower_ratio)
+        // Jawline labels
+        .replace(/{label_chin_deviation}/g, labels.chin_deviation)
+        .replace(/{label_jawline_difference}/g, labels.jawline_difference);
+
+      console.log('✅ Language-specific labels replaced for:', currentLang);
+
       console.log(finalPrompt, "final prompt")
 
       // ============================================
@@ -740,7 +896,7 @@ const AnalysisScreen = () => {
       } else {
         // Normal AI call (para harcar)
         result = await analyzeFaceRegion({
-          landmarks: faceData.landmarks,
+          // landmarks: faceData.landmarks, // REMOVED for optimization
           region: region.id,
           customPrompt: finalPrompt,
           language: i18n.language as 'en' | 'tr',
@@ -947,7 +1103,7 @@ const AnalysisScreen = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={['top']}>
+    <View className="flex-1 bg-background">
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
         {/* Header */}
         <View className="mb-6">
@@ -997,36 +1153,33 @@ const AnalysisScreen = () => {
           </Card>
         )}
 
-        {/* Free User Spin Wheel CTA */}
-        {!isPremium && !freeAnalysisUsed && (
-          <Card className="mb-6 p-4 bg-yellow-50 border-2 border-yellow-200">
-            <Pressable onPress={() => setShowSpinWheel(true)} className="active:opacity-70">
-              <View className="flex-row items-center">
-                <Ionicons name="disc-outline" size={40} color="#CA8A04" />
-                <View className="flex-1 ml-3">
-                  <Text className="font-bold text-yellow-800">
-                    {t('freeAnalysis.title')}
-                  </Text>
-                  <Text className="text-sm text-yellow-700">
-                    {t('freeAnalysis.subtitle')}
+        {/* Free User Rights Status using Counter */}
+        {!isPremium && (
+          <Card className={`mb-6 p-4 border-2 ${remainingRights > 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1">
+                <View className={`w-12 h-12 rounded-full items-center justify-center mr-3 ${remainingRights > 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+                  <Text className={`text-xl font-bold ${remainingRights > 0 ? 'text-green-700' : 'text-red-700'}`}>
+                    {remainingRights}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={24} color="#CA8A04" />
+                <View className="flex-1">
+                  <Text className={`font-bold text-lg ${remainingRights > 0 ? 'text-green-800' : 'text-red-800'}`}>
+                    {remainingRights > 0 ? t('freeAnalysis.rightsAvailable') : t('freeAnalysis.noRights')}
+                  </Text>
+                  <Text className={`text-sm ${remainingRights > 0 ? 'text-green-700' : 'text-red-700'}`}>
+                    {remainingRights > 0
+                      ? t('freeAnalysis.rightsDescription', { count: remainingRights, total: 3 })
+                      : t('freeAnalysis.upgradeDescription')}
+                  </Text>
+                </View>
               </View>
-            </Pressable>
-          </Card>
-        )}
 
-        {/* Free analysis region indicator */}
-        {!isPremium && freeAnalysisUsed && freeAnalysisRegion && (
-          <Card className="mb-6 p-3 bg-green-50 border border-green-200">
-            <View className="flex-row items-center">
-              <Ionicons name="checkmark-circle" size={16} color="#16A34A" />
-              <Text className="text-sm text-green-700 ml-2">
-                {t('freeAnalysisUsed', {
-                  region: t(`regions.${freeAnalysisRegion}.title`)
-                })}
-              </Text>
+              {remainingRights > 0 && (
+                <Pressable onPress={() => setShowSpinWheel(true)} className="bg-green-600 px-3 py-1.5 rounded-full">
+                  <Text className="text-white text-xs font-bold">{t('spinWheel.button')}</Text>
+                </Pressable>
+              )}
             </View>
           </Card>
         )}
@@ -1034,9 +1187,17 @@ const AnalysisScreen = () => {
         {/* Face Region Buttons */}
         <View className="flex-row flex-wrap justify-between">
           {FACE_REGIONS.filter(region => region.id !== 'face_shape').map((region) => {
-            // Check if this region is accessible for free users
-            const isUnlocked = isPremium || (freeAnalysisUsed && freeAnalysisRegion === region.id);
-            const isLocked = !isPremium && freeAnalysisUsed && freeAnalysisRegion !== region.id;
+            // Logic:
+            // 1. Premium: Always unlocked
+            // 2. Free & Region Won & Rights > 0: Unlocked if matches won region
+            // 3. Free & Region Won & Rights == 0: Locked (expired)
+            // 4. Free & No Region Won: Locked (must spin wheel)
+
+            const isWonRegion = freeAnalysisRegion === region.id;
+            const hasRights = remainingRights > 0;
+
+            const isUnlocked = isPremium || (isWonRegion && hasRights);
+            const isLocked = !isUnlocked;
 
             return (
               <Pressable
@@ -1046,7 +1207,7 @@ const AnalysisScreen = () => {
                 className="active:opacity-70"
                 style={{ width: '48%', marginBottom: 16 }}
               >
-                <Card className={`p-3 border bg-card ${isLocked ? 'border-border/50 opacity-80' : 'border-border'}`} style={{ minHeight: 180 }}>
+                <Card className={`p-3 border bg-card ${isLocked ? 'border-border/50 opacity-80' : 'border-border'}`} style={{ height: 205 }}>
                   {/* Icon */}
                   <View className={`w-14 h-14 rounded-full items-center justify-center mb-2 ${isLocked ? 'bg-muted' : 'bg-primary/10'}`}>
                     {typeof region.icon === 'string' ? (
@@ -1074,6 +1235,7 @@ const AnalysisScreen = () => {
                         <Text className="text-xs text-muted-foreground">{t('locked', { ns: 'common', defaultValue: 'Locked' })}</Text>
                       </View>
                     )}
+                    {/* Only show 'Free' badge if user is not premium but has rights */}
                     {isUnlocked && !isPremium && (
                       <View className="bg-green-100 px-2 py-0.5 rounded-full self-start mb-1">
                         <Text className="text-xs text-green-700 font-medium">{t('freeBadge')}</Text>
@@ -1126,7 +1288,7 @@ const AnalysisScreen = () => {
           <ScrollView className="flex-1 p-6" contentContainerStyle={{ alignItems: 'center', justifyContent: 'center', flexGrow: 1 }}>
             <SpinWheel
               onSpinComplete={handleSpinComplete}
-              disabled={freeAnalysisUsed}
+              disabled={!!freeAnalysisRegion} // Disabled if user already has a region selected
             />
           </ScrollView>
         </SafeAreaView>
@@ -1268,35 +1430,18 @@ const AnalysisScreen = () => {
 
           {/* Close Button / Navigate to Exercises */}
           <View className="p-6 border-t border-border">
-            {!isPremium && selectedRegion && freeAnalysisUsed && freeAnalysisRegion === selectedRegion.id ? (
-              <Pressable
-                onPress={() => {
-                  closeResultModal();
-                  router.push(`/exercises/${selectedRegion.id}`);
-                }}
-                className="bg-green-600 py-4 rounded-lg items-center active:opacity-80"
-              >
-                <View className="flex-row items-center">
-                  <Ionicons name="barbell-outline" size={20} color="#FFFFFF" />
-                  <Text className="text-white font-semibold text-base ml-2">
-                    Egzersizlere Git
-                  </Text>
-                </View>
-              </Pressable>
-            ) : (
-              <Pressable
-                onPress={closeResultModal}
-                className="bg-primary py-4 rounded-lg items-center active:opacity-80"
-              >
-                <Text className="text-primary-foreground font-semibold text-base">
-                  {t('closeButton')}
-                </Text>
-              </Pressable>
-            )}
+            <Pressable
+              onPress={closeResultModal}
+              className="bg-primary py-4 rounded-lg items-center active:opacity-80"
+            >
+              <Text className="text-primary-foreground font-semibold text-base">
+                {t('closeButton')}
+              </Text>
+            </Pressable>
           </View>
         </SafeAreaView>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 

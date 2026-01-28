@@ -11,6 +11,7 @@ export interface EyebrowCalculations {
   rightBrowHighestY: number;         // highest point of right brow
   browHeightDifference: number;      // absolute Y difference
   browHeightDifferenceRatio: number; // percentage of face height
+  browHeightDirection: 'LEFT_HIGHER' | 'RIGHT_HIGHER' | 'EQUAL'; // which brow is higher (viewer perspective)
   browHeightSymmetryScore: number;   // 0-10 (strict)
 
   // === ARCH HEIGHT SYMMETRY (24%) ===
@@ -133,7 +134,8 @@ export function calculateEyebrowMetrics(landmarks: Point3D[]): EyebrowCalculatio
 
   // Face dimensions
   const faceHeight = chinTip.y - forehead.y;
-  const eyeWidth = leftEyeOuter.x - rightEyeOuter.x;
+  // Use absolute difference or distance for safe width calculation
+  const eyeWidth = distance2D(leftEyeOuter, rightEyeOuter);
 
   console.log('📐 FACE DIMENSIONS:');
   console.log('  Face height:', faceHeight.toFixed(2), 'px');
@@ -144,6 +146,10 @@ export function calculateEyebrowMetrics(landmarks: Point3D[]): EyebrowCalculatio
   // ========================================
 
   // Find highest point of each brow (lowest Y value)
+  // NOTE: In MediaPipe/Screen coordinates:
+  // - leftBrow variables (indices 70, 105...) correspond to SCREEN LEFT but SUBJECT'S RIGHT brow.
+  // - rightBrow variables (indices 300, 334...) correspond to SCREEN RIGHT but SUBJECT'S LEFT brow.
+
   const leftBrowHighestY = Math.min(
     leftBrowInner.y,
     leftBrowArch.y,
@@ -163,16 +169,34 @@ export function calculateEyebrowMetrics(landmarks: Point3D[]): EyebrowCalculatio
   const browHeightDifference = Math.abs(leftBrowHighestY - rightBrowHighestY);
   const browHeightDifferenceRatio = (browHeightDifference / faceHeight) * 100;
 
+  // Hangi kaş daha yukarıda? (düşük Y = daha yukarıda)
+  // CORRECTED LOGIC FOR SUBJECT PERSPECTIVE:
+  // leftBrowHighestY = Screen Left = Subject's RIGHT Brow
+  // rightBrowHighestY = Screen Right = Subject's LEFT Brow
+  // If leftBrowHighestY < rightBrowHighestY -> Screen Left is higher -> Subject's RIGHT is higher.
+
+  const browHeightDirection: 'LEFT_HIGHER' | 'RIGHT_HIGHER' | 'EQUAL' =
+    browHeightDifference < 3 ? 'EQUAL' :
+      leftBrowHighestY < rightBrowHighestY ? 'RIGHT_HIGHER' : 'LEFT_HIGHER';
+
+  console.log('📊 BROW HEIGHT DIRECTION (SUBJECT PERSPECTIVE):');
+  console.log('  Screen Left (Subject RIGHT) Y:', leftBrowHighestY.toFixed(2), 'px');
+  console.log('  Screen Right (Subject LEFT) Y:', rightBrowHighestY.toFixed(2), 'px');
+  console.log('  Height difference:', browHeightDifference.toFixed(2), 'px');
+  console.log('  Calculated Direction (Subject POV):', browHeightDirection);
+  console.log('  → ', browHeightDirection === 'LEFT_HIGHER' ? 'SOL kaş (Screen Right) daha YUKARDA' :
+    browHeightDirection === 'RIGHT_HIGHER' ? 'SAĞ kaş (Screen Left) daha YUKARDA' : 'KAŞLAR EŞİT');
+
   // STRICT SCORING: Based on ratio to face height (not absolute pixels)
   // %1 fark = minimal, %1.5-2 fark = fark edilebilir, %2.5+ = belirgin
   const browHeightSymmetryScore =
     browHeightDifferenceRatio < 0.5 ? 10 :    // Perfect (<0.5% face height)
-    browHeightDifferenceRatio < 1 ? 8 :       // Minimal (0.5-1%)
-    browHeightDifferenceRatio < 1.5 ? 7 :     // Slight (1-1.5%)
-    browHeightDifferenceRatio < 2 ? 5 :       // Noticeable (1.5-2%)
-    browHeightDifferenceRatio < 2.5 ? 4 :     // Moderate (2-2.5%)
-    browHeightDifferenceRatio < 3.5 ? 3 :     // Visible (2.5-3.5%)
-    browHeightDifferenceRatio < 5 ? 2 : 1;    // Severe (>5%)
+      browHeightDifferenceRatio < 1 ? 8 :       // Minimal (0.5-1%)
+        browHeightDifferenceRatio < 1.5 ? 7 :     // Slight (1-1.5%)
+          browHeightDifferenceRatio < 2 ? 5 :       // Noticeable (1.5-2%)
+            browHeightDifferenceRatio < 2.5 ? 4 :     // Moderate (2-2.5%)
+              browHeightDifferenceRatio < 3.5 ? 3 :     // Visible (2.5-3.5%)
+                browHeightDifferenceRatio < 5 ? 2 : 1;    // Severe (>5%)
 
   // ========================================
   // 2. ARCH HEIGHT SYMMETRY (24% weight)
@@ -189,11 +213,11 @@ export function calculateEyebrowMetrics(landmarks: Point3D[]): EyebrowCalculatio
   // Arch height diff as % of max arch height - daha sıkı
   const archHeightSymmetryScore =
     archHeightDifferenceRatio < 3 ? 10 :      // Perfect (<3% diff)
-    archHeightDifferenceRatio < 5 ? 8 :       // Minimal (3-5%)
-    archHeightDifferenceRatio < 8 ? 6 :       // Noticeable (5-8%)
-    archHeightDifferenceRatio < 12 ? 5 :      // Moderate (8-12%)
-    archHeightDifferenceRatio < 18 ? 3 :      // Visible (12-18%)
-    archHeightDifferenceRatio < 25 ? 2 : 1;   // Severe (>25%)
+      archHeightDifferenceRatio < 5 ? 8 :       // Minimal (3-5%)
+        archHeightDifferenceRatio < 8 ? 6 :       // Noticeable (5-8%)
+          archHeightDifferenceRatio < 12 ? 5 :      // Moderate (8-12%)
+            archHeightDifferenceRatio < 18 ? 3 :      // Visible (12-18%)
+              archHeightDifferenceRatio < 25 ? 2 : 1;   // Severe (>25%)
 
   // ========================================
   // 3. BROW DISTANCE FROM EYE (18% weight)
@@ -213,24 +237,24 @@ export function calculateEyebrowMetrics(landmarks: Point3D[]): EyebrowCalculatio
   // 187% biraz yüksek - kaşlar gözden uzak
   const browEyeDistanceAssessment: 'TOO_CLOSE' | 'IDEAL' | 'TOO_FAR' =
     browEyeDistanceRatio < 60 ? 'TOO_CLOSE' :
-    browEyeDistanceRatio < 160 ? 'IDEAL' : 'TOO_FAR';
+      browEyeDistanceRatio < 160 ? 'IDEAL' : 'TOO_FAR';
 
   // STRICT SCORING: Narrower optimal range
   const distanceScore =
     browEyeDistanceRatio >= 80 && browEyeDistanceRatio <= 140 ? 10 :   // Optimal range
-    browEyeDistanceRatio >= 60 && browEyeDistanceRatio <= 160 ? 8 :    // Good range
-    browEyeDistanceRatio >= 50 && browEyeDistanceRatio <= 180 ? 6 :    // Acceptable
-    browEyeDistanceRatio >= 40 && browEyeDistanceRatio <= 200 ? 4 :    // Far from ideal
-    browEyeDistanceRatio >= 30 && browEyeDistanceRatio <= 250 ? 3 : 2; // Extreme
+      browEyeDistanceRatio >= 60 && browEyeDistanceRatio <= 160 ? 8 :    // Good range
+        browEyeDistanceRatio >= 50 && browEyeDistanceRatio <= 180 ? 6 :    // Acceptable
+          browEyeDistanceRatio >= 40 && browEyeDistanceRatio <= 200 ? 4 :    // Far from ideal
+            browEyeDistanceRatio >= 30 && browEyeDistanceRatio <= 250 ? 3 : 2; // Extreme
 
   // Asymmetry scoring: ratio-based (% of eye height) - daha sıkı
   const asymmetryRatio = (browEyeDistanceAsymmetry / eyeHeight) * 100;
   const asymmetryScore =
     asymmetryRatio < 5 ? 10 :     // <5% of eye height
-    asymmetryRatio < 10 ? 8 :     // 5-10%
-    asymmetryRatio < 15 ? 6 :     // 10-15%
-    asymmetryRatio < 20 ? 4 :     // 15-20%
-    asymmetryRatio < 30 ? 3 : 2;  // >30%
+      asymmetryRatio < 10 ? 8 :     // 5-10%
+        asymmetryRatio < 15 ? 6 :     // 10-15%
+          asymmetryRatio < 20 ? 4 :     // 15-20%
+            asymmetryRatio < 30 ? 3 : 2;  // >30%
 
   const browEyeDistanceScore = Math.round((distanceScore * 0.6) + (asymmetryScore * 0.4));
 
@@ -251,15 +275,15 @@ export function calculateEyebrowMetrics(landmarks: Point3D[]): EyebrowCalculatio
   // 127% biraz geniş aralıklı
   const innerCornerAssessment: 'TOO_CLOSE' | 'IDEAL' | 'TOO_FAR' =
     innerCornerDistanceRatio < 85 ? 'TOO_CLOSE' :
-    innerCornerDistanceRatio < 125 ? 'IDEAL' : 'TOO_FAR';
+      innerCornerDistanceRatio < 125 ? 'IDEAL' : 'TOO_FAR';
 
   // STRICT SCORING: Narrower optimal range
   const innerCornerDistanceScore =
     innerCornerDistanceRatio >= 95 && innerCornerDistanceRatio <= 115 ? 10 :   // Optimal
-    innerCornerDistanceRatio >= 85 && innerCornerDistanceRatio <= 125 ? 8 :    // Good
-    innerCornerDistanceRatio >= 75 && innerCornerDistanceRatio <= 135 ? 6 :    // Acceptable
-    innerCornerDistanceRatio >= 65 && innerCornerDistanceRatio <= 150 ? 4 :    // Wide/narrow
-    innerCornerDistanceRatio >= 55 && innerCornerDistanceRatio <= 170 ? 3 : 2; // Extreme
+      innerCornerDistanceRatio >= 85 && innerCornerDistanceRatio <= 125 ? 8 :    // Good
+        innerCornerDistanceRatio >= 75 && innerCornerDistanceRatio <= 135 ? 6 :    // Acceptable
+          innerCornerDistanceRatio >= 65 && innerCornerDistanceRatio <= 150 ? 4 :    // Wide/narrow
+            innerCornerDistanceRatio >= 55 && innerCornerDistanceRatio <= 170 ? 3 : 2; // Extreme
 
   // ========================================
   // 5. BROW ANGLE/SLOPE (10% weight)
@@ -279,18 +303,18 @@ export function calculateEyebrowMetrics(landmarks: Point3D[]): EyebrowCalculatio
   // Classify direction
   const leftBrowDirection: 'ASCENDING' | 'HORIZONTAL' | 'DESCENDING' =
     leftBrowAngle > 5 ? 'ASCENDING' :
-    leftBrowAngle < -5 ? 'DESCENDING' : 'HORIZONTAL';
+      leftBrowAngle < -5 ? 'DESCENDING' : 'HORIZONTAL';
 
   const rightBrowDirection: 'ASCENDING' | 'HORIZONTAL' | 'DESCENDING' =
     rightBrowAngle > 5 ? 'ASCENDING' :
-    rightBrowAngle < -5 ? 'DESCENDING' : 'HORIZONTAL';
+      rightBrowAngle < -5 ? 'DESCENDING' : 'HORIZONTAL';
 
   // STRICT SCORING
   const browAngleSymmetryScore =
     browAngleDifference < 3 ? 10 :
-    browAngleDifference < 6 ? 8 :
-    browAngleDifference < 10 ? 6 :
-    browAngleDifference < 15 ? 3 : 1;
+      browAngleDifference < 6 ? 8 :
+        browAngleDifference < 10 ? 6 :
+          browAngleDifference < 15 ? 3 : 1;
 
   // ========================================
   // 6. BROW THICKNESS (6% weight)
@@ -312,9 +336,9 @@ export function calculateEyebrowMetrics(landmarks: Point3D[]): EyebrowCalculatio
   // STRICT SCORING
   const browThicknessSymmetryScore =
     browThicknessDifferenceRatio < 10 ? 10 :
-    browThicknessDifferenceRatio < 20 ? 8 :
-    browThicknessDifferenceRatio < 30 ? 6 :
-    browThicknessDifferenceRatio < 40 ? 3 : 1;
+      browThicknessDifferenceRatio < 20 ? 8 :
+        browThicknessDifferenceRatio < 30 ? 6 :
+          browThicknessDifferenceRatio < 40 ? 3 : 1;
 
   // ========================================
   // 7. BROW LENGTH (2% weight)
@@ -329,9 +353,9 @@ export function calculateEyebrowMetrics(landmarks: Point3D[]): EyebrowCalculatio
   // STRICT SCORING
   const browLengthSymmetryScore =
     browLengthDifferenceRatio < 5 ? 10 :
-    browLengthDifferenceRatio < 10 ? 8 :
-    browLengthDifferenceRatio < 15 ? 6 :
-    browLengthDifferenceRatio < 20 ? 3 : 1;
+      browLengthDifferenceRatio < 10 ? 8 :
+        browLengthDifferenceRatio < 15 ? 6 :
+          browLengthDifferenceRatio < 20 ? 3 : 1;
 
   // ========================================
   // INDIVIDUAL BROW SCORES
@@ -372,8 +396,8 @@ export function calculateEyebrowMetrics(landmarks: Point3D[]): EyebrowCalculatio
   // ASYMMETRY LEVEL
   const asymmetryLevel: 'NONE' | 'MILD' | 'MODERATE' | 'SEVERE' =
     overallScore >= 9 ? 'NONE' :
-    overallScore >= 7 ? 'MILD' :
-    overallScore >= 4 ? 'MODERATE' : 'SEVERE';
+      overallScore >= 7 ? 'MILD' :
+        overallScore >= 4 ? 'MODERATE' : 'SEVERE';
 
   // ========================================
   // CONSOLE.LOG - CALCULATION RESULTS
@@ -440,6 +464,7 @@ export function calculateEyebrowMetrics(landmarks: Point3D[]): EyebrowCalculatio
     rightBrowHighestY,
     browHeightDifference,
     browHeightDifferenceRatio,
+    browHeightDirection,
     browHeightSymmetryScore,
 
     // Arch height symmetry

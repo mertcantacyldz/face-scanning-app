@@ -48,10 +48,7 @@ const RegionDetailScreen = () => {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   // Premium check
-  const { isPremium, freeAnalysisRegion } = usePremium();
-
-  // Check if this is the free analysis region for non-premium users
-  const isAccessible = isPremium || freeAnalysisRegion === regionId;
+  const { isPremium } = usePremium();
 
   const title = getRegionTitle(regionId);
   const region = FACE_REGIONS.find((r) => r.id === regionId);
@@ -253,7 +250,8 @@ const RegionDetailScreen = () => {
               )}
             </View>
             <View className="gap-3">
-              {analyses.slice(0, isPremium ? 5 : 1).map((analysis, index) => (
+              {/* Show ALL history for Premium, only latest 1 for Free */}
+              {analyses.slice(0, isPremium ? undefined : 1).map((analysis, index) => (
                 <Pressable
                   key={analysis.id}
                   onPress={() => handleAnalysisPress(analysis)}
@@ -363,62 +361,64 @@ const RegionDetailScreen = () => {
       {/* History Detail Modal (Premium only) */}
       {showHistoryDetail && selectedAnalysis && isPremium && (
         <View className="absolute inset-0 bg-background">
-          <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
-            {/* Header */}
-            <View className="flex-row items-center mb-6">
-              <Pressable
-                onPress={() => setShowHistoryDetail(false)}
-                className="w-10 h-10 items-center justify-center mr-3"
-              >
-                <Text className="text-2xl">←</Text>
-              </Pressable>
-              <View>
-                <Text className="text-2xl font-bold">{t('detailModal.title', { region: title })}</Text>
-                <Text className="text-muted-foreground">
-                  {new Date(selectedAnalysis.created_at).toLocaleDateString(
-                    i18n.language === 'tr' ? 'tr-TR' : 'en-US',
-                    {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    }
-                  )}
-                </Text>
-              </View>
-            </View>
-
-            {/* Score */}
-            <Card className="p-6 mb-6 items-center bg-primary/5 border-2 border-primary/20">
-              <View className="w-24 h-24 rounded-full bg-white shadow-lg items-center justify-center border-4 border-primary/20">
-                <Text
-                  className={`text-4xl font-bold ${selectedAnalysis.overall_score >= 7
-                    ? 'text-green-600'
-                    : selectedAnalysis.overall_score >= 4
-                      ? 'text-yellow-600'
-                      : 'text-red-600'
-                    }`}
+          <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+            <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
+              {/* Header */}
+              <View className="flex-row items-center mb-6">
+                <Pressable
+                  onPress={() => setShowHistoryDetail(false)}
+                  className="w-10 h-10 items-center justify-center mr-3"
                 >
-                  {selectedAnalysis.overall_score}
-                </Text>
-                <Text className="text-sm text-muted-foreground">/10</Text>
+                  <Text className="text-2xl">←</Text>
+                </Pressable>
+                <View>
+                  <Text className="text-2xl font-bold">{t('detailModal.title', { region: title })}</Text>
+                  <Text className="text-muted-foreground">
+                    {new Date(selectedAnalysis.created_at).toLocaleDateString(
+                      i18n.language === 'tr' ? 'tr-TR' : 'en-US',
+                      {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      }
+                    )}
+                  </Text>
+                </View>
               </View>
-            </Card>
 
-            {/* Full Analysis */}
-            {selectedAnalysis.raw_response && (
-              <Card className="p-5 bg-card border border-border">
-                <Text className="text-lg font-bold mb-4">{t('detailModal.detailedAnalysis')}</Text>
-                <JsonRenderer
-                  data={selectedAnalysis.raw_response}
-                  excludeKeys={['metadata']}
-                />
+              {/* Score */}
+              <Card className="p-6 mb-6 items-center bg-primary/5 border-2 border-primary/20">
+                <View className="w-24 h-24 rounded-full bg-white shadow-lg items-center justify-center border-4 border-primary/20">
+                  <Text
+                    className={`text-4xl font-bold ${selectedAnalysis.overall_score >= 7
+                      ? 'text-green-600'
+                      : selectedAnalysis.overall_score >= 4
+                        ? 'text-yellow-600'
+                        : 'text-red-600'
+                      }`}
+                  >
+                    {selectedAnalysis.overall_score}
+                  </Text>
+                  <Text className="text-sm text-muted-foreground">/10</Text>
+                </View>
               </Card>
-            )}
 
-            <View className="h-8" />
-          </ScrollView>
+              {/* Full Analysis */}
+              {selectedAnalysis.raw_response && (
+                <Card className="p-5 bg-card border border-border">
+                  <Text className="text-lg font-bold mb-4">{t('detailModal.detailedAnalysis')}</Text>
+                  <JsonRenderer
+                    data={selectedAnalysis.raw_response}
+                    excludeKeys={['metadata']}
+                  />
+                </Card>
+              )}
+
+              <View className="h-8" />
+            </ScrollView>
+          </SafeAreaView>
         </View>
       )}
 

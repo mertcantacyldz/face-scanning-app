@@ -5,7 +5,7 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 export interface FaceLandmarks {
@@ -176,6 +176,18 @@ export function useFaceMesh() {
             hangiResim: selectedImage?.substring(0, 50)
           });
 
+          // DEBUG-MIRROR: Ayna kontrolü için kritik landmark'lar
+          console.log('🎯 [DEBUG-MIRROR] LANDMARKS ALINDI - AYNA KONTROLÜ:', {
+            P4_noseTip_x: data.data.landmarks[4]?.x.toFixed(2),
+            P33_rightEyeOuter_x: data.data.landmarks[33]?.x.toFixed(2),
+            P263_leftEyeOuter_x: data.data.landmarks[263]?.x.toFixed(2),
+            // Aynalama kontrolü: Normal durumda P263 > P33 (sol göz sağda)
+            mirrorCheck: data.data.landmarks[263]?.x > data.data.landmarks[33]?.x ? 'NORMAL' : 'MIRRORED',
+            faceCenter: ((data.data.landmarks[33]?.x + data.data.landmarks[263]?.x) / 2).toFixed(2),
+            tipDeviation: (data.data.landmarks[4]?.x - (data.data.landmarks[33]?.x + data.data.landmarks[263]?.x) / 2).toFixed(2),
+            imageTimestamp: Date.now()
+          });
+
           setFaceLandmarks(data.data);
 
           // Mesh validation yap - TÜM data.data objesini gönder (confidence içeriyor)
@@ -236,13 +248,22 @@ export function useFaceMesh() {
     }
   };
 
-  // Veritabanına kaydet
-  const saveAnalysisToDatabase = async (landmarksData: FaceLandmarks) => {
+  // Veritabanına kaydet - returns the saved record ID
+  const saveAnalysisToDatabase = async (landmarksData: FaceLandmarks): Promise<string | null> => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      // DEBUG-MIRROR: DB'ye kaydedilmeden önce kontrol
+      console.log('💾 [DEBUG-MIRROR] DB\'YE KAYDEDİLİYOR:', {
+        P4_noseTip_x: landmarksData.landmarks[4]?.x.toFixed(2),
+        P33_rightEyeOuter_x: landmarksData.landmarks[33]?.x.toFixed(2),
+        P263_leftEyeOuter_x: landmarksData.landmarks[263]?.x.toFixed(2),
+        mirrorCheck: landmarksData.landmarks[263]?.x > landmarksData.landmarks[33]?.x ? 'NORMAL' : 'MIRRORED',
+        timestamp: landmarksData.timestamp
+      });
 
-      const { error } = await supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+
+      const { data, error } = await supabase
         .from('face_analysis')
         .insert([
           {
@@ -257,17 +278,24 @@ export function useFaceMesh() {
               timestamp: landmarksData.timestamp
             }
           }
-        ]);
+        ])
+        .select('id')
+        .single();
 
       if (error) {
         if (__DEV__) {
           console.error('Kayıt hatası:', error);
         }
+        return null;
       }
+
+      console.log('✅ [DEBUG-MIRROR] DB\'YE KAYDEDİLDİ, ID:', data?.id);
+      return data?.id || null;
     } catch (error) {
       if (__DEV__) {
         console.error('Kayıt işlemi hatası:', error);
       }
+      return null;
     }
   };
 
@@ -282,18 +310,27 @@ export function useFaceMesh() {
     setShowMeshPreview(false);
 
     if (faceLandmarks) {
-      await saveAnalysisToDatabase(faceLandmarks);
+      const savedId = await saveAnalysisToDatabase(faceLandmarks);
 
-      Alert.alert(
-        'Analiz Başarılı! 🎉',
-        `${faceLandmarks.totalPoints} noktalı MediaPipe analizi kaydedildi!`,
-        [
-          {
-            text: 'Tamam',
-            onPress: () => router.push('/analysis')
-          }
-        ]
-      );
+      if (savedId) {
+        Alert.alert(
+          'Analiz Başarılı! 🎉',
+          `${faceLandmarks.totalPoints} noktalı MediaPipe analizi kaydedildi!`,
+          [
+            {
+              text: 'Tamam',
+              // Pass the saved ID to analysis page to ensure it loads the correct data
+              onPress: () => router.push({ pathname: '/analysis', params: { faceAnalysisId: savedId } })
+            }
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Kayıt Hatası',
+          'Analiz kaydedilemedi. Lütfen tekrar deneyin.',
+          [{ text: 'Tamam' }]
+        );
+      }
     }
   };
 
@@ -320,7 +357,14 @@ export function useFaceMesh() {
   const checkCameraPermission = async () => {
     const { status } = await Camera.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('İzin Gerekli', 'Kamera kullanmak için izin vermeniz gerekiyor');
+      Alert.alert(
+        'İzin Gerekli',
+        'Kamera kullanmak için ayarlardan izin vermeniz gerekiyor.',
+        [
+          { text: 'İptal', style: 'cancel' },
+          { text: 'Ayarları Aç', onPress: () => Linking.openSettings() }
+        ]
+      );
       return false;
     }
     return true;
@@ -330,25 +374,17 @@ export function useFaceMesh() {
   const checkGalleryPermission = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('İzin Gerekli', 'Fotoğraflara erişmek için izin vermeniz gerekiyor');
+      Alert.alert(
+        'İzin Gerekli',
+        'Fotoğraflara erişmek için ayarlardan izin vermeniz gerekiyor.',
+        [
+          { text: 'İptal', style: 'cancel' },
+          { text: 'Ayarları Aç', onPress: () => Linking.openSettings() }
+        ]
+      );
       return false;
     }
     return true;
-  };
-
-  // Fotoğraf çekme uyarısı
-  const showPhotoGuidelines = () => {
-    if (__DEV__) {
-      console.log('[Flow] showPhotoGuidelines çağrıldı');
-    }
-    Alert.alert(
-      '📸 FaceAnalyzer AI Rehberi',
-      '• Yüzünüzün tamamı görünecek şekilde çekin\n• İyi ışıklı bir ortam seçin\n• Kameraya düz bakın\n• Saç yüzünüzü kapatmasın\n• 468 nokta için net fotoğraf önemli\n• Özgün AI teknolojimizle analiz edilecek',
-      [
-        { text: 'İptal', style: 'cancel' },
-        { text: 'FaceAnalyzer ile Analiz Et', onPress: () => setShowImagePicker(true) }
-      ]
-    );
   };
 
   // Kameradan fotoğraf çek
@@ -522,7 +558,7 @@ export function useFaceMesh() {
     }
     setSelectedImage(null);
     setFaceLandmarks(null);
-    showPhotoGuidelines();
+    setShowImagePicker(true);
   };
 
   return {
@@ -545,7 +581,6 @@ export function useFaceMesh() {
     startNewAnalysis,
     takePhoto,
     pickImage,
-    showPhotoGuidelines,
     setShowImagePicker,
     // Constants
     mediaPipeHTML,

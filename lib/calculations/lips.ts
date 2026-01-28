@@ -159,6 +159,12 @@ export function calculateLipMetrics(landmarks: Point3D[]): LipCalculations {
   const rightEyeOuter = landmarks[33]; // P_33
   const leftEyeOuter = landmarks[263]; // P_263
 
+  console.log('🔍 RAW LANDMARK DATA (LIPS):');
+  console.log('  P_61 (leftCorner):', JSON.stringify({ x: leftCorner.x, y: leftCorner.y }));
+  console.log('  P_291 (rightCorner):', JSON.stringify({ x: rightCorner.x, y: rightCorner.y }));
+  console.log('  P_33 (rightEyeOuter):', JSON.stringify({ x: rightEyeOuter.x, y: rightEyeOuter.y }));
+  console.log('  P_263 (leftEyeOuter):', JSON.stringify({ x: leftEyeOuter.x, y: leftEyeOuter.y }));
+
   console.log('👄 LIP LANDMARKS:');
   console.log('  P_61 (leftCorner):', leftCorner ? `x=${leftCorner.x.toFixed(2)}, y=${leftCorner.y.toFixed(2)}` : 'MISSING');
   console.log('  P_291 (rightCorner):', rightCorner ? `x=${rightCorner.x.toFixed(2)}, y=${rightCorner.y.toFixed(2)}` : 'MISSING');
@@ -172,6 +178,7 @@ export function calculateLipMetrics(landmarks: Point3D[]): LipCalculations {
   console.log('📐 FACE DIMENSIONS:');
   console.log('  Face width:', faceWidth.toFixed(2), 'px');
   console.log('  Face center X:', faceCenterX.toFixed(2), 'px');
+  console.log('  DEBUG - Reference Points X: P_33(RightEyeOuter)=', rightEyeOuter.x.toFixed(2), 'P_263(LeftEyeOuter)=', leftEyeOuter.x.toFixed(2));
 
   // ============================================
   // B. LIP CORNER ALIGNMENT (MOST CRITICAL)
@@ -184,17 +191,22 @@ export function calculateLipMetrics(landmarks: Point3D[]): LipCalculations {
   const lipWidth = Math.abs(rightCorner.x - leftCorner.x);
   const cornerYDifferenceRatio = (cornerYDifference / lipWidth) * 100;
 
-  // Calculate tilt angle (atan2 for proper quadrant handling)
+  // Calculate tilt angle for metadata (keeping atan2 for degree value)
   const dx = rightCorner.x - leftCorner.x;
   const dy = rightCorner.y - leftCorner.y;
   const lipLineTilt = Math.atan2(dy, dx) * (180 / Math.PI);
 
+  // Kişinin kendi perspektifindne Yönlendirme:
+  // leftCorner = Anatomik SOL (Ekranın Sağı)
+  // rightCorner = Anatomik SAĞ (Ekranın Solu)
+  // Y değeri aşağı indikçe artar.
+  // Hangi Y daha büyükse o köşe daha AŞAĞIDADIR.
   const lipLineTiltDirection =
-    Math.abs(lipLineTilt) < 2
+    Math.abs(leftCornerY - rightCornerY) < 1.5
       ? 'LEVEL'
-      : lipLineTilt > 0
-        ? 'TILTED_RIGHT' // Right corner lower
-        : 'TILTED_LEFT'; // Left corner lower
+      : leftCornerY > rightCornerY
+        ? 'TILTED_LEFT'  // Sol köşe (Y daha büyük) aşağıda
+        : 'TILTED_RIGHT'; // Sağ köşe (Y daha büyük) aşağıda
 
   // STRICT SCORING: Corner misalignment is extremely noticeable
   // Even 1-2 pixels can create visible asymmetry
@@ -224,6 +236,12 @@ export function calculateLipMetrics(landmarks: Point3D[]): LipCalculations {
   const lipCenterX = (leftCorner.x + rightCorner.x) / 2;
   const lipCenterDeviation = Math.abs(lipCenterX - faceCenterX);
   const lipCenterDeviationRatio = (lipCenterDeviation / faceWidth) * 100;
+
+  console.log('🔍 DEBUG LIPS CALCULATION:');
+  console.log('  lipCenterX:', lipCenterX.toFixed(2));
+  console.log('  faceCenterX:', faceCenterX.toFixed(2));
+  console.log('  lipCenterDeviation (lipCenterX - faceCenterX):', (lipCenterX - faceCenterX).toFixed(2));
+  console.log('  lipCenterDeviationRatio:', lipCenterDeviationRatio.toFixed(2));
 
   // STRICT SCORING: Center deviation
   const lipCenterScore =
@@ -361,10 +379,10 @@ export function calculateLipMetrics(landmarks: Point3D[]): LipCalculations {
     upperLowerRatio >= 0.45 && upperLowerRatio <= 0.60
       ? 10 // Ideal (10) - Balanced anatomical lip
       : (upperLowerRatio >= 0.40 && upperLowerRatio < 0.45) ||
-          (upperLowerRatio > 0.60 && upperLowerRatio <= 0.65)
+        (upperLowerRatio > 0.60 && upperLowerRatio <= 0.65)
         ? 8 // Acceptable (7-8)
         : (upperLowerRatio >= 0.35 && upperLowerRatio < 0.40) ||
-            (upperLowerRatio > 0.65 && upperLowerRatio <= 0.75)
+          (upperLowerRatio > 0.65 && upperLowerRatio <= 0.75)
           ? 6 // Noticeable (4-6)
           : upperLowerRatio < 0.30 || upperLowerRatio > 0.80
             ? 3 // Pathological (0-3) - Extreme imbalance
@@ -431,12 +449,12 @@ export function calculateLipMetrics(landmarks: Point3D[]): LipCalculations {
   // WEIGHTED SCORING: Corner alignment most critical
   const overallScore = Math.round(
     cornerAlignmentScore * 0.25 + // Corner alignment (25% - most visible)
-      lipCenterScore * 0.20 + // Center deviation (20% - very visible)
-      lipWidthSymmetryScore * 0.20 + // Width symmetry (20%)
-      upperLipSymmetryScore * 0.15 + // Upper lip (15%)
-      lowerLipSymmetryScore * 0.12 + // Lower lip (12%)
-      cupidBowSymmetryScore * 0.05 + // Cupid's bow (5% - aesthetic)
-      upperLowerRatioScore * 0.03 // Upper/lower ratio (3%)
+    lipCenterScore * 0.20 + // Center deviation (20% - very visible)
+    lipWidthSymmetryScore * 0.20 + // Width symmetry (20%)
+    upperLipSymmetryScore * 0.15 + // Upper lip (15%)
+    lowerLipSymmetryScore * 0.12 + // Lower lip (12%)
+    cupidBowSymmetryScore * 0.05 + // Cupid's bow (5% - aesthetic)
+    upperLowerRatioScore * 0.03 // Upper/lower ratio (3%)
   );
 
   // REALISTIC ASYMMETRY LEVELS

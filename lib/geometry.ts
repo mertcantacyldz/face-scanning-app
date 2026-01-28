@@ -156,14 +156,24 @@ export function pointToLineDistance(point: Point, line: Line): number {
  * @returns Center X coordinate
  */
 export function getCenterX(leftPoint: Point, rightPoint: Point): number {
-  return (leftPoint.x + rightPoint.x) / 2;
+  const result = (leftPoint.x + rightPoint.x) / 2;
+
+  // DEBUG-MIRROR: getCenterX hesaplama kontrolü
+  console.log('📐 [DEBUG-MIRROR] getCenterX:', {
+    leftPoint_x: leftPoint.x.toFixed(2),
+    rightPoint_x: rightPoint.x.toFixed(2),
+    center: result.toFixed(2),
+    // NOT: nose.ts'de rightEyeOuter ilk parametre olarak geçiriliyor!
+  });
+
+  return result;
 }
 
 /**
- * Determine direction of deviation from center
- * @param value Deviation value (positive = right, negative = left)
+ * Determine direction of deviation from center (from subject's perspective)
+ * @param value Deviation value (positive = subject's LEFT, negative = subject's RIGHT)
  * @param threshold Threshold for considering it centered (in pixels)
- * @returns Direction label
+ * @returns Direction label from subject's own perspective (mirror view)
  */
 export function getDirection(
   value: number,
@@ -172,7 +182,8 @@ export function getDirection(
   if (Math.abs(value) < threshold) {
     return 'CENTER';
   }
-  return value > 0 ? 'RIGHT' : 'LEFT';
+  // Kişinin kendi perspektifinden: ekranda sağ = kişinin solu
+  return value > 0 ? 'LEFT' : 'RIGHT';
 }
 
 /**

@@ -86,6 +86,11 @@ export function calculateJawlineMetrics(landmarks: Point3D[]): JawlineCalculatio
   const rightEyeOuter = landmarks[33];      // P_33: Right eye outer corner
   const forehead = landmarks[10];           // P_10: Forehead center
 
+  console.log('🔍 RAW LANDMARK DATA (JAWLINE):');
+  console.log('  P_152 (chinTip):', JSON.stringify({ x: chinTip.x, y: chinTip.y }));
+  console.log('  P_33 (rightEyeOuter):', JSON.stringify({ x: rightEyeOuter.x, y: rightEyeOuter.y }));
+  console.log('  P_263 (leftEyeOuter):', JSON.stringify({ x: leftEyeOuter.x, y: leftEyeOuter.y }));
+
   console.log('🦴 JAWLINE LANDMARKS:');
   console.log('  P_152 (chinTip):', chinTip ? `x=${chinTip.x.toFixed(2)}, y=${chinTip.y.toFixed(2)}` : 'MISSING');
   console.log('  P_234 (leftJawAngle):', leftJawAngle ? `x=${leftJawAngle.x.toFixed(2)}, y=${leftJawAngle.y.toFixed(2)}` : 'MISSING');
@@ -102,6 +107,7 @@ export function calculateJawlineMetrics(landmarks: Point3D[]): JawlineCalculatio
   console.log('  Face width:', faceWidth.toFixed(2), 'px');
   console.log('  Face height:', faceHeight.toFixed(2), 'px');
   console.log('  Face center X:', faceCenterX.toFixed(2), 'px');
+  console.log('  DEBUG - Reference Points X: P_33(RightEyeOuter)=', rightEyeOuter.x.toFixed(2), 'P_263(LeftEyeOuter)=', leftEyeOuter.x.toFixed(2));
 
   // ========================================
   // 1. CHIN CENTERING (30% weight)
@@ -112,16 +118,23 @@ export function calculateJawlineMetrics(landmarks: Point3D[]): JawlineCalculatio
   const chinDeviation = chinTip.x - faceCenterX;
   const chinDeviationRatio = (Math.abs(chinDeviation) / faceWidth) * 100;
 
+  // Kişinin kendi perspektifinden: ekranda sağ = kişinin solu
   const chinDirection: 'LEFT' | 'RIGHT' | 'CENTER' =
     Math.abs(chinDeviation) < 2 ? 'CENTER' :
-    chinDeviation > 0 ? 'RIGHT' : 'LEFT';
+      chinDeviation > 0 ? 'LEFT' : 'RIGHT';
+
+  console.log('🔍 DEBUG CHIN CALCULATION:');
+  console.log('  chinTip.x:', chinTip.x.toFixed(2));
+  console.log('  faceCenterX:', faceCenterX.toFixed(2));
+  console.log('  chinDeviation (x - center):', chinDeviation.toFixed(2));
+  console.log('  chinDirection assigned:', chinDirection);
 
   // STRICT SCORING: Chin centering is most visible
   const chinCenteringScore =
     chinDeviationRatio < 1 ? 10 :        // Perfect (<1%)
-    chinDeviationRatio < 2 ? 8 :         // Minimal (1-2%)
-    chinDeviationRatio < 4 ? 6 :         // Noticeable (2-4%)
-    chinDeviationRatio < 6 ? 3 : 1;      // Severe (>6%)
+      chinDeviationRatio < 2 ? 8 :         // Minimal (1-2%)
+        chinDeviationRatio < 4 ? 6 :         // Noticeable (2-4%)
+          chinDeviationRatio < 6 ? 3 : 1;      // Severe (>6%)
 
   // ========================================
   // 2. JAWLINE SYMMETRY (25% weight)
@@ -144,15 +157,15 @@ export function calculateJawlineMetrics(landmarks: Point3D[]): JawlineCalculatio
   // STRICT SCORING: Combined length + angle position
   const lengthScore =
     jawLengthDifferenceRatio < 2 ? 10 :
-    jawLengthDifferenceRatio < 4 ? 8 :
-    jawLengthDifferenceRatio < 7 ? 6 :
-    jawLengthDifferenceRatio < 12 ? 3 : 1;
+      jawLengthDifferenceRatio < 4 ? 8 :
+        jawLengthDifferenceRatio < 7 ? 6 :
+          jawLengthDifferenceRatio < 12 ? 3 : 1;
 
   const anglePositionScore =
     jawAngleYDifference < 3 ? 10 :
-    jawAngleYDifference < 6 ? 8 :
-    jawAngleYDifference < 10 ? 6 :
-    jawAngleYDifference < 15 ? 3 : 1;
+      jawAngleYDifference < 6 ? 8 :
+        jawAngleYDifference < 10 ? 6 :
+          jawAngleYDifference < 15 ? 3 : 1;
 
   const jawlineSymmetryScore = Math.round((lengthScore * 0.6) + (anglePositionScore * 0.4));
 
@@ -185,9 +198,9 @@ export function calculateJawlineMetrics(landmarks: Point3D[]): JawlineCalculatio
   // STRICT SCORING: Angle difference (no sharpness classification - requires side profile)
   const jawAngleSymmetryScore =
     jawAngleDifference < 3 ? 10 :
-    jawAngleDifference < 6 ? 8 :
-    jawAngleDifference < 10 ? 6 :
-    jawAngleDifference < 15 ? 3 : 1;
+      jawAngleDifference < 6 ? 8 :
+        jawAngleDifference < 10 ? 6 :
+          jawAngleDifference < 15 ? 3 : 1;
 
   // ========================================
   // 4. JAW WIDTH (12% weight)
@@ -222,14 +235,14 @@ export function calculateJawlineMetrics(landmarks: Point3D[]): JawlineCalculatio
   // IDEAL RANGE: 80-95% of face width
   const jawWidthScore =
     jawWidthRatio < 70 ? 5 :              // Too narrow
-    jawWidthRatio < 80 ? 7 :              // Narrow but acceptable
-    jawWidthRatio < 95 ? 10 :             // Ideal range
-    jawWidthRatio < 105 ? 8 :             // Slightly wide
-    jawWidthRatio < 115 ? 6 : 3;          // Wide/very wide
+      jawWidthRatio < 80 ? 7 :              // Narrow but acceptable
+        jawWidthRatio < 95 ? 10 :             // Ideal range
+          jawWidthRatio < 105 ? 8 :             // Slightly wide
+            jawWidthRatio < 115 ? 6 : 3;          // Wide/very wide
 
   const jawWidthAssessment: 'NARROW' | 'IDEAL' | 'WIDE' =
     jawWidthRatio < 80 ? 'NARROW' :
-    jawWidthRatio < 95 ? 'IDEAL' : 'WIDE';
+      jawWidthRatio < 95 ? 'IDEAL' : 'WIDE';
 
   // ========================================
   // 5. VERTICAL ALIGNMENT (10% weight)
@@ -245,9 +258,9 @@ export function calculateJawlineMetrics(landmarks: Point3D[]): JawlineCalculatio
   // STRICT SCORING: Usually normal, penalize only extreme cases
   const verticalAlignmentScore =
     verticalDeviationRatio < 2 ? 10 :
-    verticalDeviationRatio < 4 ? 8 :
-    verticalDeviationRatio < 7 ? 6 :
-    verticalDeviationRatio < 10 ? 4 : 2;
+      verticalDeviationRatio < 4 ? 8 :
+        verticalDeviationRatio < 7 ? 6 :
+          verticalDeviationRatio < 10 ? 4 : 2;
 
   // ========================================
   // OVERALL SCORE (WEIGHTED)
@@ -270,8 +283,8 @@ export function calculateJawlineMetrics(landmarks: Point3D[]): JawlineCalculatio
   // ASYMMETRY LEVEL
   const asymmetryLevel: 'NONE' | 'MILD' | 'MODERATE' | 'SEVERE' =
     overallScore >= 9 ? 'NONE' :
-    overallScore >= 7 ? 'MILD' :
-    overallScore >= 4 ? 'MODERATE' : 'SEVERE';
+      overallScore >= 7 ? 'MILD' :
+        overallScore >= 4 ? 'MODERATE' : 'SEVERE';
 
   // ============================================
   // LOG ALL CALCULATED VALUES

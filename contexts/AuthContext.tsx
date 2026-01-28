@@ -62,139 +62,139 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializationInProgress = true;
     initializationPromise = (async () => {
-    try {
-      console.log('🔐 Initializing auth...');
+      try {
+        console.log('🔐 Initializing auth...');
 
-      // Get device ID first (we'll need it for all scenarios)
-      const deviceId = await getOrCreateDeviceId();
-      console.log('📱 Device ID:', deviceId);
+        // Get device ID first (we'll need it for all scenarios)
+        const deviceId = await getOrCreateDeviceId();
+        console.log('📱 Device ID:', deviceId);
 
-      // 1. Try to restore saved session from AsyncStorage
-      console.log('💾 Checking for saved session...');
-      const savedSessionData = await AsyncStorage.getItem(STORAGE_KEYS.SESSION);
-      const savedUserId = await AsyncStorage.getItem(STORAGE_KEYS.DEVICE_USER_ID);
+        // 1. Try to restore saved session from AsyncStorage
+        console.log('💾 Checking for saved session...');
+        const savedSessionData = await AsyncStorage.getItem(STORAGE_KEYS.SESSION);
+        const savedUserId = await AsyncStorage.getItem(STORAGE_KEYS.DEVICE_USER_ID);
 
-      if (savedSessionData && savedUserId) {
-        console.log('🔍 Found saved session for user:', savedUserId);
-        try {
-          const { access_token, refresh_token } = JSON.parse(savedSessionData);
+        if (savedSessionData && savedUserId) {
+          console.log('🔍 Found saved session for user:', savedUserId);
+          try {
+            const { access_token, refresh_token } = JSON.parse(savedSessionData);
 
-          // Check if refresh_token exists (required for session restore)
-          if (!refresh_token) {
-            console.warn('⚠️ No refresh token found, clearing session...');
-            await clearSavedSession();
-          } else {
-            console.log('🔄 Restoring session (via refresh)...');
-
-            // FIX: Always use refreshSession instead of setSession
-            // This prevents local hangs and ensures server-side validation
-            const { data, error } = await supabase.auth.refreshSession({ refresh_token });
-
-            if (error) {
-              console.warn('⚠️ Failed to restore session:', error.message);
-              console.log('   Will create new session...');
-              // Clear invalid session
+            // Check if refresh_token exists (required for session restore)
+            if (!refresh_token) {
+              console.warn('⚠️ No refresh token found, clearing session...');
               await clearSavedSession();
-            } else if (data.session) {
-              console.log('✅ Session restored successfully:', data.session.user.id);
-              // Save the refreshed session
-              await saveSession(data.session, deviceId);
-              setSession(data.session);
-              setIsAnonymous(data.session.user?.is_anonymous ?? false);
-              setLoading(false);
-              return;
             } else {
-              console.warn('⚠️ No session returned, clearing...');
-              await clearSavedSession();
+              console.log('🔄 Restoring session (via refresh)...');
+
+              // FIX: Always use refreshSession instead of setSession
+              // This prevents local hangs and ensures server-side validation
+              const { data, error } = await supabase.auth.refreshSession({ refresh_token });
+
+              if (error) {
+                console.warn('⚠️ Failed to restore session:', error.message);
+                console.log('   Will create new session...');
+                // Clear invalid session
+                await clearSavedSession();
+              } else if (data.session) {
+                console.log('✅ Session restored successfully:', data.session.user.id);
+                // Save the refreshed session
+                await saveSession(data.session, deviceId);
+                setSession(data.session);
+                setIsAnonymous(data.session.user?.is_anonymous ?? false);
+                setLoading(false);
+                return;
+              } else {
+                console.warn('⚠️ No session returned, clearing...');
+                await clearSavedSession();
+              }
             }
+          } catch (parseError) {
+            console.warn('⚠️ Error restoring session:', parseError);
+            await clearSavedSession();
           }
-        } catch (parseError) {
-          console.warn('⚠️ Error restoring session:', parseError);
-          await clearSavedSession();
+        } else {
+          console.log('❌ No saved session found');
         }
-      } else {
-        console.log('❌ No saved session found');
-      }
 
-      // 2. Check Supabase's own session (fallback)
-      console.log('📡 Checking Supabase session...');
-      const { data: { session: existingSession } } = await supabase.auth.getSession();
+        // 2. Check Supabase's own session (fallback)
+        console.log('📡 Checking Supabase session...');
+        const { data: { session: existingSession } } = await supabase.auth.getSession();
 
-      if (existingSession) {
-        console.log('✅ Supabase session found:', existingSession.user.id);
-        // Save it for next time
-        await saveSession(existingSession, deviceId);
-        setSession(existingSession);
-        setIsAnonymous(existingSession.user?.is_anonymous ?? false);
+        if (existingSession) {
+          console.log('✅ Supabase session found:', existingSession.user.id);
+          // Save it for next time
+          await saveSession(existingSession, deviceId);
+          setSession(existingSession);
+          setIsAnonymous(existingSession.user?.is_anonymous ?? false);
+          setLoading(false);
+          return;
+        }
+
+        // 3. No session exists - check if this device already has a user
+        console.log('❌ No session found anywhere, checking device mapping...');
+
+        // 3a. Check if this device ID is already mapped to a user
+        const { data: existingDevice, error: deviceError } = await supabase
+          .from('device_users')
+          .select('supabase_user_id')
+          .eq('device_id', deviceId)
+          .maybeSingle();
+
+        if (deviceError) {
+          console.warn('⚠️ Error checking device mapping:', deviceError);
+        }
+
+        if (existingDevice?.supabase_user_id) {
+          console.log('🔍 Found existing user mapping for this device:', existingDevice.supabase_user_id);
+          console.log('⚠️ Device has existing user but session cannot be restored for anonymous users.');
+          console.log('   A new anonymous user will be created. Previous data remains in database.');
+          console.log('   Users can preserve data across devices by creating an account with email/OAuth.');
+        } else {
+          console.log('✅ No existing user for this device');
+        }
+
+        // 4. Create new anonymous session
+        console.log('🆕 Creating new anonymous user...');
+        const { data, error } = await supabase.auth.signInAnonymously({
+          options: {
+            data: { device_id: deviceId }, // Store device ID in user metadata
+          },
+        });
+
+        if (error) {
+          console.error('❌ Anonymous auth error:', error);
+          throw error;
+        }
+
+        console.log('✅ Anonymous user created:', data.user?.id);
+
+        // 5. Create profile manually (backup if trigger fails)
+        if (data.user) {
+          await createProfile(data.user.id, data.user.email ?? null);
+        }
+
+        // 6. Update device mapping in database
+        // Always update to point to the ACTIVE user (not preserve first user)
+        // Premium is now tied to device ID via RevenueCat, not device_users mapping
+        if (data.user) {
+          await upsertDeviceMapping(deviceId, data.user.id);
+        }
+
+        // 7. Save session for next app launch
+        if (data.session) {
+          await saveSession(data.session, deviceId);
+        }
+
+        setSession(data.session);
+        setIsAnonymous(true);
+      } catch (error) {
+        console.error('❌ Auth initialization error:', error);
+        console.error('❌ Error details:', JSON.stringify(error, null, 2));
+      } finally {
+        console.log('🏁 Auth initialization complete, setting loading to false');
         setLoading(false);
-        return;
+        initializationInProgress = false;
       }
-
-      // 3. No session exists - check if this device already has a user
-      console.log('❌ No session found anywhere, checking device mapping...');
-
-      // 3a. Check if this device ID is already mapped to a user
-      const { data: existingDevice, error: deviceError } = await supabase
-        .from('device_users')
-        .select('supabase_user_id')
-        .eq('device_id', deviceId)
-        .maybeSingle();
-
-      if (deviceError) {
-        console.warn('⚠️ Error checking device mapping:', deviceError);
-      }
-
-      if (existingDevice?.supabase_user_id) {
-        console.log('🔍 Found existing user mapping for this device:', existingDevice.supabase_user_id);
-        console.log('⚠️ Device has existing user but session cannot be restored for anonymous users.');
-        console.log('   A new anonymous user will be created. Previous data remains in database.');
-        console.log('   Users can preserve data across devices by creating an account with email/OAuth.');
-      } else {
-        console.log('✅ No existing user for this device');
-      }
-
-      // 4. Create new anonymous session
-      console.log('🆕 Creating new anonymous user...');
-      const { data, error } = await supabase.auth.signInAnonymously({
-        options: {
-          data: { device_id: deviceId }, // Store device ID in user metadata
-        },
-      });
-
-      if (error) {
-        console.error('❌ Anonymous auth error:', error);
-        throw error;
-      }
-
-      console.log('✅ Anonymous user created:', data.user?.id);
-
-      // 5. Create profile manually (backup if trigger fails)
-      if (data.user) {
-        await createProfile(data.user.id, data.user.email ?? null);
-      }
-
-      // 6. Update device mapping in database
-      // Always update to point to the ACTIVE user (not preserve first user)
-      // Premium is now tied to device ID via RevenueCat, not device_users mapping
-      if (data.user) {
-        await upsertDeviceMapping(deviceId, data.user.id);
-      }
-
-      // 7. Save session for next app launch
-      if (data.session) {
-        await saveSession(data.session, deviceId);
-      }
-
-      setSession(data.session);
-      setIsAnonymous(true);
-    } catch (error) {
-      console.error('❌ Auth initialization error:', error);
-      console.error('❌ Error details:', JSON.stringify(error, null, 2));
-    } finally {
-      console.log('🏁 Auth initialization complete, setting loading to false');
-      setLoading(false);
-      initializationInProgress = false;
-    }
     })();
 
     return initializationPromise;

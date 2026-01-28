@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 interface UserFriendlySummaryProps {
   data: {
@@ -13,6 +14,8 @@ interface UserFriendlySummaryProps {
 }
 
 export function UserFriendlySummary({ data }: UserFriendlySummaryProps) {
+  const { t } = useTranslation('analysis');
+
   if (!data) return null;
 
   return (
@@ -20,7 +23,7 @@ export function UserFriendlySummary({ data }: UserFriendlySummaryProps) {
       {/* Header with icon */}
       <View className="flex-row items-center gap-2 mb-4">
         <Ionicons name="information-circle" size={28} color="#8B5CF6" />
-        <Text className="text-xl font-bold text-primary">Summary</Text>
+        <Text className="text-xl font-bold text-primary">{t('ui.summary')}</Text>
       </View>
 
       {/* Assessment (bold headline) */}
@@ -36,7 +39,7 @@ export function UserFriendlySummary({ data }: UserFriendlySummaryProps) {
       {/* Key Findings (bullet list) */}
       {data.key_findings && data.key_findings.length > 0 && (
         <View>
-          <Text className="font-semibold mb-2 text-foreground">Key Findings:</Text>
+          <Text className="font-semibold mb-2 text-foreground">{t('ui.keyFindings')}:</Text>
           <View className="gap-1.5">
             {data.key_findings.map((finding, idx) => (
               <View key={idx} className="flex-row gap-2">

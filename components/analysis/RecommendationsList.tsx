@@ -3,13 +3,21 @@ import { View } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 interface RecommendationsListProps {
   data: Record<string, string | string[]>;
 }
 
-// Helper: Format key name
-function formatKeyName(key: string): string {
+// Helper: Format key name with i18n support
+function formatKeyName(key: string, t: (key: string) => string): string {
+  const translationKey = `fields.${key}`;
+  const translated = t(translationKey);
+
+  if (translated !== translationKey) {
+    return translated;
+  }
+
   return key
     .split('_')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -36,6 +44,7 @@ function getRecommendationIcon(key: string): string {
 }
 
 export function RecommendationsList({ data }: RecommendationsListProps) {
+  const { t } = useTranslation('analysis');
   const entries = Object.entries(data);
 
   if (entries.length === 0) {
@@ -48,7 +57,7 @@ export function RecommendationsList({ data }: RecommendationsListProps) {
       <View className="flex-row items-center gap-2 mb-4">
         <Ionicons name="bulb-outline" size={24} color="#8B5CF6" />
         <Text className="text-xl font-bold text-primary">
-          Recommendations
+          {t('ui.recommendations')}
         </Text>
       </View>
 
@@ -60,7 +69,7 @@ export function RecommendationsList({ data }: RecommendationsListProps) {
             <View className="flex-row items-center gap-2 mb-2">
               <Ionicons name={getRecommendationIcon(key) as any} size={20} color="#8B5CF6" />
               <Text className="font-bold text-base text-foreground">
-                {formatKeyName(key)}
+                {formatKeyName(key, t)}
               </Text>
             </View>
 

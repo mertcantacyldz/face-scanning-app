@@ -23,5 +23,6 @@
   },
   "welcome": {
     "defaultUser": "Kullanıcı"
-  }
+  },
+  "locked": "Kilitli"
 }
