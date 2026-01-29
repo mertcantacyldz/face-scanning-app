@@ -43,7 +43,12 @@ export const METRIC_TRANSLATIONS = {
     // Nose metrics
     nose_tip_deviation: 'Burun ucu sapması',
     nostril_asymmetry: 'Burun delikleri asimetrisi',
-    rotation_angle: 'Dönüş açısı',
+    rotation_angle: 'Eğim açısı', // v2.0: Değişti (Dönüş → Eğim)
+
+    // v2.0 Nose rotation metrics
+    geometric_tilt: 'Geometrik eğim',
+    positional_deviation: 'Konumsal sapma',
+    combined_rotation: 'Birleşik eğim açısı',
 
     // Lip metrics
     corner_alignment: 'Köşe hizalama farkı',
@@ -81,6 +86,11 @@ export const METRIC_TRANSLATIONS = {
     nose_tip_deviation: 'Nose tip deviation',
     nostril_asymmetry: 'Nostril asymmetry',
     rotation_angle: 'Rotation angle',
+
+    // v2.0 Nose rotation metrics
+    geometric_tilt: 'Geometric tilt',
+    positional_deviation: 'Positional deviation',
+    combined_rotation: 'Combined rotation angle',
 
     // Lip metrics
     corner_alignment: 'Corner alignment difference',
@@ -341,9 +351,13 @@ NOSTRIL SYMMETRY (25% weight):
 - Height difference: {nostrilHeightDiff}px ({nostrilHeightDiffRatio}%)
 - Score: {nostrilScore}/10
 
-ROTATION/TILT (15% weight):
-- Angle: {rotationAngle}° ({rotationDirection})
-- Score: {rotationScore}/10
+ROTATION/TILT (30% weight - v2.1 HYBRID APPROACH):
+┌─ Geometric Tilt (nose axis): {geometricTilt}° ({geometricTiltDirection})
+├─ Positional Deviation (from midline P_168→P_152): {positionalDeviation}° ({positionalDeviationDirection})
+└─ Combined Rotation (Pythagorean): {combinedRotation}° ({combinedRotationDirection})
+Score: {combinedRotationScore}/10
+
+[Legacy] Old rotation: {rotationAngle}° ({rotationDirection}) - for reference
 
 BRIDGE STRAIGHTNESS (12% weight):
 - Deviation: {bridgeDeviation}px ({bridgeDeviationRatio}%)
@@ -360,6 +374,36 @@ PROPORTIONS (10% weight):
 - Score: {depthScore}/10
 
 OVERALL: {overallScore}/10 ({asymmetryLevel})
+
+═══════════════════════════════════════════
+TURKISH LANGUAGE GUIDANCE (v2.1)
+═══════════════════════════════════════════
+
+When generating Turkish (tr) explanations:
+
+❌ AVOID using "dönme" or "dönüş" (means spinning/rotating)
+✅ USE "eğim" or "eğiklik" (means tilt/inclination)
+
+Examples:
+- ❌ "Burnunuz sağa dönmüş" (sounds like nose is spinning)
+- ✅ "Burnunuz sağa eğik" (nose is tilted right)
+
+Context-specific terms:
+- Geometric Tilt → "Geometrik eğim" (the nose's own axis tilt)
+- Positional Deviation → "Konumsal sapma" (displacement from center)
+- Combined Rotation → "Birleşik eğim" or "Toplam eğim açısı"
+
+IMPORTANT ROTATION INTERPRETATION:
+1. If geometricTilt is HIGH but positionalDeviation is LOW:
+   → "Burnunuz kendi aksı boyunca eğik ama merkeze yakın"
+2. If positionalDeviation is HIGH but geometricTilt is LOW:
+   → "Burnunuz düz iniyor ama yüzünüzün [SOL/SAĞ] tarafında duruyor"
+3. If BOTH are high:
+   → "Burnunuz [yön] eğik ve [yön] kaymış, kompleks bir asimetri"
+4. If BOTH are low:
+   → "Burnunuz düz ve merkeze yakın"
+
+ALWAYS reference the actual degree values in your explanation!
 
 ═══════════════════════════════════════════
 OUTPUT JSON FORMAT
@@ -396,10 +440,15 @@ OUTPUT JSON FORMAT
       "user_explanation": "string (explain visual impact of nostril symmetry, in user's language)"
     },
     "rotation": {
-      "angle": {rotationAngle},
-      "direction": "{rotationDirection}",
-      "score": {rotationScore},
-      "user_explanation": "string (explain visual impact of nose rotation, in user's language)"
+      "geometric_tilt": {geometricTilt},
+      "geometric_tilt_direction": "{geometricTiltDirection}",
+      "positional_deviation": {positionalDeviation},
+      "positional_deviation_direction": "{positionalDeviationDirection}",
+      "combined_angle": {combinedRotation},
+      "direction": "{combinedRotationDirection}",
+      "score": {combinedRotationScore},
+      "legacy_angle": {rotationAngle},
+      "user_explanation": "string (MUST explain BOTH geometric tilt AND positional deviation, reference actual degree values, use 'eğim' not 'dönme' in Turkish, in user's language)"
     },
     "bridge": {
       "deviation": {bridgeDeviation},

@@ -482,6 +482,15 @@ const AnalysisScreen = () => {
           .replace(/{rotationDirection}/g, calculatedMetrics.rotationDirection)
           .replace(/{rotationScore}/g, calculatedMetrics.rotationScore.toString())
 
+          // v2.0 ROTATION METRICS (Hybrid Approach)
+          .replace(/{geometricTilt}/g, calculatedMetrics.geometricTilt.toFixed(2))
+          .replace(/{geometricTiltDirection}/g, calculatedMetrics.geometricTiltDirection)
+          .replace(/{positionalDeviation}/g, calculatedMetrics.positionalDeviation.toFixed(2))
+          .replace(/{positionalDeviationDirection}/g, calculatedMetrics.positionalDeviationDirection)
+          .replace(/{combinedRotation}/g, calculatedMetrics.combinedRotation.toFixed(2))
+          .replace(/{combinedRotationDirection}/g, calculatedMetrics.combinedRotationDirection)
+          .replace(/{combinedRotationScore}/g, calculatedMetrics.combinedRotationScore.toString())
+
           .replace(/{depthDifference}/g, calculatedMetrics.depthDifference.toFixed(3))
           .replace(/{depthScore}/g, calculatedMetrics.depthScore.toString())
 

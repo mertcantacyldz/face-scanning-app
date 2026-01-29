@@ -713,6 +713,33 @@ export const mediaPipeHTML = `
                 ctx.arc(x, y, 2, 0, 2 * Math.PI);
                 ctx.fill();
             });
+
+            // === 7. P_168 VURGUSU (DEBUG - Orta nokta kontrolü) ===
+            // P_168 (mid-bridge) - Kırmızı ve büyük göster
+            var p168 = landmarks[168];
+            if (p168) {
+                var x168 = p168.x * canvasElement.width;
+                var y168 = p168.y * canvasElement.height;
+
+                // Dış glow - kırmızı
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.4)';
+                ctx.beginPath();
+                ctx.arc(x168, y168, 12, 0, 2 * Math.PI);
+                ctx.fill();
+
+                // İç daire - parlak kırmızı
+                ctx.fillStyle = '#FF0000';
+                ctx.beginPath();
+                ctx.arc(x168, y168, 6, 0, 2 * Math.PI);
+                ctx.fill();
+
+                // Beyaz border
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(x168, y168, 6, 0, 2 * Math.PI);
+                ctx.stroke();
+            }
         }
 
         // MediaPipe instance'ını tamamen reset et
