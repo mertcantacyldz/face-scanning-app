@@ -38,7 +38,9 @@ export function extractNoseMetrics(rawResponse: Record<string, any>): NoseMetric
     symmetryAnalysis.deviation_angle ??
     bridgeAnalysis.deviation_angle ??
     analysisResult.deviation_angle ??
-    getNestedValue(rawResponse, 'deviation_angle');
+    getNestedValue(rawResponse, 'deviation_angle') ??
+    getNestedValue(rawResponse, 'combinedRotation') ??
+    getNestedValue(rawResponse, 'combined_angle');
 
   // Extract bridge straightness
   const bridgeStraightness =

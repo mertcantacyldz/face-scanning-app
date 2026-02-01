@@ -410,8 +410,8 @@ export const mediaPipeHTML = `
                     canvasSize: canvasElement.width + 'x' + canvasElement.height
                 });
 
-                // DEBUG-MIRROR: Pixel dönüşümü sonrası kontrol
-                console.log('[WEBVIEW] 📤 [DEBUG-MIRROR] PIXEL DÖNÜŞÜMÜ SONRASI:', {
+                // DEBUG-MIRROR: Pixel conversion check
+                console.log('[WEBVIEW] 📤 [DEBUG-MIRROR] AFTER PIXEL CONVERSION:', {
                   P4_noseTip_px: result.data.landmarks[4]?.x.toFixed(2),
                   P33_rightEyeOuter_px: result.data.landmarks[33]?.x.toFixed(2),
                   P263_leftEyeOuter_px: result.data.landmarks[263]?.x.toFixed(2),

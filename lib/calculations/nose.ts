@@ -37,27 +37,12 @@ export interface NoseCalculations {
   nostrilAsymmetryRatio: number; // percentage
   nostrilScore: number; // 0-10
 
-  // Rotation (tilt) - LEGACY (v1.0)
-  rotationAngle: number; // degrees (signed: positive=tilted right) - KEPT FOR BACKWARD COMPATIBILITY
+  // === ROTATION (Simple atan2 - Nose axis tilt from vertical) ===
+  // Measures how much the nose axis (bridge → tip) deviates from vertical
+  // More intuitive and calibrated against real test cases
+  rotationAngle: number; // degrees (signed: positive=tilted right, negative=tilted left)
   rotationDirection: 'TILTED_LEFT' | 'TILTED_RIGHT' | 'STRAIGHT';
-  rotationScore: number; // 0-10
-
-  // === v2.0 ROTATION METRICS (Hybrid Approach) ===
-  // Geometric Tilt: How much the nose AXIS is tilted
-  geometricTilt: number; // degrees (0-180)
-  geometricTiltDirection: 'TILTED_LEFT' | 'TILTED_RIGHT' | 'STRAIGHT';
-
-  // Positional Deviation: How much the nose TIP is displaced from midline
-  positionalDeviation: number; // degrees (converted from horizontal distance)
-  positionalDeviationDirection: 'LEFT' | 'RIGHT' | 'CENTER';
-
-  // Combined Rotation: Pythagorean combination of both
-  combinedRotation: number; // degrees (sqrt(tilt² + deviation²))
-  combinedRotationDirection: 'TILTED_LEFT' | 'TILTED_RIGHT' | 'STRAIGHT';
-  combinedRotationScore: number; // 0-10 (NEW MAIN SCORE)
-
-  // Midline reference (for debugging/validation)
-  midlineVector: { dx: number; dy: number };
+  rotationScore: number; // 0-10 (used in overall score)
 
   // 3D Depth
   depthDifference: number; // z-axis units
@@ -114,67 +99,67 @@ export interface NoseCalculations {
 }
 
 // ============================================
-// HELPER FUNCTIONS (v2.0 - Midline-based Rotation)
+// CONTINUOUS SCORING FUNCTIONS (v3.0 - Calibrated)
 // ============================================
+// Linear interpolation for smooth score transitions
+// Calibrated against real test cases for accurate perception matching
 
 /**
- * Calculate the midline (face vertical axis) using P_168 and P_6
- * @param midBridge P_168 (mid-bridge point)
- * @param bridge P_6 (nasion/bridge top)
- * @returns Direction vector of the midline
+ * Calculate tip deviation score using continuous linear interpolation
+ * Ultra-aggressive scoring in %3-4.5 range to match human perception
+ *
+ * Calibration targets:
+ * - %3.35 → 6.6 (Case 1: visible but mild)
+ * - %3.94 → 4.2 (Case 2: more noticeable)
+ * - %4.32 → 2.7 (Case 3: significant deviation)
  */
-function calculateMidlineVector(
-  midBridge: Point3D,
-  bridge: Point3D
-): { dx: number; dy: number } {
-  return {
-    dx: bridge.x - midBridge.x,
-    dy: bridge.y - midBridge.y,
-  };
+function calculateTipScore(ratio: number): number {
+  const absRatio = Math.abs(ratio);
+  if (absRatio <= 1.5) return 10;                                    // Symmetric
+  if (absRatio <= 2.5) return 10 - ((absRatio - 1.5) * 0.5);        // 10 → 9.5
+  if (absRatio <= 3.0) return 9.5 - ((absRatio - 2.5) * 3);         // 9.5 → 8
+  if (absRatio <= 3.5) return 8 - ((absRatio - 3.0) * 4);           // 8 → 6
+  if (absRatio <= 4.0) return 6 - ((absRatio - 3.5) * 4);           // 6 → 4
+  if (absRatio <= 4.5) return 4 - ((absRatio - 4.0) * 4);           // 4 → 2
+  if (absRatio <= 6.0) return 2 - ((absRatio - 4.5) * 0.5);         // 2 → 1.25
+  return 1;
 }
 
 /**
- * Calculate perpendicular distance from a point to midline
- * @param point The point to measure from (e.g., nose tip)
- * @param linePoint A point on the midline (P_168 or P_6)
- * @param lineVector The direction vector of the midline
- * @returns Signed distance (positive = right of midline, negative = left)
+ * Calculate rotation score using continuous linear interpolation
  */
-function distanceToMidline(
-  point: Point3D,
-  linePoint: Point3D,
-  lineVector: { dx: number; dy: number }
-): number {
-  // Vector from line point to the point we're measuring
-  const vx = point.x - linePoint.x;
-  const vy = point.y - linePoint.y;
-
-  // Cross product gives signed distance
-  // Positive = right of midline, Negative = left of midline
-  const crossProduct = vx * lineVector.dy - vy * lineVector.dx;
-  const magnitude = Math.sqrt(lineVector.dx ** 2 + lineVector.dy ** 2);
-
-  return crossProduct / magnitude;
+function calculateRotationScore(angle: number): number {
+  const absAngle = Math.abs(angle);
+  if (absAngle <= 1.5) return 10;                                    // Straight
+  if (absAngle <= 3.0) return 10 - ((absAngle - 1.5) / 1.5) * 2;    // 10 → 8
+  if (absAngle <= 5.0) return 8 - ((absAngle - 3.0) / 2.0) * 3;     // 8 → 5
+  if (absAngle <= 8.0) return 5 - ((absAngle - 5.0) / 3.0) * 2;     // 5 → 3
+  if (absAngle <= 12.0) return 3 - ((absAngle - 8.0) / 4.0) * 2;    // 3 → 1
+  return 1;
 }
 
 /**
- * Calculate angle between two vectors (in degrees)
- * @param v1 First vector
- * @param v2 Second vector
- * @returns Angle in degrees (0-180)
+ * Calculate nostril asymmetry score using continuous linear interpolation
  */
-function angleBetweenVectors(
-  v1: { dx: number; dy: number },
-  v2: { dx: number; dy: number }
-): number {
-  const dot = v1.dx * v2.dx + v1.dy * v2.dy;
-  const mag1 = Math.sqrt(v1.dx ** 2 + v1.dy ** 2);
-  const mag2 = Math.sqrt(v2.dx ** 2 + v2.dy ** 2);
-
-  const cosAngle = dot / (mag1 * mag2);
-  // Clamp to [-1, 1] to avoid Math.acos errors
-  return Math.acos(Math.max(-1, Math.min(1, cosAngle))) * (180 / Math.PI);
+function calculateNostrilScore(ratio: number): number {
+  const absRatio = Math.abs(ratio);
+  if (absRatio <= 2.0) return 10;                                    // Equal
+  if (absRatio <= 5.0) return 10 - ((absRatio - 2.0) / 3.0) * 3;    // 10 → 7
+  if (absRatio <= 10.0) return 7 - ((absRatio - 5.0) / 5.0) * 4;    // 7 → 3
+  return 3;
 }
+
+/**
+ * Calculate depth difference score using continuous linear interpolation
+ */
+function calculateDepthScore(diff: number): number {
+  const absDiff = Math.abs(diff);
+  if (absDiff < 0.01) return 10;                                     // Planar
+  if (absDiff < 0.025) return 10 - ((absDiff - 0.01) / 0.015) * 2;  // 10 → 8
+  if (absDiff < 0.05) return 8 - ((absDiff - 0.025) / 0.025) * 2;   // 8 → 6
+  return 6;
+}
+
 
 // ============================================
 // MAIN CALCULATION FUNCTION
@@ -207,8 +192,7 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
   const leftEyeOuter = landmarks[263]; // P_263
   const leftWing = landmarks[98]; // P_98 (left wing outer)
   const rightWing = landmarks[327]; // P_327 (right wing outer)
-  const midBridge = landmarks[168]; // P_168 (mid bridge point - MIDLINE TOP)
-  const chin = landmarks[152]; // P_152 (chin - MIDLINE BOTTOM)
+  const midBridge = landmarks[168]; // P_168 (mid bridge point)
   const leftNostrilBottom = landmarks[2]; // P_2 (bottom reference)
 
   console.log('🔍 RAW LANDMARK DATA (NOSE):');
@@ -276,17 +260,8 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
   console.log('  tipDirection:', tipDirection);
   console.log('  BEKLENTİ: Aynalı resimde tipDirection TERSİNE dönmeli!');
 
-  // STRICT SCORING: %4 is the "breaking point" for visible asymmetry
-  const tipScore =
-    tipDeviationRatio < 1.5
-      ? 10 // Symmetric (9-10)
-      : tipDeviationRatio < 3.5
-        ? 8 // Mild (7-8) - Tolerable
-        : tipDeviationRatio < 5
-          ? 6 // Noticeable (4-6) - Visible
-          : tipDeviationRatio < 8
-            ? 3 // Moderate-Severe (2-3)
-            : 1; // Severe (0-1)
+  // CONTINUOUS SCORING: Smooth linear interpolation for accurate perception
+  const tipScore = calculateTipScore(tipDeviationRatio);
 
   // ============================================
   // C. NOSTRIL ASYMMETRY
@@ -297,139 +272,37 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
   const nostrilAsymmetry = Math.abs(leftNostrilDist - rightNostrilDist);
   const nostrilAsymmetryRatio = toPercentageOfWidth(nostrilAsymmetry, faceWidth);
 
-  // STRICT SCORING: Nostril asymmetry is usually a consequence of tip deviation
-  const nostrilScore =
-    nostrilAsymmetryRatio < 2
-      ? 10 // Equal (10)
-      : nostrilAsymmetryRatio < 5
-        ? 8 // Mild (7-8)
-        : nostrilAsymmetryRatio < 10
-          ? 6 // Noticeable (4-6)
-          : 3; // Prominent (0-3)
+  // CONTINUOUS SCORING: Smooth linear interpolation
+  const nostrilScore = calculateNostrilScore(nostrilAsymmetryRatio);
 
   // ============================================
-  // v2.0 ROTATION CALCULATION (Hybrid Approach)
+  // D. ROTATION ANGLE (Simple atan2 - Nose axis tilt)
   // ============================================
-  // Combines geometric tilt + positional deviation
+  // Measures how much the nose axis (bridge → tip) deviates from vertical
+  // dx = horizontal displacement, dy = vertical distance
+  // atan2(dx, dy) gives angle from vertical axis
 
-  // === 1. MIDLINE VECTOR (v2.1 - REVISED) ===
-  // Yüzün dikey merkez hattı: P_168 (mid-bridge) → P_152 (chin)
-  // Bu hat yüzün tüm yüksekliğini kapsadığı için daha stabil
-  const midlineVector = calculateMidlineVector(midBridge, chin);
-
-  console.log('🔍 [v2.1] MIDLINE CALCULATION:');
-  console.log('  P_168 (midBridge - TOP):', midBridge.x.toFixed(2), midBridge.y.toFixed(2));
-  console.log('  P_152 (chin - BOTTOM):', chin.x.toFixed(2), chin.y.toFixed(2));
-  console.log('  Midline vector (dx, dy):', midlineVector.dx.toFixed(2), midlineVector.dy.toFixed(2));
-
-  // === 2. GEOMETRIC TILT (Burnun kendi aksının eğimi) ===
-  // Burun aksı: bridge → noseTip
-  const noseAxisVector = {
-    dx: noseTip.x - bridge.x,
-    dy: noseTip.y - bridge.y,
-  };
-
-  // Midline ile açı
-  const geometricTilt = angleBetweenVectors(midlineVector, noseAxisVector);
-
-  // Yön belirle: Cross product ile
-  const crossProduct =
-    noseAxisVector.dx * midlineVector.dy -
-    noseAxisVector.dy * midlineVector.dx;
-
-  const geometricTiltDirection =
-    Math.abs(geometricTilt) < 3
-      ? 'STRAIGHT'
-      : crossProduct > 0
-        ? 'TILTED_RIGHT' // Kişinin sağına eğik
-        : 'TILTED_LEFT'; // Kişinin soluna eğik
-
-  console.log('📐 [v2.0] GEOMETRIC TILT:');
-  console.log('  Nose axis vector:', noseAxisVector.dx.toFixed(2), noseAxisVector.dy.toFixed(2));
-  console.log('  Tilt angle:', geometricTilt.toFixed(2), '°');
-  console.log('  Direction:', geometricTiltDirection);
-
-  // === 3. POSITIONAL DEVIATION (v2.1 - REVISED) ===
-  // Burun ucunun midline'a DİK uzaklığı (Point-to-Line Distance)
-  // Artık midline P_168 → P_152 olduğu için doğru çalışır
-  const tipDistanceToMidline = distanceToMidline(noseTip, midBridge, midlineVector);
-
-  console.log('📍 [v2.1] POSITIONAL DEVIATION:');
-  console.log('  noseTip (P_4):', noseTip.x.toFixed(2), noseTip.y.toFixed(2));
-  console.log('  Perpendicular distance to midline:', tipDistanceToMidline.toFixed(2), 'px');
-
-  // Açıya çevir: atan2(displacement, noseLengthForDeviation)
-  const noseLengthForDeviation = distance2D(bridge, noseTip);
-  const positionalDeviation = Math.atan2(
-    Math.abs(tipDistanceToMidline),
-    noseLengthForDeviation
-  ) * (180 / Math.PI);
-
-  const positionalDeviationDirection = getDirection(tipDistanceToMidline, 2);
-
-  console.log('  Nose length:', noseLengthForDeviation.toFixed(2), 'px');
-  console.log('  Deviation angle:', positionalDeviation.toFixed(2), '°');
-  console.log('  Direction:', positionalDeviationDirection);
-
-  // === 4. COMBINED ROTATION (v2.1 - Pythagorean Addition) ===
-  const combinedRotation = Math.sqrt(geometricTilt ** 2 + positionalDeviation ** 2);
-  const combinedRotationDirection = Math.abs(geometricTilt) > Math.abs(positionalDeviation)
-    ? geometricTiltDirection
-    : positionalDeviationDirection === 'CENTER'
-      ? 'STRAIGHT'
-      : positionalDeviationDirection === 'LEFT'
-        ? 'TILTED_LEFT'
-        : 'TILTED_RIGHT';
-
-  console.log('🎯 [v2.1] COMBINED ROTATION:');
-  console.log('  Combined angle:', combinedRotation.toFixed(2), '°');
-  console.log('  Direction:', combinedRotationDirection);
-  console.log('  Formula: sqrt(' + geometricTilt.toFixed(2) + '² + ' + positionalDeviation.toFixed(2) + '²)');
-
-  // === 5. SCORING (Combined rotation'a göre) ===
-  // STRICT SCORING: Daha gerçekçi eşikler (klinik %4 eşiğine uygun)
-  const combinedRotationScore =
-    Math.abs(combinedRotation) < 1.5
-      ? 10 // 0-1.5° → Simetrik (göz fark etmez)
-      : Math.abs(combinedRotation) < 3
-        ? 8 // 1.5-3° → Minimal (sadece dikkatli bakınca)
-        : Math.abs(combinedRotation) < 5 // ← DÜZELTİLDİ: 6'dan 5'e
-          ? 6 // 3-5° → Fark edilebilir ama kabul edilebilir
-          : Math.abs(combinedRotation) < 8 // ← DÜZELTİLDİ: 10'dan 8'e
-            ? 4 // 5-8° → Belirgin asimetri (6.21° buraya düşer)
-            : Math.abs(combinedRotation) < 12
-              ? 2 // 8-12° → Ciddi asimetri
-              : 1; // 12°+ → Çok ciddi
-
-  console.log('⭐ [v2.1] COMBINED ROTATION SCORE:', combinedRotationScore, '/10');
-
-  // === 6. LEGACY SUPPORT: Eski rotationAngle hesabı (backward compatibility) ===
   const dx = bridge.x - noseTip.x;
   const dy = noseTip.y - bridge.y;
   const rotationAngle = Math.atan2(dx, dy) * (180 / Math.PI);
-  // Kişinin kendi perspektifinden: pozitif açı = kişinin soluna eğik
-  const rotationDirection =
+
+  // Direction: positive = tilted right (from person's perspective)
+  const rotationDirection: 'TILTED_LEFT' | 'TILTED_RIGHT' | 'STRAIGHT' =
     Math.abs(rotationAngle) < 3
       ? 'STRAIGHT'
       : rotationAngle > 0
         ? 'TILTED_RIGHT'
         : 'TILTED_LEFT';
 
-  // STRICT SCORING: Human eye perceives 2-3° as "tilted"
-  const rotationScore =
-    Math.abs(rotationAngle) < 1.5
-      ? 10 // Straight (10)
-      : Math.abs(rotationAngle) < 3
-        ? 8 // Minimal (7-8)
-        : Math.abs(rotationAngle) < 6
-          ? 6 // Noticeable (4-6)
-          : Math.abs(rotationAngle) < 10
-            ? 3 // Severe (2-3)
-            : 1; // Very Severe (0-1)
+  // CONTINUOUS SCORING: Smooth linear interpolation
+  const rotationScore = calculateRotationScore(rotationAngle);
 
-  console.log('🔄 [LEGACY] OLD ROTATION (for backward compatibility):');
-  console.log('  Old rotationAngle:', rotationAngle.toFixed(2), '°');
-  console.log('  Old rotationScore:', rotationScore, '/10');
+  console.log('📐 ROTATION CALCULATION:');
+  console.log('  dx (bridge.x - noseTip.x):', dx.toFixed(2));
+  console.log('  dy (noseTip.y - bridge.y):', dy.toFixed(2));
+  console.log('  Rotation angle:', rotationAngle.toFixed(2), '°');
+  console.log('  Direction:', rotationDirection);
+  console.log('  Score:', rotationScore.toFixed(1), '/10');
 
   // ============================================
   // E. 3D DEPTH DIFFERENCE
@@ -437,13 +310,8 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
 
   const depthDifference = Math.abs(leftNostril.z - rightNostril.z);
 
-  // STRICT SCORING: Z-axis is photo-quality dependent, lower weight
-  const depthScore =
-    depthDifference < 0.01
-      ? 10 // Planar symmetry (10)
-      : depthDifference < 0.025
-        ? 8 // Mild depth diff (7-8)
-        : 6; // Noticeable perspective shift (4-6)
+  // CONTINUOUS SCORING: Smooth linear interpolation
+  const depthScore = calculateDepthScore(depthDifference);
 
   // ============================================
   // G. ADDITIONAL METRICS
@@ -560,17 +428,16 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
         : 'CURVED';
 
   // ============================================
-  // F. OVERALL SCORE (WEIGHTED)
+  // F. OVERALL SCORE (WEIGHTED - v3.0 Calibrated)
   // ============================================
 
-  // WEIGHTED SCORING: Tip deviation is most critical
-  // v2.0: Using combinedRotationScore instead of rotationScore
-  const overallScore = Math.round(
-    tipScore * 0.4 +                  // Tip deviation (40% - most critical)
-    combinedRotationScore * 0.3 +   // Combined rotation (30%) - v2.0 UPDATE
-    nostrilScore * 0.2 +            // Nostril asymmetry (20%)
-    depthScore * 0.1                // Depth difference (10% - least reliable)
-  );
+  // v3.0: Tip deviation is dominant (70%) - calibrated for accurate perception
+  // No Math.round() - küsüratlı skor for precision
+  const overallScore =
+    tipScore * 0.70 +       // Tip deviation (70% - dominant factor)
+    rotationScore * 0.15 +  // Rotation angle (15%)
+    nostrilScore * 0.10 +   // Nostril asymmetry (10%)
+    depthScore * 0.05;      // Depth difference (5% - least reliable)
 
   // REALISTIC ASYMMETRY LEVELS
   const asymmetryLevel =
@@ -586,27 +453,27 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
   // LOG ALL CALCULATED VALUES
   // ============================================
 
-  console.log('📊 NOSE CALCULATION RESULTS:');
+  console.log('📊 NOSE CALCULATION RESULTS (v3.0 - Calibrated):');
   console.log('  ┌─────────────────────────────────────────────────────');
-  console.log('  │ TIP DEVIATION (40% weight):');
+  console.log('  │ TIP DEVIATION (70% weight):');
   console.log('  │   Deviation:', tipDeviation.toFixed(2), 'px');
   console.log('  │   Ratio:', tipDeviationRatio.toFixed(2), '%');
   console.log('  │   Direction:', tipDirection);
-  console.log('  │   Score:', tipScore, '/10');
+  console.log('  │   Score:', tipScore.toFixed(1), '/10');
   console.log('  ├─────────────────────────────────────────────────────');
-  console.log('  │ ROTATION (30% weight):');
+  console.log('  │ ROTATION (15% weight):');
   console.log('  │   Angle:', rotationAngle.toFixed(2), '°');
   console.log('  │   Direction:', rotationDirection);
-  console.log('  │   Score:', rotationScore, '/10');
+  console.log('  │   Score:', rotationScore.toFixed(1), '/10');
   console.log('  ├─────────────────────────────────────────────────────');
-  console.log('  │ NOSTRIL ASYMMETRY (20% weight):');
+  console.log('  │ NOSTRIL ASYMMETRY (10% weight):');
   console.log('  │   Asymmetry:', nostrilAsymmetry.toFixed(2), 'px');
   console.log('  │   Ratio:', nostrilAsymmetryRatio.toFixed(2), '%');
-  console.log('  │   Score:', nostrilScore, '/10');
+  console.log('  │   Score:', nostrilScore.toFixed(1), '/10');
   console.log('  ├─────────────────────────────────────────────────────');
-  console.log('  │ DEPTH (10% weight):');
+  console.log('  │ DEPTH (5% weight):');
   console.log('  │   Difference:', depthDifference.toFixed(4));
-  console.log('  │   Score:', depthScore, '/10');
+  console.log('  │   Score:', depthScore.toFixed(1), '/10');
   console.log('  ├─────────────────────────────────────────────────────');
   console.log('  │ PROPORTIONS:');
   console.log('  │   Width:', noseWidth.toFixed(2), 'px (', noseWidthRatio.toFixed(2), '%) -', widthAssessment);
@@ -614,7 +481,7 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
   console.log('  │   Projection:', tipProjection.toFixed(4), '-', projectionAssessment);
   console.log('  │   Bridge:', bridgeDeviation.toFixed(2), 'px deviation -', bridgeAssessment);
   console.log('  └─────────────────────────────────────────────────────');
-  console.log('🏆 OVERALL SCORE:', overallScore, '/10');
+  console.log('🏆 OVERALL SCORE:', overallScore.toFixed(1), '/10');
   console.log('📋 ASYMMETRY LEVEL:', asymmetryLevel);
   console.log('🔢 ==========================================');
   console.log('🔢 NOSE CALCULATIONS END');
@@ -635,20 +502,10 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
     nostrilAsymmetryRatio,
     nostrilScore,
 
-    // LEGACY rotation (v1.0 - kept for backward compatibility)
+    // Rotation metrics (simple atan2)
     rotationAngle,
     rotationDirection,
     rotationScore,
-
-    // v2.0 ROTATION METRICS (Hybrid Approach)
-    geometricTilt,
-    geometricTiltDirection,
-    positionalDeviation,
-    positionalDeviationDirection,
-    combinedRotation,
-    combinedRotationDirection,
-    combinedRotationScore,
-    midlineVector,
 
     depthDifference,
     depthScore,

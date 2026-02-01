@@ -33,7 +33,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // TEST MODE: AI çağrısını atla, sadece hesaplamaları test et
 // Para harcamamak için true yap, AI'ı açmak için false yap
 // ============================================
-const TEST_MODE = false;
+const TEST_MODE = true;
 
 interface FaceAnalysisData {
   id: string;
@@ -478,9 +478,7 @@ const AnalysisScreen = () => {
           .replace(/{nostrilAsymmetryRatio}/g, calculatedMetrics.nostrilAsymmetryRatio.toFixed(2))
           .replace(/{nostrilScore}/g, calculatedMetrics.nostrilScore.toString())
 
-          .replace(/{rotationAngle}/g, calculatedMetrics.rotationAngle.toFixed(2))
-          .replace(/{rotationDirection}/g, calculatedMetrics.rotationDirection)
-          .replace(/{rotationScore}/g, calculatedMetrics.rotationScore.toString())
+
 
           // v2.0 ROTATION METRICS (Hybrid Approach)
           .replace(/{geometricTilt}/g, calculatedMetrics.geometricTilt.toFixed(2))
@@ -846,7 +844,7 @@ const AnalysisScreen = () => {
         // Nose labels
         .replace(/{label_nose_tip_deviation}/g, labels.nose_tip_deviation)
         .replace(/{label_nostril_asymmetry}/g, labels.nostril_asymmetry)
-        .replace(/{label_rotation_angle}/g, labels.rotation_angle)
+        .replace(/{label_combined_rotation}/g, labels.combined_rotation)
         // Lip labels
         .replace(/{label_corner_alignment}/g, labels.corner_alignment)
         .replace(/{label_width_asymmetry}/g, labels.width_asymmetry)

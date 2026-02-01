@@ -43,7 +43,6 @@ export const METRIC_TRANSLATIONS = {
     // Nose metrics
     nose_tip_deviation: 'Burun ucu sapması',
     nostril_asymmetry: 'Burun delikleri asimetrisi',
-    rotation_angle: 'Eğim açısı', // v2.0: Değişti (Dönüş → Eğim)
 
     // v2.0 Nose rotation metrics
     geometric_tilt: 'Geometrik eğim',
@@ -85,7 +84,6 @@ export const METRIC_TRANSLATIONS = {
     // Nose metrics
     nose_tip_deviation: 'Nose tip deviation',
     nostril_asymmetry: 'Nostril asymmetry',
-    rotation_angle: 'Rotation angle',
 
     // v2.0 Nose rotation metrics
     geometric_tilt: 'Geometric tilt',
@@ -355,9 +353,7 @@ ROTATION/TILT (30% weight - v2.1 HYBRID APPROACH):
 ┌─ Geometric Tilt (nose axis): {geometricTilt}° ({geometricTiltDirection})
 ├─ Positional Deviation (from midline P_168→P_152): {positionalDeviation}° ({positionalDeviationDirection})
 └─ Combined Rotation (Pythagorean): {combinedRotation}° ({combinedRotationDirection})
-Score: {combinedRotationScore}/10
-
-[Legacy] Old rotation: {rotationAngle}° ({rotationDirection}) - for reference
+358: Score: {combinedRotationScore}/10
 
 BRIDGE STRAIGHTNESS (12% weight):
 - Deviation: {bridgeDeviation}px ({bridgeDeviationRatio}%)
@@ -422,7 +418,7 @@ OUTPUT JSON FORMAT
     "key_metrics": [
       "{label_nose_tip_deviation}: {tipDeviation} {unit_pixels} ({tipDirection})",
       "{label_nostril_asymmetry}: {nostrilAsymmetry} {unit_pixels}",
-      "{label_rotation_angle}: {rotationAngle}°"
+      "{label_combined_rotation}: {combinedRotation}°"
     ]
   },
 
@@ -447,7 +443,6 @@ OUTPUT JSON FORMAT
       "combined_angle": {combinedRotation},
       "direction": "{combinedRotationDirection}",
       "score": {combinedRotationScore},
-      "legacy_angle": {rotationAngle},
       "user_explanation": "string (MUST explain BOTH geometric tilt AND positional deviation, reference actual degree values, use 'eğim' not 'dönme' in Turkish, in user's language)"
     },
     "bridge": {

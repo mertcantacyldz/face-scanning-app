@@ -139,8 +139,25 @@ function ScoreBar({ value, max }: { value: number; max: number }) {
   );
 }
 
+// Helper: Translate enum value
+function translateEnum(value: string, t: (key: string) => string): string {
+  const translationKey = `enums.${value}`;
+  const translated = t(translationKey);
+
+  // If translation exists (not same as key), use it
+  if (translated !== translationKey) {
+    return translated;
+  }
+
+  // Fallback: convert UPPER_CASE to Title Case
+  return value
+    .split('_')
+    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
 // Component: Enum Badge
-function EnumBadge({ value }: { value: string }) {
+function EnumBadge({ value, t }: { value: string; t: (key: string) => string }) {
   const color = getEnumColor(value);
 
   const colorClasses = {
@@ -157,12 +174,14 @@ function EnumBadge({ value }: { value: string }) {
     gray: 'text-gray-800',
   }[color];
 
+  const displayValue = translateEnum(value, t);
+
   return (
     <View
       className={`${colorClasses} border px-3 py-1.5 rounded-full self-start`}
     >
       <Text className={`${textColorClasses} text-xs font-semibold`}>
-        {value}
+        {displayValue}
       </Text>
     </View>
   );
@@ -214,7 +233,7 @@ function renderValue(
 
   // Enum
   if (type === 'enum') {
-    return <EnumBadge value={value} />;
+    return <EnumBadge value={value} t={t} />;
   }
 
   // Coordinate
