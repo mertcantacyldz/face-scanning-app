@@ -340,36 +340,28 @@ OUTPUT JSON FORMAT
 PRE-CALCULATED METRICS
 ═══════════════════════════════════════════
 
-NOSE TIP CENTERING (30% weight):
+NOSE TIP CENTERING (60% weight):
 - Deviation: {tipDeviation}px {tipDirection} ({tipDeviationRatio}%)
 - Score: {tipScore}/10
 
-NOSTRIL SYMMETRY (25% weight):
-- Horizontal asymmetry: {nostrilAsymmetry}px ({nostrilAsymmetryRatio}%)
-- Height difference: {nostrilHeightDiff}px ({nostrilHeightDiffRatio}%)
-- Score: {nostrilScore}/10
-
-ROTATION/TILT (30% weight - v2.1 HYBRID APPROACH):
-┌─ Geometric Tilt (nose axis): {geometricTilt}° ({geometricTiltDirection})
-├─ Positional Deviation (from midline P_168→P_152): {positionalDeviation}° ({positionalDeviationDirection})
-└─ Combined Rotation (Pythagorean): {combinedRotation}° ({combinedRotationDirection})
-358: Score: {combinedRotationScore}/10
-
-BRIDGE STRAIGHTNESS (12% weight):
-- Deviation: {bridgeDeviation}px ({bridgeDeviationRatio}%)
-- Assessment: {bridgeAssessment}
+BRIDGE STRAIGHTNESS (15% weight):
+- Deviation: {bridgeDeviation}px ({bridgeAssessment})
 - Score: {bridgeStraightnessScore}/10
 
-PROPORTIONS (10% weight):
-- Width: {noseWidth}px ({noseWidthRatio}% of face) - {widthAssessment}
-- Length: {noseLength}px ({noseLengthRatio}% of face) - {lengthAssessment}
-- Width Score: {widthScore}/10 | Length Score: {lengthScore}/10
+COMBINED ROTATION/EĞİM (15% weight):
+┌─ Geometric Tilt (nose axis): {geometricTilt}° ({geometricTiltDirection})
+├─ Positional Deviation: {positionalDeviation}° ({positionalDeviationDirection})
+└─ Combined Rotation (Pythagorean): {combinedRotation}° ({combinedRotationDirection})
+- Score: {combinedRotationScore}/10
 
-3D DEPTH (8% weight):
-- Depth difference: {depthDifference} units
-- Score: {depthScore}/10
+PROPORTIONS (10% weight):
+- Width: {noseWidth}px ({widthAssessment})
+- Length: {noseLength}px ({lengthAssessment})
+- Score: {widthScore}/10 (width) | {lengthScore}/10 (length)
 
 OVERALL: {overallScore}/10 ({asymmetryLevel})
+
+(Detailed metrics provided for internal calculation context - DO NOT add any keys to the JSON except for those specified in the OUTPUT JSON FORMAT below)
 
 ═══════════════════════════════════════════
 TURKISH LANGUAGE GUIDANCE (v2.1)
@@ -414,49 +406,40 @@ OUTPUT JSON FORMAT
 
   "summary": {
     "headline": "string (max 10 words, in user's language)",
-    "explanation": "string (2-3 sentences, MUST reference {tipDeviation}px and {nostrilAsymmetry}px values, in user's language)",
+    "explanation": "string (2-3 sentences, MUST reference {tipDeviationRatio}% value, in user's language)",
     "key_metrics": [
-      "{label_nose_tip_deviation}: {tipDeviation} {unit_pixels} ({tipDirection})",
-      "{label_nostril_asymmetry}: {nostrilAsymmetry} {unit_pixels}",
+      "{label_nose_tip_deviation}: {tipDeviationRatio}%",
+      "{label_bridge_straightness}: {bridgeAssessment}",
       "{label_combined_rotation}: {combinedRotation}°"
     ]
   },
 
   "details": {
-    "tip_centering": {
-      "deviation": {tipDeviation},
+    "tip_deviation": {
+      "tip_deviation_ratio": {tipDeviationRatio},
       "direction": "{tipDirection}",
       "score": {tipScore},
-      "user_explanation": "string (explain visual impact of this deviation, in user's language)"
+      "user_explanation": "string (describe how the {tipDeviationRatio}% deviation affects facial symmetry in the {tipDirection} direction, in user's language)"
     },
-    "nostril_symmetry": {
-      "asymmetry": {nostrilAsymmetry},
-      "height_diff": {nostrilHeightDiff},
-      "score": {nostrilScore},
-      "user_explanation": "string (explain visual impact of nostril symmetry, in user's language)"
-    },
-    "rotation": {
-      "geometric_tilt": {geometricTilt},
-      "geometric_tilt_direction": "{geometricTiltDirection}",
-      "positional_deviation": {positionalDeviation},
-      "positional_deviation_direction": "{positionalDeviationDirection}",
-      "combined_angle": {combinedRotation},
-      "direction": "{combinedRotationDirection}",
-      "score": {combinedRotationScore},
-      "user_explanation": "string (MUST explain BOTH geometric tilt AND positional deviation, reference actual degree values, use 'eğim' not 'dönme' in Turkish, in user's language)"
-    },
-    "bridge": {
+    "bridge_straightness": {
       "deviation": {bridgeDeviation},
       "assessment": "{bridgeAssessment}",
       "score": {bridgeStraightnessScore},
-      "user_explanation": "string (explain visual impact of bridge straightness, in user's language)"
+      "user_explanation": "string (describe the visual character of the bridge curvature/straightness based on {bridgeDeviation}px, mentioning aesthetic impact, in user's language)"
+    },
+    "combined_rotation": {
+      "angle": {combinedRotation},
+      "direction": "{combinedRotationDirection}",
+      "score": {combinedRotationScore},
+      "user_explanation": "string (describe the overall lean of the nose axis at {combinedRotation}°, explaining how it impacts the 'flow' of the face, in user's language)"
     },
     "proportions": {
-      "width_ratio": {noseWidthRatio},
-      "length_ratio": {noseLengthRatio},
+      "proportion_score": {proportionScore},
       "width_assessment": "{widthAssessment}",
+      "width_score": {widthScore},
       "length_assessment": "{lengthAssessment}",
-      "user_explanation": "string (explain visual impact of nose proportions, in user's language)"
+      "length_score": {lengthScore},
+      "user_explanation": "string (describe the harmony between nose width ({noseWidth}px) and length ({noseLength}px), explaining how it balances with facial thirds, in user's language)"
     }
   },
 
@@ -464,7 +447,7 @@ OUTPUT JSON FORMAT
     "quick_tip": "string (immediately actionable tip, in user's language)",
     "exercise_suggestion": "string (facial yoga exercises for the nose area can be helpful, in user's language)",
     "exercise_region": "nose",
-    "professional_advice": "string or null (filled if score < 5, in user's language)"
+    "professional_advice": "string or null (filled if score < 6, in user's language)"
   },
 
   "metadata": {

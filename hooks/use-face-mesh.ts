@@ -1,10 +1,11 @@
 import { mediaPipeHTML } from '@/lib/mediapipe-html';
+import { loadAnalysisPhoto, saveAnalysisPhoto, deleteAnalysisPhoto, PhotoMetadata } from '@/lib/photo-storage';
 import { supabase } from '@/lib/supabase';
 import { Camera } from 'expo-camera';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Linking } from 'react-native';
 import { WebView } from 'react-native-webview';
 
@@ -92,7 +93,21 @@ const validateMesh = (faceData: any) => {
   const confidence = faceData.confidence || 0.99;
   const confidencePercent = Math.round(confidence * 100);
 
-  if (confidence >= 0.95) {
+  // DEBUG: Kalite detaylarını logla
+  if (faceData.confidenceDetails) {
+    const details = faceData.confidenceDetails;
+    console.log('📊 [QUALITY DEBUG]', {
+      total: details.totalScore,
+      yaw: details.yaw?.score,
+      pitch: details.pitch?.score,
+      eyeSym: details.eyeSymmetry?.score,
+      size: details.size?.score,
+      depthG: details.depthGlobal?.score,
+      depthL: details.depthLocal?.score
+    });
+  }
+
+  if (confidence >= 0.94) { // 0.95 -> 0.94 (Hafif esnetme)
     // Optimal yüz boyutu
     return {
       isValid: true,
@@ -108,7 +123,7 @@ const validateMesh = (faceData: any) => {
       message: 'İyi kalite',
       confidence: confidencePercent
     };
-  } else if (confidence >= 0.73) {
+  } else if (confidence >= 0.70) { // 0.73 -> 0.70 (Hafif esnetme)
     // Yüz çok büyük (75%)
     return {
       isValid: true,
@@ -148,7 +163,34 @@ export function useFaceMesh() {
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
+  // Saved photo state (kalıcı fotoğraf)
+  const [savedPhotoUri, setSavedPhotoUri] = useState<string | null>(null);
+  const [savedPhotoDate, setSavedPhotoDate] = useState<string | null>(null);
+  const [savedPhotoAnalysisId, setSavedPhotoAnalysisId] = useState<string | null>(null);
+  const [isLoadingPhoto, setIsLoadingPhoto] = useState(true);
+
   const webViewRef = useRef<WebView>(null);
+
+  // Mount'ta kayıtlı fotoğrafı yükle
+  useEffect(() => {
+    const loadSavedPhoto = async () => {
+      try {
+        const metadata = await loadAnalysisPhoto();
+        if (metadata) {
+          setSavedPhotoUri(metadata.uri);
+          setSavedPhotoDate(metadata.savedAt);
+          setSavedPhotoAnalysisId(metadata.faceAnalysisId || null);
+          console.log('📸 [useFaceMesh] Kayıtlı fotoğraf yüklendi:', metadata.uri);
+        }
+      } catch (error) {
+        console.error('📸 [useFaceMesh] Fotoğraf yükleme hatası:', error);
+      } finally {
+        setIsLoadingPhoto(false);
+      }
+    };
+
+    loadSavedPhoto();
+  }, []);
 
   // WebView mesajlarını dinle
   const handleWebViewMessage = async (event: any) => {
@@ -313,6 +355,17 @@ export function useFaceMesh() {
       const savedId = await saveAnalysisToDatabase(faceLandmarks);
 
       if (savedId) {
+        // Fotoğrafı kalıcı olarak kaydet
+        if (selectedImage) {
+          const photoMetadata = await saveAnalysisPhoto(selectedImage, savedId);
+          if (photoMetadata) {
+            setSavedPhotoUri(photoMetadata.uri);
+            setSavedPhotoDate(photoMetadata.savedAt);
+            setSavedPhotoAnalysisId(savedId);
+            console.log('📸 [handleConfirmMesh] Fotoğraf kaydedildi');
+          }
+        }
+
         Alert.alert(
           'Analiz Başarılı! 🎉',
           `${faceLandmarks.totalPoints} noktalı MediaPipe analizi kaydedildi!`,
@@ -558,7 +611,21 @@ export function useFaceMesh() {
     }
     setSelectedImage(null);
     setFaceLandmarks(null);
+    setMeshImageUri(null);
     setShowImagePicker(true);
+  };
+
+  // Kayıtlı fotoğrafı temizle (yeni fotoğraf seçmek için)
+  const clearSavedPhoto = async () => {
+    try {
+      await deleteAnalysisPhoto();
+      setSavedPhotoUri(null);
+      setSavedPhotoDate(null);
+      setSavedPhotoAnalysisId(null);
+      console.log('📸 [clearSavedPhoto] Kayıtlı fotoğraf temizlendi');
+    } catch (error) {
+      console.error('📸 [clearSavedPhoto] Hata:', error);
+    }
   };
 
   return {
@@ -571,6 +638,11 @@ export function useFaceMesh() {
     isAnalyzing,
     showImagePicker,
     showMeshPreview,
+    // Saved photo state
+    savedPhotoUri,
+    savedPhotoDate,
+    savedPhotoAnalysisId,
+    isLoadingPhoto,
     // Refs
     webViewRef,
     // Handlers
@@ -582,6 +654,7 @@ export function useFaceMesh() {
     takePhoto,
     pickImage,
     setShowImagePicker,
+    clearSavedPhoto,
     // Constants
     mediaPipeHTML,
   };

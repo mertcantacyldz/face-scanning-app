@@ -33,13 +33,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // TEST MODE: AI çağrısını atla, sadece hesaplamaları test et
 // Para harcamamak için true yap, AI'ı açmak için false yap
 // ============================================
-const TEST_MODE = true;
+const TEST_MODE = false;
 
 interface FaceAnalysisData {
   id: string;
   landmarks: { x: number; y: number; z: number; index: number }[];
   created_at: string;
 }
+
+
 
 const AnalysisScreen = () => {
   const { t, i18n } = useTranslation(['analysis', 'common']);
@@ -253,9 +255,10 @@ const AnalysisScreen = () => {
         lid_score: 0.10,
       },
       nose: {
-        nose_tip_score: 0.50,
-        rotation_score: 0.30,
-        nostril_score: 0.20,
+        nose_tip_score: 0.60,
+        bridge_straightness_score: 0.15,
+        combined_rotation_score: 0.15,
+        proportion_score: 0.10,
       },
       lips: {
         upper_lower_ratio_score: 0.30,
@@ -474,24 +477,6 @@ const AnalysisScreen = () => {
           .replace(/{tipDirection}/g, calculatedMetrics.tipDirection)
           .replace(/{tipScore}/g, calculatedMetrics.tipScore.toString())
 
-          .replace(/{nostrilAsymmetry}/g, calculatedMetrics.nostrilAsymmetry.toFixed(2))
-          .replace(/{nostrilAsymmetryRatio}/g, calculatedMetrics.nostrilAsymmetryRatio.toFixed(2))
-          .replace(/{nostrilScore}/g, calculatedMetrics.nostrilScore.toString())
-
-
-
-          // v2.0 ROTATION METRICS (Hybrid Approach)
-          .replace(/{geometricTilt}/g, calculatedMetrics.geometricTilt.toFixed(2))
-          .replace(/{geometricTiltDirection}/g, calculatedMetrics.geometricTiltDirection)
-          .replace(/{positionalDeviation}/g, calculatedMetrics.positionalDeviation.toFixed(2))
-          .replace(/{positionalDeviationDirection}/g, calculatedMetrics.positionalDeviationDirection)
-          .replace(/{combinedRotation}/g, calculatedMetrics.combinedRotation.toFixed(2))
-          .replace(/{combinedRotationDirection}/g, calculatedMetrics.combinedRotationDirection)
-          .replace(/{combinedRotationScore}/g, calculatedMetrics.combinedRotationScore.toString())
-
-          .replace(/{depthDifference}/g, calculatedMetrics.depthDifference.toFixed(3))
-          .replace(/{depthScore}/g, calculatedMetrics.depthScore.toString())
-
           .replace(/{noseWidth}/g, calculatedMetrics.noseWidth.toFixed(2))
           .replace(/{noseWidthRatio}/g, calculatedMetrics.noseWidthRatio.toFixed(2))
           .replace(/{widthScore}/g, calculatedMetrics.widthScore.toString())
@@ -502,19 +487,12 @@ const AnalysisScreen = () => {
           .replace(/{lengthScore}/g, calculatedMetrics.lengthScore.toString())
           .replace(/{lengthAssessment}/g, calculatedMetrics.lengthAssessment)
 
-          .replace(/{tipProjection}/g, calculatedMetrics.tipProjection.toFixed(3))
-          .replace(/{projectionScore}/g, calculatedMetrics.projectionScore.toString())
-          .replace(/{projectionAssessment}/g, calculatedMetrics.projectionAssessment)
-
-          .replace(/{nostrilHeightDiff}/g, calculatedMetrics.nostrilHeightDiff.toFixed(2))
-          .replace(/{nostrilHeightDiffRatio}/g, calculatedMetrics.nostrilHeightDiffRatio.toFixed(2))
-          .replace(/{nostrilSizeScore}/g, calculatedMetrics.nostrilSizeScore.toString())
-
           .replace(/{bridgeDeviation}/g, calculatedMetrics.bridgeDeviation.toFixed(2))
           .replace(/{bridgeDeviationRatio}/g, calculatedMetrics.bridgeDeviationRatio.toFixed(2))
           .replace(/{bridgeStraightnessScore}/g, calculatedMetrics.bridgeStraightnessScore.toString())
           .replace(/{bridgeAssessment}/g, calculatedMetrics.bridgeAssessment)
 
+          .replace(/{proportionScore}/g, (calculatedMetrics as any).proportionScore?.toString() || '0')
           .replace(/{overallScore}/g, calculatedMetrics.overallScore.toString())
           .replace(/{asymmetryLevel}/g, calculatedMetrics.asymmetryLevel);
 
@@ -880,16 +858,32 @@ const AnalysisScreen = () => {
             },
             user_friendly_summary: {
               assessment: '🧪 Test Modu Aktif',
-              explanation: 'AI çağrısı yapılmadı. Aşağıda TypeScript tarafından hesaplanan ham değerler gösterilmektedir. Console\'u kontrol edin.',
-              key_findings: calculatedMetrics
-                ? Object.entries(calculatedMetrics)
-                  .filter(([_, value]) => typeof value === 'number' || typeof value === 'string')
-                  .filter(([key]) => !key.includes('landmarkIndices'))
-                  .slice(0, 12)
-                  .map(([key, value]) => `${key}: ${typeof value === 'number' ? (Number.isInteger(value) ? value : value.toFixed(2)) : value}`)
-                : ['Hesaplama yapılamadı']
+              explanation: 'AI devre dışı. TypeScript hesaplamaları gösteriliyor.',
+              key_findings: region.id === 'nose'
+                ? [
+                  `Burun Ucu Sapma Oranı: %${calculatedMetrics.tipDeviationRatio.toFixed(1)}`,
+                  `Kemer Puanı: ${calculatedMetrics.bridgeStraightnessScore.toFixed(1)}`,
+                  `Eğim Puanı: ${calculatedMetrics.combinedRotationScore.toFixed(1)}`,
+                  `Orantı Puanı: ${(calculatedMetrics as any).proportionScore?.toFixed(1) || '0.0'}`
+                ]
+                : calculatedMetrics
+                  ? Object.entries(calculatedMetrics)
+                    .filter(([_, value]) => typeof value === 'number' || typeof value === 'string')
+                    .filter(([key]) => !key.includes('landmarkIndices'))
+                    .slice(0, 12)
+                    .map(([key, value]) => `${key}: ${typeof value === 'number' ? (Number.isInteger(value) ? value : value.toFixed(2)) : value}`)
+                  : ['Hesaplama yapılamadı']
             },
-            calculated_metrics: calculatedMetrics,
+            details: region.id === 'nose' ? {
+              tip_deviation: {
+                tip_deviation_ratio: calculatedMetrics.tipDeviationRatio,
+                direction: calculatedMetrics.tipDirection,
+                score: calculatedMetrics.tipScore
+              },
+              bridge_straightness: { score: calculatedMetrics.bridgeStraightnessScore, assessment: calculatedMetrics.bridgeAssessment },
+              combined_rotation: { score: calculatedMetrics.combinedRotationScore, angle: calculatedMetrics.combinedRotation },
+              proportions: { proportion_score: (calculatedMetrics as any).proportionScore, width_assessment: calculatedMetrics.widthAssessment, length_assessment: calculatedMetrics.lengthAssessment }
+            } : calculatedMetrics,
             metadata: {
               test_mode: true,
               calculation_method: 'typescript_precalculated',
@@ -947,7 +941,15 @@ const AnalysisScreen = () => {
         // ============================================
         // 4. VALIDATE AI RESPONSE (NOSE, EYES, LIPS, JAWLINE, EYEBROWS, FACE_SHAPE)
         // ============================================
-        if ((region.id === 'nose' || region.id === 'eyes' || region.id === 'lips' || region.id === 'jawline' || region.id === 'eyebrows' || region.id === 'face_shape') && calculatedMetrics) {
+        if (
+          (region.id === 'nose' ||
+            region.id === 'eyes' ||
+            region.id === 'lips' ||
+            region.id === 'jawline' ||
+            region.id === 'eyebrows' ||
+            region.id === 'face_shape') &&
+          calculatedMetrics
+        ) {
           const aiScore = jsonResult.analysis_result?.overall_score;
 
           if (aiScore !== calculatedMetrics.overallScore) {
@@ -970,6 +972,27 @@ const AnalysisScreen = () => {
           }
           jsonResult.metadata.calculation_method = 'typescript_precalculated';
 
+          // 🛡️ HARD FILTER: For Nose region, ONLY allow the 4 categories requested
+          if (region.id === 'nose' && jsonResult.details) {
+            const allowed = [
+              'tip_deviation',
+              'bridge_straightness',
+              'combined_rotation',
+              'proportions',
+            ];
+            const filteredDetails: Record<string, any> = {};
+            allowed.forEach((key) => {
+              if (jsonResult.details[key]) {
+                filteredDetails[key] = jsonResult.details[key];
+              }
+            });
+            jsonResult.details = filteredDetails;
+
+            // Also filter summary key_metrics if present
+            if (jsonResult.summary?.key_metrics) {
+              jsonResult.summary.key_metrics = jsonResult.summary.key_metrics.slice(0, 4);
+            }
+          }
           console.log(`✅ ${region.id} AI response validated and corrected if needed`);
         }
 
@@ -978,27 +1001,13 @@ const AnalysisScreen = () => {
         setShowResultModal(true);
 
         // Save to database in background
-        const savedRecord = await saveAnalysisToDatabase(region.id as RegionId, jsonResult);
-
-        // If save failed, show warning to user
-        if (!savedRecord) {
-          Alert.alert(
-            'Kayıt Uyarısı',
-            'Analiz sonucu gösteriliyor ancak veritabanına kaydedilemedi. İnternet bağlantınızı kontrol edin.',
-            [
-              { text: 'Tamam' },
-              {
-                text: 'Tekrar Dene',
-                onPress: () => saveAnalysisToDatabase(region.id as RegionId, jsonResult),
-              },
-            ]
-          );
-        }
+        await saveAnalysisToDatabase(region.id as RegionId, jsonResult);
       } else {
         // Show error message
         Alert.alert(
           i18n.language === 'tr' ? 'Analiz Hatası' : 'Analysis Error',
-          result.error || (i18n.language === 'tr'
+          result.error ||
+          (i18n.language === 'tr'
             ? 'Analiz yapılırken bir hata oluştu'
             : 'An error occurred during analysis')
         );
@@ -1011,11 +1020,11 @@ const AnalysisScreen = () => {
     }
   };
 
-  // Save analysis result to database and return the saved record
-  const saveAnalysisToDatabase = async (
+  // Helper function to save analysis result to database
+  async function saveAnalysisToDatabase(
     regionId: RegionId,
     rawResponse: Record<string, any>
-  ): Promise<Record<string, any> | null> => {
+  ): Promise<Record<string, any> | null> {
     try {
       const {
         data: { user },
@@ -1031,7 +1040,8 @@ const AnalysisScreen = () => {
 
       // Override AI's overall_score with our calculation
       if (rawResponse.analysis_result) {
-        const aiScore = rawResponse.analysis_result.overall_score ??
+        const aiScore =
+          rawResponse.analysis_result.overall_score ??
           rawResponse.analysis_result.confidence_score;
 
         if (aiScore !== calculatedScore) {
@@ -1071,13 +1081,13 @@ const AnalysisScreen = () => {
       console.error('Error saving analysis to database:', error);
       return null;
     }
-  };
+  }
 
-  const closeResultModal = () => {
+  function closeResultModal() {
     setShowResultModal(false);
     setAnalysisResult(null);
     setSelectedRegion(null);
-  };
+  }
 
   if (loading) {
     return (

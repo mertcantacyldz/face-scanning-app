@@ -30,6 +30,7 @@ import {
   FaceScanVisual,
   GlassCard,
   PulsingButton,
+  SavedPhotoCard,
   StatusPill,
   FeatureHighlight,
   FeatureHighlightsRow,
@@ -39,6 +40,7 @@ import { useFaceMesh } from '@/hooks/use-face-mesh';
 import { usePremium } from '@/hooks/use-premium';
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 const isSmallScreen = screenHeight < 700; // iPhone SE, small Android devices
@@ -78,6 +80,12 @@ export default function HomeScreen() {
     pickImage,
     setShowImagePicker,
     mediaPipeHTML,
+    // Saved photo state
+    savedPhotoUri,
+    savedPhotoDate,
+    savedPhotoAnalysisId,
+    isLoadingPhoto,
+    clearSavedPhoto,
   } = useFaceMesh();
 
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -189,7 +197,8 @@ export default function HomeScreen() {
     }
   };
 
-  if (!profile) {
+  // Loading state - profile veya photo yükleniyor
+  if (!profile || isLoadingPhoto) {
     return (
       <View className="flex-1 justify-center items-center">
         <AnimatedBackground />
@@ -200,6 +209,26 @@ export default function HomeScreen() {
       </View>
     );
   }
+
+  // Durum belirleme
+  const hasStoredPhoto = !!savedPhotoUri;
+  const isActiveAnalysis = !!selectedImage || !!meshImageUri;
+
+  // Handler'lar
+  const handleViewResults = () => {
+    if (savedPhotoAnalysisId) {
+      router.push({ pathname: '/analysis', params: { faceAnalysisId: savedPhotoAnalysisId } });
+    }
+  };
+
+  const handleChangePhoto = async () => {
+    await clearSavedPhoto();
+    setShowImagePicker(true);
+  };
+
+  const handleNewScan = () => {
+    startNewAnalysis();
+  };
 
   return (
     <View className="flex-1">
@@ -232,8 +261,80 @@ export default function HomeScreen() {
       </View>
 
       {/* Main Content Area */}
-      {!meshImageUri && !selectedImage ? (
-        /* STATIC HERO LAYOUT (No Scroll) */
+      {hasStoredPhoto && !isActiveAnalysis ? (
+        /* SAVED PHOTO LAYOUT - Kayıtlı fotoğraf var, aktif analiz yok */
+        <ScrollView
+          className="flex-1"
+          contentContainerStyle={{ padding: 20, paddingBottom: tabBarHeight + 40 }}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Status Pill */}
+          <View className="mb-4">
+            <StatusPill
+              isReady={mediaPipeReady}
+              readyText={t('aiStatus.ready')}
+              loadingText={t('aiStatus.loading')}
+            />
+          </View>
+
+          {/* Saved Photo Card */}
+          <SavedPhotoCard
+            photoUri={savedPhotoUri}
+            savedAt={savedPhotoDate || new Date().toISOString()}
+            faceAnalysisId={savedPhotoAnalysisId}
+            onViewResults={handleViewResults}
+            onChangePhoto={handleChangePhoto}
+            onNewScan={handleNewScan}
+          />
+
+          {/* Premium Promotion */}
+          {!isPremium && (
+            <GlassCard
+              delay={400}
+              borderGradient="premium"
+              intensity="medium"
+              style={{ padding: 24, marginTop: 24 }}
+            >
+              <View className="items-center">
+                <View className="flex-row items-center justify-center gap-2 mb-3">
+                  <Ionicons name="diamond-outline" size={20} color="#F59E0B" />
+                  <Text
+                    style={{
+                      color: isDark ? '#FCD34D' : '#D97706',
+                      fontWeight: '700',
+                      fontSize: 18,
+                    }}
+                  >
+                    {t('premium.title')}
+                  </Text>
+                </View>
+                <Text
+                  style={{
+                    color: isDark ? '#94A3B8' : '#64748B',
+                    textAlign: 'center',
+                    marginBottom: 16,
+                    lineHeight: 22,
+                  }}
+                >
+                  {t('premium.benefits')}
+                </Text>
+                <Button
+                  onPress={() => {/* Navigate to premium */ }}
+                  style={{
+                    backgroundColor: '#F59E0B',
+                    width: '100%',
+                  }}
+                >
+                  <Text style={{ color: '#1E293B', fontWeight: '700' }}>
+                    {t('premium.button')}
+                  </Text>
+                </Button>
+              </View>
+            </GlassCard>
+          )}
+        </ScrollView>
+      ) : !isActiveAnalysis ? (
+        /* STATIC HERO LAYOUT (No Scroll) - İlk kullanım */
         <View className="flex-1 px-4 pb-5 justify-between">
           <View className="flex-1 pt-2">
             {/* Status Pill */}

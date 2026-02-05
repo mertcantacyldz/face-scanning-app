@@ -1,8 +1,9 @@
-import React from 'react';
-import { View } from 'react-native';
-import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
+import { Text } from '@/components/ui/text';
+import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { View } from 'react-native';
 
 // Types
 type ValueType =
@@ -46,13 +47,14 @@ function detectUnit(key: string): string {
   const keyLower = key.toLowerCase();
 
   const unitMap: Record<string, string> = {
+    ratio: '%',
+    percentage: '%',
     angle: '°',
     degree: '°',
     width: 'px',
     height: 'px',
     distance: 'px',
     deviation: 'px',
-    ratio: '%',
   };
 
   for (const [keyword, unit] of Object.entries(unitMap)) {
@@ -79,15 +81,22 @@ function getEnumColor(value: string): 'green' | 'yellow' | 'red' | 'gray' {
 }
 
 // Helper: Detect value type
-function detectValueType(value: any): ValueType {
+function detectValueType(value: any, key: string = ''): ValueType {
   if (value == null) return 'null';
 
   if (typeof value === 'boolean') return 'boolean';
 
   if (typeof value === 'number') {
-    // Score: integer 0-10
-    if (Number.isInteger(value) && value >= 0 && value <= 10) {
-      return 'score';
+    const keyLower = key.toLowerCase();
+    const isScoreKey = keyLower.includes('score');
+
+    // Score: number 0-10
+    // v2.0: Allow floats for scores if they're in 0-10 range and key says "score"
+    // Other regions use integers, but Nose uses precise floats
+    if (value >= 0 && value <= 10) {
+      if (isScoreKey || Number.isInteger(value)) {
+        return 'score';
+      }
     }
     return 'number';
   }
@@ -133,7 +142,7 @@ function ScoreBar({ value, max }: { value: number; max: number }) {
       </View>
       {/* Score text */}
       <Text className="font-bold text-sm min-w-[45px]">
-        {value}/{max}
+        {value.toFixed(1)}/{max}
       </Text>
     </View>
   );
@@ -208,18 +217,26 @@ function renderValue(
   key: string,
   value: any,
   depth: number,
-  t: (key: string) => string
+  t: (key: string, options?: any) => string
 ): React.ReactElement | null {
-  // SPECIAL CASE: user_explanation (display prominently before scores)
-  if (key === 'user_explanation' && typeof value === 'string') {
+  // SPECIAL CASE: user_explanation (display prominently as a comment box)
+  if (key === 'user_explanation' && typeof value === 'string' && value.trim()) {
     return (
-      <Text className="text-sm italic text-muted-foreground mb-2 leading-relaxed">
-        {value}
-      </Text>
+      <View className="bg-primary/5 p-3 rounded-lg border-l-4 border-primary mt-1 mb-3">
+        <View className="flex-row items-center mb-1 gap-1">
+          <Ionicons name="chatbubble-ellipses-outline" size={14} color="#8B5CF6" />
+          <Text className="text-[10px] font-bold text-primary uppercase tracking-tighter">
+            {t('ui.ai_comment', { defaultValue: 'AI COMMENT' })}
+          </Text>
+        </View>
+        <Text className="text-sm italic text-muted-foreground leading-relaxed">
+          {value}
+        </Text>
+      </View>
     );
   }
 
-  const type = detectValueType(value);
+  const type = detectValueType(value, key);
 
   // Null/undefined
   if (type === 'null') {
@@ -255,14 +272,12 @@ function renderValue(
   if (type === 'boolean') {
     return (
       <View
-        className={`${
-          value ? 'bg-green-100 border-green-300' : 'bg-red-100 border-red-300'
-        } border px-2 py-1 rounded self-start`}
+        className={`${value ? 'bg-green-100 border-green-300' : 'bg-red-100 border-red-300'
+          } border px-2 py-1 rounded self-start`}
       >
         <Text
-          className={`text-xs font-semibold ${
-            value ? 'text-green-800' : 'text-red-800'
-          }`}
+          className={`text-xs font-semibold ${value ? 'text-green-800' : 'text-red-800'
+            }`}
         >
           {value ? `✓ ${t('ui.yes')}` : `✗ ${t('ui.no')}`}
         </Text>
@@ -324,7 +339,7 @@ function JsonRendererInner({
   depth = 0,
   excludeKeys = [],
   t,
-}: JsonRendererProps & { t: (key: string) => string }) {
+}: JsonRendererProps & { t: (key: string, options?: any) => string }) {
   if (!data || typeof data !== 'object') {
     return null;
   }

@@ -80,5 +80,12 @@
     "lips": "Dudaklar",
     "jawline": "Çene Hattı",
     "face_shape": "Yüz Şekli"
+  },
+  "savedPhoto": {
+    "title": "Kayitli Taraman",
+    "lastScan": "Son tarama: {{date}}",
+    "viewResults": "Analiz Sonuclarini Gor",
+    "changePhoto": "Fotografi Degistir",
+    "newScan": "Yeni Tarama"
   }
 }

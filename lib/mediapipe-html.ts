@@ -126,7 +126,7 @@ export const mediaPipeHTML = `
 
                 faceMesh.setOptions({
                     maxNumFaces: 1,
-                    refineLandmarks: true,  // İris detayı için aktif (468-477 landmarks)
+                    refineLandmarks: true,  // İris detayı için aktif (4TEN ÇOK DAHA FAZLA landmark)
                     minDetectionConfidence: 0.7,  // Daha yüksek kalite kontrolü
                     minTrackingConfidence: 0.5,
                     selfieMode: false,
@@ -762,9 +762,9 @@ export const mediaPipeHTML = `
 
             faceMesh.setOptions({
                 maxNumFaces: 1,
-                refineLandmarks: false,
-                minDetectionConfidence: 0.5,
-                minTrackingConfidence: 0.0,
+                refineLandmarks: true,  // FIX: Unify with initMediaPipe
+                minDetectionConfidence: 0.7,  // FIX: Unify with initMediaPipe
+                minTrackingConfidence: 0.5,
                 selfieMode: false,
                 staticImageMode: true,
                 modelComplexity: 1

@@ -1,7 +1,7 @@
+import { Card } from '@/components/ui/card';
+import { Text } from '@/components/ui/text';
 import React from 'react';
 import { View } from 'react-native';
-import { Text } from '@/components/ui/text';
-import { Card } from '@/components/ui/card';
 
 interface HeroCardProps {
   data: {
@@ -68,7 +68,9 @@ export function HeroCard({ data }: HeroCardProps) {
       {/* Score Circle */}
       <View className="items-center mb-6">
         <View className="w-36 h-36 rounded-full bg-white shadow-xl items-center justify-center border-4 border-primary/20">
-          <Text className={`text-6xl font-bold ${scoreColor}`}>{score}</Text>
+          <Text className={`text-6xl font-bold ${scoreColor}`}>
+            {typeof score === 'number' ? score.toFixed(1) : score}
+          </Text>
           <Text className="text-sm text-muted-foreground font-medium">
             / 10
           </Text>

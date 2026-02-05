@@ -80,5 +80,12 @@
     "lips": "Lips",
     "jawline": "Jawline",
     "face_shape": "Face Shape"
+  },
+  "savedPhoto": {
+    "title": "Your Saved Scan",
+    "lastScan": "Last scan: {{date}}",
+    "viewResults": "View Analysis Results",
+    "changePhoto": "Change Photo",
+    "newScan": "New Scan"
   }
 }
