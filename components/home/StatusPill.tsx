@@ -1,15 +1,14 @@
-import React, { useEffect } from 'react';
-import { View, useColorScheme } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  FadeIn,
-  SlideInLeft,
-} from 'react-native-reanimated';
 import { Text } from '@/components/ui/text';
 import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect } from 'react';
+import { useColorScheme } from 'react-native';
+import Animated, {
+  SlideInLeft,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming
+} from 'react-native-reanimated';
 
 interface StatusPillProps {
   isReady: boolean;
@@ -56,17 +55,6 @@ export function StatusPill({ isReady, readyText, loadingText }: StatusPillProps)
         gap: 8,
       }}
     >
-      {/* Animated dot */}
-      <Animated.View style={dotStyle}>
-        <View
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: 4,
-            backgroundColor: isReady ? '#10B981' : '#F59E0B',
-          }}
-        />
-      </Animated.View>
 
       {/* Icon */}
       <Ionicons

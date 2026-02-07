@@ -631,6 +631,7 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
   console.log('📊 NOSE CALCULATION RESULTS (v4.0 - Multi-Factor):');
   console.log('  ┌─────────────────────────────────────────────────────');
   console.log('  │ TIP DEVIATION (60% weight):');
+  console.log('  │   Deviation:', tipDeviation.toFixed(2), 'px (', tipDeviationRatio.toFixed(2), '%)');
   console.log('  │   Score:', tipScore.toFixed(1), '/10');
   console.log('  ├─────────────────────────────────────────────────────');
   console.log('  │ BRIDGE STRAIGHTNESS (15% weight):');

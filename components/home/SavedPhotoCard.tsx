@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -8,9 +9,9 @@ import {
   useColorScheme,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
 
 import { Text } from '@/components/ui/text';
+import { Button } from '../ui/button';
 import { GlassCard } from './GlassCard';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -157,113 +158,162 @@ export function SavedPhotoCard({
         </View>
       </View>
 
-      {/* Primary Action - View Results */}
-      {faceAnalysisId && (
-        <Pressable
-          onPress={onViewResults}
-          style={({ pressed }) => ({
-            backgroundColor: pressed ? '#4F46E5' : '#6366F1',
-            borderRadius: 16,
-            padding: 16,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            marginBottom: 12,
-          })}
-        >
-          <Ionicons name="analytics-outline" size={20} color="#FFFFFF" />
-          <Text
-            style={{
-              color: '#FFFFFF',
-              fontSize: 16,
-              fontWeight: '600',
-            }}
+      {/* Actions Section */}
+      <View style={{ gap: 10 }}>
+        {/* Ana Buton - Analiz Sonuçlarını Gör */}
+        {faceAnalysisId && (
+          <Button
+            onPress={onViewResults}
+            className=' w-full  flex-row gap-3 mb-4'
+            style={({ pressed }) => ({
+              backgroundColor: pressed
+                ? isDark
+                  ? '#5B21B6'
+                  : '#7C3AED'
+                : isDark
+                  ? '#6D28D9'
+                  : '#8B5CF6',
+              borderRadius: 16,
+              paddingVertical: 16,
+              paddingHorizontal: 20,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+              shadowColor: '#8B5CF6',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 4,
+            })}
           >
-            {t('savedPhoto.viewResults')}
-          </Text>
-        </Pressable>
-      )}
 
-      {/* Secondary Actions Row */}
-      <View style={{ flexDirection: 'row', gap: 12 }}>
-        {/* Change Photo */}
-        <Pressable
-          onPress={onChangePhoto}
-          style={({ pressed }) => ({
-            flex: 1,
-            backgroundColor: pressed
-              ? isDark
-                ? 'rgba(100, 116, 139, 0.4)'
-                : 'rgba(100, 116, 139, 0.2)'
-              : isDark
-                ? 'rgba(100, 116, 139, 0.2)'
-                : 'rgba(100, 116, 139, 0.1)',
-            borderRadius: 14,
-            padding: 14,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1,
-            borderColor: isDark
-              ? 'rgba(100, 116, 139, 0.3)'
-              : 'rgba(100, 116, 139, 0.2)',
-          })}
-        >
-          <Ionicons
-            name="swap-horizontal-outline"
-            size={22}
-            color={isDark ? '#94A3B8' : '#64748B'}
-          />
-          <Text
-            style={{
-              marginTop: 6,
-              fontSize: 13,
-              fontWeight: '500',
-              color: isDark ? '#94A3B8' : '#64748B',
-            }}
-          >
-            {t('savedPhoto.changePhoto')}
-          </Text>
-        </Pressable>
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: '700',
+                color: '#FFFFFF',
+              }}
+            >
+              {t('savedPhoto.viewResults')}
+            </Text>
+          </Button>
+        )}
 
-        {/* New Scan */}
-        <Pressable
-          onPress={onNewScan}
-          style={({ pressed }) => ({
-            flex: 1,
-            backgroundColor: pressed
-              ? isDark
-                ? 'rgba(99, 102, 241, 0.25)'
-                : 'rgba(99, 102, 241, 0.15)'
-              : isDark
-                ? 'rgba(99, 102, 241, 0.15)'
-                : 'rgba(99, 102, 241, 0.08)',
-            borderRadius: 14,
-            padding: 14,
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderWidth: 1,
-            borderColor: isDark
-              ? 'rgba(99, 102, 241, 0.3)'
-              : 'rgba(99, 102, 241, 0.2)',
-          })}
-        >
-          <Ionicons
-            name="scan-outline"
-            size={22}
-            color={isDark ? '#A5B4FC' : '#6366F1'}
-          />
-          <Text
-            style={{
-              marginTop: 6,
-              fontSize: 13,
-              fontWeight: '500',
-              color: isDark ? '#A5B4FC' : '#6366F1',
-            }}
+        {/* Alt Butonlar - Yan Yana */}
+        <View className='w- full flex-row justify-between gap-2 '>
+          {/* Yeni Tarama */}
+          <Pressable
+            onPress={onNewScan}
+            className='flex justify-center items-center'
+            style={({ pressed }) => ({
+
+              backgroundColor: pressed
+                ? isDark
+                  ? '#1E293B'
+                  : '#F1F5F9'
+                : isDark
+                  ? '#334155'
+                  : '#FFFFFF',
+              borderRadius: 16,
+              paddingVertical: 16,
+              paddingHorizontal: 12,
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              shadowColor: '#000000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: isDark ? 0.2 : 0.08,
+              shadowRadius: 4,
+              elevation: 2,
+            })}
           >
-            {t('savedPhoto.newScan')}
-          </Text>
-        </Pressable>
+            <View
+              style={{
+                backgroundColor: isDark
+                  ? 'rgba(139, 92, 246, 0.2)'
+                  : 'rgba(139, 92, 246, 0.1)',
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons
+                name="scan"
+                size={24}
+                color={isDark ? '#A78BFA' : '#8B5CF6'}
+              />
+            </View>
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: '600',
+                color: isDark ? '#E2E8F0' : '#334155',
+                textAlign: 'center',
+              }}
+            >
+              {t('savedPhoto.newScan')}
+            </Text>
+          </Pressable>
+
+          {/* Fotoğraf Değiştir */}
+          <Pressable
+            onPress={onChangePhoto}
+            className='flex justify-center items-center'
+            style={({ pressed }) => ({
+              flex: 1,
+              backgroundColor: pressed
+                ? isDark
+                  ? '#1E293B'
+                  : '#F1F5F9'
+                : isDark
+                  ? '#334155'
+                  : '#FFFFFF',
+              borderRadius: 16,
+              paddingVertical: 16,
+              paddingHorizontal: 12,
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              shadowColor: '#000000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: isDark ? 0.2 : 0.08,
+              shadowRadius: 4,
+              elevation: 2,
+            })}
+          >
+            <View
+              style={{
+                backgroundColor: isDark
+                  ? 'rgba(99, 102, 241, 0.2)'
+                  : 'rgba(99, 102, 241, 0.1)',
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Ionicons
+                name="images"
+                size={24}
+                color={isDark ? '#818CF8' : '#6366F1'}
+              />
+            </View>
+            <Text
+              style={{
+                fontSize: 13,
+                fontWeight: '600',
+                color: isDark ? '#E2E8F0' : '#334155',
+                textAlign: 'center',
+              }}
+            >
+              {t('savedPhoto.changePhoto')}
+            </Text>
+          </Pressable>
+        </View>
       </View>
     </GlassCard>
   );

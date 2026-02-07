@@ -47,19 +47,31 @@ export interface FaceLandmarks {
 
 // Mesh validation fonksiyonu
 const validateMesh = (faceData: any) => {
+  console.log('🔍 [VALIDATE_MESH] ========== BAŞLADI ==========');
+  console.log('🔍 [VALIDATE_MESH] faceData keys:', Object.keys(faceData || {}));
+
   const landmarks = faceData.landmarks;
 
-  // 1. 468 landmark var mı?
-  if (!landmarks || landmarks.length !== 468) {
+  // 1. Yeterli landmark var mı? (468 temel + 10 iris = 478, veya sadece 468)
+  console.log('🔍 [VALIDATE_MESH] Step 1: Landmark kontrolü');
+  console.log('🔍 [VALIDATE_MESH] landmarks var mı?:', !!landmarks);
+  console.log('🔍 [VALIDATE_MESH] landmarks.length:', landmarks?.length);
+
+  // MediaPipe 468 (temel) veya 478 (refineLandmarks ile iris dahil) döndürebilir
+  const validLandmarkCounts = [468, 478];
+  if (!landmarks || !validLandmarkCounts.includes(landmarks.length)) {
+    console.log('❌ [VALIDATE_MESH] FAIL: Geçerli landmark sayısı yok! Return poor');
     return {
       isValid: false,
       quality: 'poor' as const,
-      message: '468 nokta tespit edilemedi. Lütfen daha net bir fotoğraf çekin.',
+      message: `Yeterli nokta tespit edilemedi (${landmarks?.length || 0}). Lütfen daha net bir fotoğraf çekin.`,
       confidence: 0
     };
   }
+  console.log('✅ [VALIDATE_MESH] Step 1 PASSED:', landmarks.length, 'landmark var');
 
   // 2. Kritik landmark'lar geçerli koordinatlarda mı?
+  console.log('🔍 [VALIDATE_MESH] Step 2: Kritik nokta kontrolü');
   const criticalIndices = [
     // Sol göz
     159, 145, 133,
@@ -79,6 +91,11 @@ const validateMesh = (faceData: any) => {
     const point = landmarks[idx];
     // Koordinatlar fotoğraf içinde mi? (1024x1024 piksel)
     if (!point || point.x < 0 || point.x > 1024 || point.y < 0 || point.y > 1024) {
+      console.log(`❌ [VALIDATE_MESH] FAIL: Kritik nokta ${idx} geçersiz!`, {
+        point,
+        x: point?.x,
+        y: point?.y
+      });
       return {
         isValid: false,
         quality: 'poor' as const,
@@ -87,11 +104,19 @@ const validateMesh = (faceData: any) => {
       };
     }
   }
+  console.log('✅ [VALIDATE_MESH] Step 2 PASSED: Tüm kritik noktalar geçerli');
 
   // ✅ 3. YENİ: Confidence-based quality assessment
+  console.log('🔍 [VALIDATE_MESH] Step 3: Confidence kontrolü');
+  console.log('🔍 [VALIDATE_MESH] faceData.confidence:', faceData.confidence);
+  console.log('🔍 [VALIDATE_MESH] faceData.totalPoints:', faceData.totalPoints);
+
   // Confidence değeri faceData objesinin içinde (landmarks array'inde DEĞİL!)
   const confidence = faceData.confidence || 0.99;
   const confidencePercent = Math.round(confidence * 100);
+
+  console.log('🔍 [VALIDATE_MESH] Kullanılan confidence:', confidence);
+  console.log('🔍 [VALIDATE_MESH] confidencePercent:', confidencePercent);
 
   // DEBUG: Kalite detaylarını logla
   if (faceData.confidenceDetails) {
@@ -107,39 +132,44 @@ const validateMesh = (faceData: any) => {
     });
   }
 
-  if (confidence >= 0.94) { // 0.95 -> 0.94 (Hafif esnetme)
-    // Optimal yüz boyutu
-    return {
+  let result;
+  if (confidence >= 0.94) {
+    console.log('✅ [VALIDATE_MESH] Quality: EXCELLENT (confidence >= 0.94)');
+    result = {
       isValid: true,
       quality: 'excellent' as const,
       message: 'Mükemmel kalite!',
       confidence: confidencePercent
     };
   } else if (confidence >= 0.80) {
-    // Kabul edilebilir boyut
-    return {
+    console.log('✅ [VALIDATE_MESH] Quality: GOOD (confidence >= 0.80)');
+    result = {
       isValid: true,
       quality: 'good' as const,
       message: 'İyi kalite',
       confidence: confidencePercent
     };
-  } else if (confidence >= 0.70) { // 0.73 -> 0.70 (Hafif esnetme)
-    // Yüz çok büyük (75%)
-    return {
+  } else if (confidence >= 0.70) {
+    console.log('⚠️ [VALIDATE_MESH] Quality: WARNING (confidence >= 0.70)');
+    result = {
       isValid: true,
       quality: 'warning' as const,
       message: 'Yüz çok yakın - Kamerayı biraz uzaklaştırın',
       confidence: confidencePercent
     };
   } else {
-    // Yüz çok küçük (70%)
-    return {
+    console.log('❌ [VALIDATE_MESH] Quality: POOR (confidence < 0.70)');
+    result = {
       isValid: true,
       quality: 'poor' as const,
       message: 'Yüz küçük - Kamerayı yaklaştırın veya yüzünüzü merkezleyin',
       confidence: confidencePercent
     };
   }
+
+  console.log('🔍 [VALIDATE_MESH] SONUÇ:', result);
+  console.log('🔍 [VALIDATE_MESH] ========== BİTTİ ==========');
+  return result;
 };
 
 export function useFaceMesh() {
