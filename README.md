@@ -14,8 +14,18 @@ FaceLoom is a cutting-edge mobile application built with **Expo** and **React Na
 
 <div align="center">
   <img src="assets/screenshots/analysis-result.jpeg" width="30%" alt="Detailed Analysis">
+  <img src="assets/screenshots/analysis-result-2.jpeg" width="30%" alt="Analysis Metrics">
+  <img src="assets/screenshots/face-region-detail.jpeg" width="30%" alt="Face Region Detail">
+</div>
+
+<div align="center">
   <img src="assets/screenshots/exercise.jpeg" width="30%" alt="Exercises">
+  <img src="assets/screenshots/exercise-detail.jpeg" width="30%" alt="Exercise Detail">
   <img src="assets/screenshots/progress-racking.jpeg" width="30%" alt="Progress Tracking">
+</div>
+
+<div align="center">
+  <img src="assets/screenshots/profile.jpeg" width="30%" alt="User Profile">
 </div>
 
 ---
