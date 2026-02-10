@@ -1,13 +1,45 @@
 import { mediaPipeHTML } from '@/lib/mediapipe-html';
-import { loadAnalysisPhoto, saveAnalysisPhoto, deleteAnalysisPhoto, PhotoMetadata } from '@/lib/photo-storage';
+import {
+  loadAnalysisPhoto,
+  saveAnalysisPhoto,
+  deleteAnalysisPhoto,
+  loadMultiPhotoAnalysis,
+  saveMultipleAnalysisPhotos,
+  deleteMultiPhotoAnalysis,
+  loadAnyAnalysisPhoto,
+  type MultiPhotoMetadata,
+} from '@/lib/photo-storage';
+import {
+  normalizeLandmarks,
+  averageLandmarks,
+  calculateConsistency,
+  type NormalizedLandmarks,
+  type AveragedResult,
+  type ConsistencyResult,
+} from '@/lib/normalization';
+import { Point3D } from '@/lib/geometry';
 import { supabase } from '@/lib/supabase';
 import { Camera } from 'expo-camera';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Alert, Linking } from 'react-native';
 import { WebView } from 'react-native-webview';
+
+// Multi-photo state interface
+export interface MultiPhotoState {
+  uri: string | null;
+  landmarks: FaceLandmarks | null;
+  normalizedLandmarks: NormalizedLandmarks | null;
+  meshImageUri: string | null;
+  validation: {
+    isValid: boolean;
+    quality: 'excellent' | 'good' | 'warning' | 'poor';
+    message: string;
+    confidence: number;
+  } | null;
+}
 
 export interface FaceLandmarks {
   landmarks: { x: number, y: number, z: number, index: number }[];
@@ -193,24 +225,66 @@ export function useFaceMesh() {
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Saved photo state (kalıcı fotoğraf)
+  // Saved photo state (kalıcı fotoğraf - legacy single photo)
   const [savedPhotoUri, setSavedPhotoUri] = useState<string | null>(null);
   const [savedPhotoDate, setSavedPhotoDate] = useState<string | null>(null);
   const [savedPhotoAnalysisId, setSavedPhotoAnalysisId] = useState<string | null>(null);
   const [isLoadingPhoto, setIsLoadingPhoto] = useState(true);
 
+  // Multi-photo state
+  const [isMultiPhotoMode, setIsMultiPhotoMode] = useState(true); // Default: multi-photo mode
+  const [multiPhotos, setMultiPhotos] = useState<MultiPhotoState[]>([
+    { uri: null, landmarks: null, normalizedLandmarks: null, meshImageUri: null, validation: null },
+    { uri: null, landmarks: null, normalizedLandmarks: null, meshImageUri: null, validation: null },
+    { uri: null, landmarks: null, normalizedLandmarks: null, meshImageUri: null, validation: null },
+  ]);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState<0 | 1 | 2>(0);
+  const [multiPhotoProcessingStatus, setMultiPhotoProcessingStatus] = useState<
+    'idle' | 'processing' | 'averaging' | 'complete'
+  >('idle');
+  const [consistencyScore, setConsistencyScore] = useState<number | null>(null);
+  const [consistencyResult, setConsistencyResult] = useState<ConsistencyResult | null>(null);
+  const [savedMultiPhotos, setSavedMultiPhotos] = useState<MultiPhotoMetadata | null>(null);
+
+  // Queue for processing multiple photos
+  const processingQueueRef = useRef<string[]>([]);
+  const currentProcessingIndexRef = useRef<number>(-1);
+  // ✅ Promise resolver: landmarks gelince processMultiPhoto'yu resolve eder
+  const landmarksResolverRef = useRef<(() => void) | null>(null);
+  // ✅ Ref: isMultiPhotoMode'un güncel değeri (state async olduğu için ref kullanıyoruz)
+  const isMultiPhotoModeRef = useRef<boolean>(true);
+  // ✅ Ref: multiPhotos'un güncel değeri (finalize'da state yerine ref kullanacağız)
+  const multiPhotosRef = useRef<MultiPhotoState[]>([
+    { uri: null, landmarks: null, normalizedLandmarks: null, meshImageUri: null, validation: null },
+    { uri: null, landmarks: null, normalizedLandmarks: null, meshImageUri: null, validation: null },
+    { uri: null, landmarks: null, normalizedLandmarks: null, meshImageUri: null, validation: null },
+  ]);
+
   const webViewRef = useRef<WebView>(null);
 
-  // Mount'ta kayıtlı fotoğrafı yükle
+  // Mount'ta kayıtlı fotoğrafı yükle (multi-photo veya legacy)
   useEffect(() => {
     const loadSavedPhoto = async () => {
       try {
-        const metadata = await loadAnalysisPhoto();
-        if (metadata) {
-          setSavedPhotoUri(metadata.uri);
-          setSavedPhotoDate(metadata.savedAt);
-          setSavedPhotoAnalysisId(metadata.faceAnalysisId || null);
-          console.log('📸 [useFaceMesh] Kayıtlı fotoğraf yüklendi:', metadata.uri);
+        const result = await loadAnyAnalysisPhoto();
+
+        if (result.type === 'multi' && result.multiPhoto) {
+          // Multi-photo kayıtlı
+          setSavedMultiPhotos(result.multiPhoto);
+          setSavedPhotoAnalysisId(result.multiPhoto.faceAnalysisId);
+          setConsistencyScore(result.multiPhoto.consistencyScore);
+          console.log('📸 [useFaceMesh] Multi-photo yüklendi:', result.multiPhoto.photos.length);
+        } else if (result.type === 'single' && result.singlePhoto) {
+          // Legacy single photo - eskiden SAKLANIYORDU, şimdi sadece LOG
+          console.log('🗑️ [MIGRATION] Eski format fotoğraf bulundu:', result.singlePhoto.uri);
+          console.log('ℹ️ [MIGRATION] Not: Eski fotoğrafları görüntüleyebilirsiniz ama yeni tarama yapınca kaybolacak');
+
+          // Eski fotoğrafı göster (backward compatibility)
+          setSavedPhotoUri(result.singlePhoto.uri);
+          setSavedPhotoDate(result.singlePhoto.savedAt);
+          setSavedPhotoAnalysisId(result.singlePhoto.faceAnalysisId || null);
+
+          // NOT: Kullanıcı "Yeni Tarama" yapınca startNewAnalysis() bu state'leri temizleyecek
         }
       } catch (error) {
         console.error('📸 [useFaceMesh] Fotoğraf yükleme hatası:', error);
@@ -265,6 +339,26 @@ export function useFaceMesh() {
           // Mesh validation yap - TÜM data.data objesini gönder (confidence içeriyor)
           const validation = validateMesh(data.data);
           setMeshValidation(validation);
+
+          // ✅ Multi-photo: landmarks'ı sakla ve promise'ı resolve et
+          if (currentProcessingIndexRef.current >= 0) {
+            const idx = currentProcessingIndexRef.current;
+            console.log(`📸 [LANDMARKS] Multi-photo fotoğraf ${idx + 1} kaydediliyor`);
+            updateMultiPhotoWithLandmarks(
+              idx as 0 | 1 | 2,
+              data.data,
+              meshImageUri,
+              validation
+            );
+
+            // ✅ Landmarks geldi - processMultiPhoto promise'ını resolve et
+            if (landmarksResolverRef.current) {
+              console.log(`✅ [LANDMARKS] Resolver çağrılıyor, fotoğraf ${idx + 1} tamamlandı`);
+              landmarksResolverRef.current();
+              landmarksResolverRef.current = null;
+            }
+            currentProcessingIndexRef.current = -1;
+          }
 
           setIsAnalyzing(false);
           setIsProcessing(false);
@@ -632,17 +726,26 @@ export function useFaceMesh() {
   };
 
   // Yeni analiz başlat
-  const startNewAnalysis = () => {
+  const startNewAnalysis = (mode: 'single' | 'multi' = 'single') => {
     if (__DEV__) {
       console.log('[Flow] startNewAnalysis çağrıldı:', {
+        mode,
         hasSelectedImage: !!selectedImage,
         hasFaceLandmarks: !!faceLandmarks,
       });
     }
+
+    // ✅ CRITICAL FIX: Set multi-photo mode based on user selection
+    setIsMultiPhotoMode(mode === 'multi');
+    console.log(`🎯 [MODE] isMultiPhotoMode set to: ${mode === 'multi'}`);
+
+    // State'leri temizle
     setSelectedImage(null);
     setFaceLandmarks(null);
     setMeshImageUri(null);
-    setShowImagePicker(true);
+    setMeshValidation({ isValid: true, quality: 'excellent', message: '', confidence: 0 });
+
+    // ✅ Modal açma işini index.tsx yapacak - buradan kaldırıldı (setShowImagePicker silindi)
   };
 
   // Kayıtlı fotoğrafı temizle (yeni fotoğraf seçmek için)
@@ -658,6 +761,501 @@ export function useFaceMesh() {
     }
   };
 
+  // ============================================
+  // MULTI-PHOTO FUNCTIONS
+  // ============================================
+
+  // Reset multi-photo state
+  const resetMultiPhotoState = useCallback(() => {
+    setMultiPhotos([
+      { uri: null, landmarks: null, normalizedLandmarks: null, meshImageUri: null, validation: null },
+      { uri: null, landmarks: null, normalizedLandmarks: null, meshImageUri: null, validation: null },
+      { uri: null, landmarks: null, normalizedLandmarks: null, meshImageUri: null, validation: null },
+    ]);
+    setCurrentPhotoIndex(0);
+    setMultiPhotoProcessingStatus('idle');
+    setConsistencyScore(null);
+    setConsistencyResult(null);
+    processingQueueRef.current = [];
+    currentProcessingIndexRef.current = -1;
+    landmarksResolverRef.current = null;
+    multiPhotosRef.current = [
+      { uri: null, landmarks: null, normalizedLandmarks: null, meshImageUri: null, validation: null },
+      { uri: null, landmarks: null, normalizedLandmarks: null, meshImageUri: null, validation: null },
+      { uri: null, landmarks: null, normalizedLandmarks: null, meshImageUri: null, validation: null },
+    ];
+  }, []);
+
+  // Process a single photo for multi-photo flow
+  // ✅ LANDMARKS mesajı gelene kadar bekler (race condition düzeltildi)
+  const processMultiPhoto = useCallback(async (
+    photoUri: string,
+    index: 0 | 1 | 2
+  ): Promise<void> => {
+    currentProcessingIndexRef.current = index;
+    console.log(`📸 [MULTI-PHOTO] Fotoğraf ${index + 1} işleniyor...`);
+
+    return new Promise((resolve, reject) => {
+      // Timeout guard (15 saniye - WebView + MediaPipe süresi)
+      const timeout = setTimeout(() => {
+        currentProcessingIndexRef.current = -1;
+        landmarksResolverRef.current = null;
+        console.error(`⚠️ [MULTI-PHOTO] Fotoğraf ${index + 1} timeout (15s)`);
+        reject(new Error(`Fotoğraf ${index + 1} timeout`));
+      }, 15000);
+
+      // Store URI in processing queue
+      processingQueueRef.current[index] = photoUri;
+      setCurrentPhotoIndex(index);
+      setMultiPhotoProcessingStatus('processing');
+
+      // ✅ Resolver'ı kaydet - handleWebViewMessage LANDMARKS gelince çağıracak
+      landmarksResolverRef.current = () => {
+        clearTimeout(timeout);
+        console.log(`✅ [MULTI-PHOTO] Fotoğraf ${index + 1} landmarks alındı, resolve ediliyor`);
+        resolve();
+      };
+
+      // WebView'a image gönder (LANDMARKS mesajını tetikler)
+      processImageWithMediaPipe(photoUri)
+        .catch((err) => {
+          clearTimeout(timeout);
+          currentProcessingIndexRef.current = -1;
+          landmarksResolverRef.current = null;
+          reject(err);
+        });
+    });
+  }, [processImageWithMediaPipe]);
+
+  // Update multi-photo state when landmarks arrive
+  const updateMultiPhotoWithLandmarks = useCallback((
+    index: number,
+    landmarks: FaceLandmarks,
+    meshUri: string | null,
+    validation: MultiPhotoState['validation']
+  ) => {
+    try {
+      // ✅ DOĞRU: Tek fotoğrafsa normalize ETME (ref kullan, state async olabilir)
+      let normalized: NormalizedLandmarks | null = null;
+
+      if (isMultiPhotoModeRef.current) {
+        // 2-3 fotoğraf → normalize et
+        normalized = normalizeLandmarks(
+          landmarks.landmarks.map(l => ({ ...l })) as Point3D[]
+        );
+        console.log(`🔄 [NORMALIZATION] Fotoğraf ${index + 1} normalize edildi`);
+      } else {
+        // 1 fotoğraf → normalize ETME
+        console.log(`✅ [SINGLE-PHOTO] Fotoğraf ${index + 1} - normalizasyon atlandı`);
+      }
+
+      const photoData = {
+        uri: processingQueueRef.current[index] || null,
+        landmarks,
+        normalizedLandmarks: normalized,
+        meshImageUri: meshUri,
+        validation,
+      };
+
+      // ✅ Ref'i hemen güncelle (sync - finalize'da kullanılacak)
+      multiPhotosRef.current[index] = photoData;
+
+      // State'i de güncelle (UI render için)
+      setMultiPhotos(prev => {
+        const updated = [...prev];
+        updated[index] = photoData;
+        return updated;
+      });
+
+      console.log(`📸 [MULTI-PHOTO] Fotoğraf ${index + 1} state'e kaydedildi`, {
+        hasLandmarks: !!landmarks,
+        hasNormalized: !!normalized,
+        validation: validation?.quality,
+      });
+    } catch (error) {
+      console.error(`❌ [MULTI-PHOTO] Fotoğraf ${index + 1} işleme hatası:`, error);
+    }
+  }, []);  // ref kullanıldığı için dependency gerekmiyor
+
+  // Process 1-3 photos sequentially
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const processAllMultiPhotos = useCallback(async (photoUris: string[]): Promise<void> => {
+    // Validate photo count (1-3 allowed)
+    if (photoUris.length < 1 || photoUris.length > 3) {
+      Alert.alert('Hata', 'Lütfen 1-3 arasında fotoğraf seçin');
+      return;
+    }
+
+    console.log(`📸 [MULTI-PHOTO] ${photoUris.length} fotoğraf işlenecek`);
+
+    // Dynamically set mode based on photo count
+    const mode = photoUris.length >= 2 ? 'multi' : 'single';
+    const isMulti = mode === 'multi';
+    setIsMultiPhotoMode(isMulti);
+    isMultiPhotoModeRef.current = isMulti;  // ✅ Ref'i hemen güncelle (state async)
+    console.log(`🎯 [MODE] Fotoğraf sayısına göre mod: ${mode}`);
+
+    resetMultiPhotoState();
+    setMultiPhotoProcessingStatus('processing');
+
+    try {
+      // Process photos sequentially (1, 2, or 3 photos)
+      for (let i = 0; i < photoUris.length; i++) {
+        console.log(`📸 [MULTI-PHOTO] Fotoğraf ${i + 1}/${photoUris.length} işleniyor...`);
+        await processMultiPhoto(photoUris[i], i as 0 | 1 | 2);
+        // Wait a bit for WebView to process
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Log completion status
+        console.log(`✅ [MULTI-PHOTO] Fotoğraf ${i + 1}/${photoUris.length} tamamlandı:`, {
+          hasLandmarks: multiPhotos[i].landmarks !== null,
+          hasNormalized: multiPhotos[i].normalizedLandmarks !== null,
+          validation: multiPhotos[i].validation?.quality,
+        });
+      }
+
+      console.log(`📸 [MULTI-PHOTO] Tüm fotoğraflar işlendi (${photoUris.length} adet)`);
+
+      // ✅ YENİ: Finalize çağır
+      try {
+        await finalizeMultiPhotoAnalysis();
+        console.log('✅ [MULTI-PHOTO] Finalize başarılı, /analysis ekranına yönlendiriliyor');
+      } catch (finalizeError) {
+        console.error('❌ [MULTI-PHOTO] Finalize hatası:', finalizeError);
+        Alert.alert('Hata', 'Analiz tamamlanamadı: ' + (finalizeError as Error).message);
+      } finally {
+        setMultiPhotoProcessingStatus('idle');
+      }
+    } catch (error) {
+      console.error('📸 [MULTI-PHOTO] İşlem hatası:', error);
+      Alert.alert('Hata', 'Fotoğraflar işlenirken bir hata oluştu');
+      setMultiPhotoProcessingStatus('idle');
+    }
+  }, [resetMultiPhotoState, processMultiPhoto, setIsMultiPhotoMode]);
+
+  // Finalize multi-photo analysis (average landmarks and save)
+  const finalizeMultiPhotoAnalysis = useCallback(async (): Promise<void> => {
+    // ✅ DOĞRU: Ref kullan (state async olabilir, ref her zaman güncel)
+    const photosWithLandmarks = multiPhotosRef.current.filter(p => p.landmarks !== null);
+    const photoCount = photosWithLandmarks.length;
+
+    if (photoCount === 0) {
+      throw new Error('Hiç landmark bulunamadı');
+    }
+
+    console.log(`🔍 [FINALIZE] ${photoCount} fotoğraf ile finalize başlıyor`);
+
+    setMultiPhotoProcessingStatus('averaging');
+
+    try {
+      // Handle single photo case (no normalization/averaging needed)
+      if (photoCount === 1) {
+        console.log('✅ [SINGLE-PHOTO] Tek fotoğraf - normalizasyon atlanıyor');
+
+        const photo = photosWithLandmarks[0];
+        if (!photo.landmarks) {
+          throw new Error('Landmarks eksik');
+        }
+
+        // ✅ DOĞRU: Raw landmarks kullan
+        const singlePhotoLandmarks: FaceLandmarks = {
+          landmarks: photo.landmarks.landmarks,
+          totalPoints: photo.landmarks.landmarks.length,
+          confidence: photo.landmarks.confidence || 0,
+          faceBox: photo.landmarks.faceBox,
+          faceRegions: photo.landmarks.faceRegions,
+          regionDetails: photo.landmarks.regionDetails,
+          imageSize: photo.landmarks.imageSize,
+          timestamp: Date.now(),
+        };
+
+        // Save to database
+        const faceAnalysisId = await saveAnalysisToDatabase({
+          ...singlePhotoLandmarks,
+          analysis_data: {
+            totalPoints: photo.landmarks.landmarks.length,
+            confidence: photo.landmarks.confidence || 0,
+            singlePhotoMode: true,
+            processedAt: new Date().toISOString(),
+          },
+        } as any);
+
+        console.log('💾 [SINGLE-PHOTO] Database kayıt ID:', faceAnalysisId);
+
+        // Save photo to local storage
+        if (photo.uri) {
+          await saveAnalysisPhoto(photo.uri, faceAnalysisId ?? undefined);
+          setSavedPhotoUri(photo.uri);
+          setSavedPhotoDate(new Date().toISOString());
+        }
+
+        // Update state
+        setSavedPhotoAnalysisId(faceAnalysisId);
+
+        // Navigate to analysis
+        setMultiPhotoProcessingStatus('complete');
+        router.push('/analysis');
+        return;
+      }
+
+      // Handle multi-photo case (2-3 photos)
+      console.log('🔄 [MULTI-PHOTO] 2-3 fotoğraf - normalizasyon + ortalama');
+
+      // ✅ DOĞRU: Sadece normalized olanları al
+      const validNormalizedPhotos = photosWithLandmarks.filter(
+        p => p.normalizedLandmarks !== null
+      );
+
+      if (validNormalizedPhotos.length < 2) {
+        throw new Error('En az 2 normalize edilmiş fotoğraf gerekli');
+      }
+
+      const normalizedSets = validNormalizedPhotos
+        .map(p => p.normalizedLandmarks)
+        .filter((n): n is NormalizedLandmarks => n !== null);
+
+      console.log(`📊 [MULTI-PHOTO] ${photoCount} fotoğraf ortalaması alınıyor...`);
+
+      const averaged = averageLandmarks(normalizedSets);
+      const consistency = calculateConsistency(averaged, normalizedSets, 'tr');
+
+      setConsistencyScore(averaged.consistencyScore);
+      setConsistencyResult(consistency);
+
+      console.log('📊 [MULTI-PHOTO] Ortalama alındı:', {
+        photoCount,
+        consistencyScore: averaged.consistencyScore,
+        level: consistency.level,
+      });
+
+      console.log('📊 [MULTI-PHOTO] Ortalama sonuçları:', {
+        totalLandmarks: averaged.landmarks.length,
+        consistencyScore: averaged.consistencyScore,
+        consistencyLevel: consistency.level,
+        recommendation: consistency.recommendation,
+        problematicRegions: consistency.details.inconsistentRegions,
+      });
+
+      // Log first 5 landmark averaging verification
+      for (let i = 0; i < Math.min(5, normalizedSets.length); i++) {
+        const logData: any = {
+          photo1: `(${normalizedSets[0].landmarks[i].x.toFixed(1)}, ${normalizedSets[0].landmarks[i].y.toFixed(1)})`,
+          averaged: `(${averaged.landmarks[i].x.toFixed(1)}, ${averaged.landmarks[i].y.toFixed(1)})`,
+        };
+
+        if (normalizedSets[1]) {
+          logData.photo2 = `(${normalizedSets[1].landmarks[i].x.toFixed(1)}, ${normalizedSets[1].landmarks[i].y.toFixed(1)})`;
+        }
+        if (normalizedSets[2]) {
+          logData.photo3 = `(${normalizedSets[2].landmarks[i].x.toFixed(1)}, ${normalizedSets[2].landmarks[i].y.toFixed(1)})`;
+        }
+
+        console.log(`🔢 [MULTI-PHOTO] Landmark ${i} averaging check:`, logData);
+      }
+
+      // Create FaceLandmarks object from averaged landmarks
+      const averagedFaceLandmarks: FaceLandmarks = {
+        landmarks: averaged.landmarks.map((l, i) => ({
+          x: l.x,
+          y: l.y,
+          z: l.z,
+          index: i,
+        })),
+        totalPoints: averaged.landmarks.length,
+        confidence: averaged.consistencyScore / 100,
+        faceBox: multiPhotosRef.current[0].landmarks?.faceBox || { x: 0, y: 0, width: 1024, height: 1024 },
+        faceRegions: multiPhotosRef.current[0].landmarks?.faceRegions || {} as FaceLandmarks['faceRegions'],
+        regionDetails: multiPhotosRef.current[0].landmarks?.regionDetails || { totalRegions: 0, regionNames: [], pointCounts: {} },
+        imageSize: { width: 1024, height: 1024 },
+        timestamp: Date.now(),
+      };
+
+      // Log database save preparation
+      console.log('💾 [MULTI-PHOTO] Database kaydı başlıyor:', {
+        landmarkCount: averagedFaceLandmarks.landmarks.length,
+        analysisDataKeys: Object.keys(averagedFaceLandmarks),
+        multiPhotoMetadata: {
+          photoCount,
+          consistencyScore: averaged.consistencyScore,
+          consistencyLevel: consistency.level,
+        },
+      });
+
+      // Save to database with multi-photo metadata
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        Alert.alert('Hata', 'Kullanıcı bulunamadı');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('face_analysis')
+        .insert([
+          {
+            user_id: user.id,
+            landmarks: averagedFaceLandmarks.landmarks,
+            analysis_data: {
+              totalPoints: averagedFaceLandmarks.totalPoints,
+              confidence: averagedFaceLandmarks.confidence,
+              faceBox: averagedFaceLandmarks.faceBox,
+              regionDetails: averagedFaceLandmarks.regionDetails,
+              imageSize: averagedFaceLandmarks.imageSize,
+              timestamp: averagedFaceLandmarks.timestamp,
+              multiPhotoSource: {
+                photoCount,
+                consistencyScore: averaged.consistencyScore,
+                consistencyLevel: consistency.level,
+                processedAt: new Date().toISOString(),
+              },
+            },
+          },
+        ])
+        .select('id')
+        .single();
+
+      if (error) {
+        console.error('📸 [MULTI-PHOTO] DB kayıt hatası:', error);
+        Alert.alert('Hata', 'Analiz kaydedilemedi');
+        return;
+      }
+
+      const savedId = data?.id;
+      if (!savedId) {
+        Alert.alert('Hata', 'Kayıt ID alınamadı');
+        return;
+      }
+
+      // Save photos to storage
+      const photoUris = multiPhotosRef.current.map(p => p.uri).filter((u): u is string => u !== null);
+      const savedMetadata = await saveMultipleAnalysisPhotos(
+        photoUris,
+        savedId,
+        averaged.consistencyScore
+      );
+
+      if (savedMetadata) {
+        setSavedMultiPhotos(savedMetadata);
+        setSavedPhotoAnalysisId(savedId);
+      }
+
+      setMultiPhotoProcessingStatus('complete');
+
+      // Final summary report
+      console.log('');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('📋 [MULTI-PHOTO] FINAL SUMMARY REPORT');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('');
+      console.log('📸 Photo Processing:');
+      console.log(`  ✓ Total photos: ${photoCount}`);
+      console.log(`  ✓ All processed successfully`);
+      console.log('');
+      console.log('🔄 Normalization Summary:');
+      const avgRotation = (normalizedSets.reduce((sum, s) =>
+        sum + s.transformParams.rotationAngle, 0) / normalizedSets.length * 180 / Math.PI).toFixed(2);
+      const avgScale = (normalizedSets.reduce((sum, s) =>
+        sum + s.transformParams.scale, 0) / normalizedSets.length).toFixed(4);
+      console.log(`  • Average rotation: ${avgRotation}°`);
+      console.log(`  • Average scale: ${avgScale}`);
+      console.log(`  • Pose similarity: ${consistency.details.similarPose ? '✅ Good' : '⚠️ Different'}`);
+      console.log('');
+      console.log('📊 Averaging Results:');
+      console.log(`  • Consistency score: ${averaged.consistencyScore.toFixed(1)}/100`);
+      console.log(`  • Consistency level: ${consistency.level}`);
+      console.log(`  • Average variance: ${averaged.varianceDetails.avgVariance.toFixed(2)}px²`);
+      console.log(`  • Problematic landmarks: ${averaged.varianceDetails.problematicIndices.length}/468`);
+      console.log('');
+      console.log('🎯 Quality Assessment:');
+      console.log(`  • Same person check: ${consistency.details.samePerson ? '✅ Pass' : '❌ Fail'}`);
+      console.log(`  • Similar pose check: ${consistency.details.similarPose ? '✅ Pass' : '⚠️ Warning'}`);
+      console.log(`  • Inconsistent regions: ${consistency.details.inconsistentRegions.length > 0 ? consistency.details.inconsistentRegions.join(', ') : 'None'}`);
+      console.log('');
+      console.log('💾 Data Storage:');
+      console.log(`  • Face analysis ID: ${savedId.substring(0, 8)}...`);
+      console.log(`  • Landmark count: ${averagedFaceLandmarks.landmarks.length}`);
+      console.log(`  • Storage type: Multi-photo (${photoCount} images)`);
+      console.log('');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('');
+
+      // Navigate to analysis
+      Alert.alert(
+        'Analiz Tamamlandı! 🎉',
+        `${photoCount} fotoğraftan ortalama analiz oluşturuldu.\nTutarlılık: %${Math.round(averaged.consistencyScore)}`,
+        [
+          {
+            text: 'Sonuçları Gör',
+            onPress: () => router.push({ pathname: '/analysis', params: { faceAnalysisId: savedId } }),
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('📸 [MULTI-PHOTO] Finalize hatası:', error);
+      Alert.alert('Hata', 'Analiz tamamlanırken bir hata oluştu');
+      setMultiPhotoProcessingStatus('idle');
+    }
+  }, []);  // ref kullanıldığı için dependency gerekmiyor
+
+  // Remove a single photo from multi-photo state
+  const removeMultiPhoto = useCallback((index: number) => {
+    const emptyState: MultiPhotoState = {
+      uri: null, landmarks: null, normalizedLandmarks: null,
+      meshImageUri: null, validation: null,
+    };
+
+    // Ref güncelle (sync)
+    multiPhotosRef.current[index] = emptyState;
+
+    // State güncelle (UI render)
+    setMultiPhotos(prev => {
+      const updated = [...prev];
+      updated[index] = emptyState;
+      return updated;
+    });
+
+    console.log(`📸 [REMOVE] Fotoğraf ${index + 1} silindi`);
+  }, []);
+
+  // Clear multi-photo data
+  const clearMultiPhotoData = useCallback(async () => {
+    try {
+      await deleteMultiPhotoAnalysis();
+      resetMultiPhotoState();
+      setSavedMultiPhotos(null);
+      setSavedPhotoAnalysisId(null);
+      setConsistencyScore(null);
+      console.log('📸 [MULTI-PHOTO] Tüm veriler temizlendi');
+    } catch (error) {
+      console.error('📸 [MULTI-PHOTO] Temizleme hatası:', error);
+    }
+  }, [resetMultiPhotoState]);
+
+  // Pick multiple images from gallery
+  const pickMultipleImages = useCallback(async (): Promise<string[] | null> => {
+    const hasPermission = await checkGalleryPermission();
+    if (!hasPermission) return null;
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        selectionLimit: 3,
+        quality: 0.9,
+      });
+
+      if (!result.canceled && result.assets.length > 0) {
+        const uris = result.assets.slice(0, 3).map(a => a.uri);
+        console.log('📸 [MULTI-PHOTO] Galeriden seçildi:', uris.length);
+        return uris;
+      }
+      return null;
+    } catch (error) {
+      console.error('📸 [MULTI-PHOTO] Galeri hatası:', error);
+      Alert.alert('Hata', 'Fotoğraflar seçilemedi');
+      return null;
+    }
+  }, []);
+
   return {
     // State
     mediaPipeReady,
@@ -668,11 +1266,20 @@ export function useFaceMesh() {
     isAnalyzing,
     showImagePicker,
     showMeshPreview,
-    // Saved photo state
+    // Saved photo state (legacy single photo)
     savedPhotoUri,
     savedPhotoDate,
     savedPhotoAnalysisId,
     isLoadingPhoto,
+    // Multi-photo state
+    isMultiPhotoMode,
+    setIsMultiPhotoMode,
+    multiPhotos,
+    currentPhotoIndex,
+    multiPhotoProcessingStatus,
+    consistencyScore,
+    consistencyResult,
+    savedMultiPhotos,
     // Refs
     webViewRef,
     // Handlers
@@ -685,6 +1292,14 @@ export function useFaceMesh() {
     pickImage,
     setShowImagePicker,
     clearSavedPhoto,
+    // Multi-photo handlers
+    resetMultiPhotoState,
+    removeMultiPhoto,
+    processAllMultiPhotos,
+    finalizeMultiPhotoAnalysis,
+    clearMultiPhotoData,
+    pickMultipleImages,
+    updateMultiPhotoWithLandmarks,
     // Constants
     mediaPipeHTML,
   };

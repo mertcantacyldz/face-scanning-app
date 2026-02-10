@@ -13,12 +13,20 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Text } from '@/components/ui/text';
 import { Button } from '../ui/button';
 import { GlassCard } from './GlassCard';
+import { PhotoGrid } from './PhotoGrid';
+import { ConsistencyBadge } from './ConsistencyBadge';
+import type { MultiPhotoMetadata } from '@/lib/photo-storage';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 interface SavedPhotoCardProps {
-  photoUri: string;
-  savedAt: string;
+  // Legacy single photo
+  photoUri?: string;
+  savedAt?: string;
+  // Multi-photo support
+  multiPhotoData?: MultiPhotoMetadata | null;
+  consistencyScore?: number | null;
+  // Common
   faceAnalysisId?: string | null;
   onViewResults: () => void;
   onChangePhoto: () => void;
@@ -57,6 +65,8 @@ const formatRelativeDate = (isoDate: string, language: string): string => {
 export function SavedPhotoCard({
   photoUri,
   savedAt,
+  multiPhotoData,
+  consistencyScore,
   faceAnalysisId,
   onViewResults,
   onChangePhoto,
@@ -66,7 +76,10 @@ export function SavedPhotoCard({
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
 
-  const relativeDate = formatRelativeDate(savedAt, i18n.language);
+  // Determine if multi-photo mode
+  const isMultiPhoto = !!multiPhotoData && multiPhotoData.photos.length === 3;
+  const displayDate = isMultiPhoto ? multiPhotoData.savedAt : savedAt;
+  const relativeDate = displayDate ? formatRelativeDate(displayDate, i18n.language) : '';
   const imageSize = screenWidth - 80;
 
   return (
@@ -98,27 +111,51 @@ export function SavedPhotoCard({
           marginBottom: 16,
         }}
       >
-        <View
-          style={{
-            borderRadius: 20,
-            overflow: 'hidden',
-            shadowColor: '#6366F1',
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: isDark ? 0.4 : 0.2,
-            shadowRadius: 16,
-            elevation: 8,
-          }}
-        >
-          <Image
-            source={{ uri: photoUri }}
+        {isMultiPhoto ? (
+          /* Multi-photo grid */
+          <View style={{ width: '100%' }}>
+            <PhotoGrid
+              photos={multiPhotoData.photos.map(p => ({
+                uri: p.uri,
+                isProcessing: false,
+                validation: null,
+              }))}
+              compact
+              disabled
+            />
+            {/* Consistency badge */}
+            {consistencyScore !== null && consistencyScore !== undefined && (
+              <View style={{ alignItems: 'center', marginTop: 12 }}>
+                <ConsistencyBadge score={consistencyScore} size="medium" />
+              </View>
+            )}
+          </View>
+        ) : (
+          /* Single photo */
+          <View
             style={{
-              width: imageSize,
-              height: imageSize,
               borderRadius: 20,
+              overflow: 'hidden',
+              shadowColor: '#6366F1',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: isDark ? 0.4 : 0.2,
+              shadowRadius: 16,
+              elevation: 8,
             }}
-            resizeMode="cover"
-          />
-        </View>
+          >
+            {photoUri && (
+              <Image
+                source={{ uri: photoUri }}
+                style={{
+                  width: imageSize,
+                  height: imageSize,
+                  borderRadius: 20,
+                }}
+                resizeMode="cover"
+              />
+            )}
+          </View>
+        )}
       </Animated.View>
 
       {/* Date Badge */}

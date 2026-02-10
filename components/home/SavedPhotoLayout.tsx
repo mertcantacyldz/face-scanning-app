@@ -1,6 +1,7 @@
 /**
  * SavedPhotoLayout Component
  * Displays saved photo with actions to view results or start new analysis
+ * Supports both single photo (legacy) and multi-photo modes
  */
 
 import { useTranslation } from 'react-i18next';
@@ -8,16 +9,21 @@ import { ScrollView, View } from 'react-native';
 import { PremiumPromotionCard } from './PremiumPromotionCard';
 import { SavedPhotoCard } from './SavedPhotoCard';
 import { StatusPill } from './StatusPill';
+import type { MultiPhotoMetadata } from '@/lib/photo-storage';
 
 // ============================================
 // TYPES
 // ============================================
 
 export interface SavedPhotoLayoutProps {
-  /** Saved photo URI */
-  photoUri: string;
-  /** Date when photo was saved */
-  savedAt: string;
+  /** Saved photo URI (legacy single photo) */
+  photoUri?: string;
+  /** Date when photo was saved (legacy) */
+  savedAt?: string;
+  /** Multi-photo data */
+  multiPhotoData?: MultiPhotoMetadata | null;
+  /** Consistency score for multi-photo */
+  consistencyScore?: number | null;
   /** Face analysis ID for viewing results */
   faceAnalysisId: string | null;
   /** Whether MediaPipe is ready */
@@ -43,6 +49,8 @@ export interface SavedPhotoLayoutProps {
 export function SavedPhotoLayout({
   photoUri,
   savedAt,
+  multiPhotoData,
+  consistencyScore,
   faceAnalysisId,
   mediaPipeReady,
   isPremium,
@@ -69,10 +77,12 @@ export function SavedPhotoLayout({
         />
       </View>
 
-      {/* Saved Photo Card */}
+      {/* Saved Photo Card - supports both single and multi-photo */}
       <SavedPhotoCard
         photoUri={photoUri}
         savedAt={savedAt}
+        multiPhotoData={multiPhotoData}
+        consistencyScore={consistencyScore}
         faceAnalysisId={faceAnalysisId}
         onViewResults={onViewResults}
         onChangePhoto={onChangePhoto}

@@ -33,6 +33,8 @@ export interface AnalysisLayoutProps {
   isAnalyzing: boolean;
   /** Whether user has premium */
   isPremium: boolean;
+  /** Tab bar height for bottom spacing */
+  tabBarHeight: number;
   /** Callback to retake photo */
   onRetake: () => void;
   /** Callback to confirm mesh and proceed */

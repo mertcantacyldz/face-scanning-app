@@ -43,3 +43,12 @@ CREATE POLICY "Users can delete own region analysis"
 COMMENT ON TABLE region_analysis IS 'Stores AI analysis results for each face region with full response and extracted metrics';
 COMMENT ON COLUMN region_analysis.raw_response IS 'Complete AI JSON response for displaying to user';
 COMMENT ON COLUMN region_analysis.metrics IS 'Extracted metrics for progress comparison (region-specific structure)';
+öncelikle değiştireceğimiz tek şey skorlamalar olacak diğer hesaplamalar gayet iyi bunda hem fikir olalım
+1- 3 burun içinde genel skorlar baya yüksek onu belirtmem lazım
+2-  devisyon ve  rotasyon skorlamalarında düzeltmelere gitmemiz gerekli  fazla puan veriyoruz bence
+
+case 1  için deviasyon  ve rotasyon değerleri çok yüksek 8  almış 8 demek  gayet iyi ve kaliteli bir burun demek mükemmel olmasa ama bu burun kusurlu bir burun o yüzden  hem genel skor  hemde hem deviasyon hem rotasyon açısından 6-7 aralığında  olmalı 
+
+case-2  de  aslında fena bir hesaplama yapmamışız ama  deviasyon değeri biraz yüksek geldi bana 6 yerine 5 ile 6 arasında bir değer almalı genel skor olarak da 5- 6 aralığında bir değer almalı
+
+case 3 deviasyon değeri çok yüksek max 4.5 almalı bu burun  genel skor olarak da  en fazla 5 alabilir 4-5 aralığında olmalı

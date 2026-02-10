@@ -24,7 +24,7 @@ export interface HeroLayoutProps {
   mediaPipeReady: boolean;
   /** Tab bar height for bottom spacing */
   tabBarHeight: number;
-  /** Callback when start scan button pressed */
+  /** Callback when scan button is pressed */
   onStartScan: () => void;
 }
 
@@ -139,11 +139,12 @@ export function HeroLayout({
             {t('cta.description')}
           </Text>
 
+          {/* Single Scan Button */}
           <PulsingButton
             onPress={onStartScan}
             disabled={!mediaPipeReady}
             title={mediaPipeReady ? t('cta.button') : t('cta.buttonLoading')}
-            icon="scan-outline"
+            icon="scan"
           />
 
           {/* Privacy note */}

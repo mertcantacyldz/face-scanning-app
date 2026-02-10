@@ -87,5 +87,44 @@
     "viewResults": "View Analysis Results",
     "changePhoto": "Change Photo",
     "newScan": "New Scan"
-  }
+  },
+  "multiPhoto": {
+    "title": "3-Photo Analysis",
+    "subtitle": "Take 3 photos for more accurate results",
+    "step": "{{current}} photos processed",
+    "addPhoto": "Add Photo {{number}}",
+    "retake": "Retake",
+    "complete": "Complete Analysis",
+    "processing": "Processing...",
+    "averaging": "Calculating average...",
+    "pickFromGallery": "Pick Photos from Gallery",
+    "takePhotos": "Take Photos",
+    "retakePhotos": "Change Photos",
+    "changePhotos": "Change Photos",
+    "continueAnyway": "Continue Anyway",
+    "lowConsistencyWarning": "Photos are inconsistent. Results may not be reliable.",
+    "consistency": {
+      "excellent": "Excellent consistency",
+      "good": "Good consistency",
+      "acceptable": "Acceptable",
+      "poor": "Low consistency"
+    },
+    "warning": {
+      "title": "Notice",
+      "message": "We recommend 3 photos for more accurate results. Do you want to continue?",
+      "retry": "Select Again",
+      "continue": "Continue"
+    },
+    "invalidCount": {
+      "title": "Invalid Photo Count",
+      "message": "Please select between 1-3 photos."
+    }
+  },
+  "guidance": {
+    "title": "Photo Tips",
+    "tip1": "Look straight at the camera",
+    "tip2": "Keep a neutral expression",
+    "tip3": "Ensure even lighting",
+    "tip4": "Make sure your whole face is visible"
+  },
 }

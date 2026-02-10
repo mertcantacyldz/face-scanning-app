@@ -8,9 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePremium } from '@/hooks/use-premium';
-import { supabase } from '@/lib/supabase';
-import { getFreeAnalysisStatus } from '@/lib/premium-database';
 import { getOrCreateDeviceId } from '@/lib/device-id-with-fallback';
+import { getFreeAnalysisStatus } from '@/lib/premium-database';
+import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -25,7 +25,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface Profile {
   id: string;
@@ -429,12 +428,12 @@ export default function ProfileScreen() {
         </Card>
 
         {/* Quick Actions */}
-        <View className="flex-row items-center gap-2 mb-4">
+        {/* <View className="flex-row items-center gap-2 mb-4">
           <Ionicons name="flash-outline" size={20} color="#8B5CF6" />
           <Text className="text-lg font-bold text-foreground">
             {t('quickActions.title')}
           </Text>
-        </View>
+        </View> */}
 
         <View className="flex flex-col gap-4 mb-6">
           {!isPremium && (
@@ -449,7 +448,7 @@ export default function ProfileScreen() {
             </Button>
           )}
 
-          <Button
+          {/* <Button
             onPress={() => router.push('/(tabs)/analysis')}
             variant="outline"
             className="h-14 border-success/30 bg-success/10"
@@ -458,7 +457,7 @@ export default function ProfileScreen() {
             <Text className="text-success font-semibold ml-2">
               {t('quickActions.newAnalysis')}
             </Text>
-          </Button>
+          </Button> */}
         </View>
 
         {/* Account Actions */}

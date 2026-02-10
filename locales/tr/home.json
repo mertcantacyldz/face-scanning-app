@@ -82,10 +82,49 @@
     "face_shape": "Yüz Şekli"
   },
   "savedPhoto": {
-    "title": "Kayitli Taraman",
+    "title": "Kayıtlı Taraman",
     "lastScan": "Son tarama: {{date}}",
-    "viewResults": "Analiz Sonuclarini Gor",
-    "changePhoto": "Fotografi Degistir",
+    "viewResults": "Analiz Sonuçlarını Gör",
+    "changePhoto": "Fotoğrafı Değiştir",
     "newScan": "Yeni Tarama"
-  }
+  },
+  "multiPhoto": {
+    "title": "3 Fotoğraflı Analiz",
+    "subtitle": "Daha doğru sonuçlar için 3 fotoğraf çekin",
+    "step": "{{current}} fotoğraf işlendi",
+    "addPhoto": "{{number}}. Fotoğrafı Ekle",
+    "retake": "Tekrar Çek",
+    "complete": "Analizi Tamamla",
+    "processing": "İşleniyor...",
+    "averaging": "Ortalama hesaplanıyor...",
+    "pickFromGallery": "Galeriden Fotoğraf Seç",
+    "takePhotos": "Kameradan Çek",
+    "retakePhotos": "Fotoğrafları Değiştir",
+    "changePhotos": "Fotoğrafları Değiştir",
+    "continueAnyway": "Yine de Devam Et",
+    "lowConsistencyWarning": "Fotoğraflar arasında tutarsızlık var. Sonuçlar güvenilir olmayabilir.",
+    "consistency": {
+      "excellent": "Mükemmel tutarlılık",
+      "good": "İyi tutarlılık",
+      "acceptable": "Kabul edilebilir",
+      "poor": "Düşük tutarlılık"
+    },
+    "warning": {
+      "title": "Dikkat",
+      "message": "Daha verimli ve başarılı sonuçlar için 3 fotoğraf öneriyoruz. Devam etmek istiyor musunuz?",
+      "retry": "Tekrar Seç",
+      "continue": "Devam Et"
+    },
+    "invalidCount": {
+      "title": "Geçersiz Fotoğraf Sayısı",
+      "message": "Lütfen 1-3 arasında fotoğraf seçin."
+    }
+  },
+  "guidance": {
+    "title": "Fotoğraf İpuçları",
+    "tip1": "Kameraya düz bakın",
+    "tip2": "Doğal ifadenizi koruyun",
+    "tip3": "Yüzünüze eşit ışık düşsün",
+    "tip4": "Yüzünüzün tamamı görünsün"
+  },
 }

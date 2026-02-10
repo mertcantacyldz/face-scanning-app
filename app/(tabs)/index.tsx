@@ -2,7 +2,7 @@
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
+import { Alert, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 import {
@@ -11,6 +11,7 @@ import {
   HeroLayout,
   ImagePickerModal,
   SavedPhotoLayout,
+  MultiPhotoPickerModal,
   type MeshValidation,
 } from '@/components/home';
 import { Text } from '@/components/ui/text';
@@ -60,13 +61,33 @@ export default function HomeScreen() {
     pickImage,
     setShowImagePicker,
     mediaPipeHTML,
-    // Saved photo state
+    // Saved photo state (legacy single photo)
     savedPhotoUri,
     savedPhotoDate,
     savedPhotoAnalysisId,
     isLoadingPhoto,
     clearSavedPhoto,
+    // Multi-photo state
+    isMultiPhotoMode,
+    multiPhotos,
+    currentPhotoIndex,
+    multiPhotoProcessingStatus,
+    consistencyScore,
+    savedMultiPhotos,
+    // Multi-photo handlers
+    resetMultiPhotoState,
+    removeMultiPhoto,
+    processAllMultiPhotos,
+    finalizeMultiPhotoAnalysis,
+    clearMultiPhotoData,
+    pickMultipleImages,
   } = useFaceMesh();
+
+  // Multi-photo modal state
+  const [showMultiPhotoModal, setShowMultiPhotoModal] = useState(false);
+
+  // Mode selection dialog state
+  const [showModeSelection, setShowModeSelection] = useState(false);
 
   // Fetch user profile when session is ready
   useEffect(() => {
@@ -131,7 +152,9 @@ export default function HomeScreen() {
 
   // State determination
   const hasStoredPhoto = !!savedPhotoUri;
+  const hasMultiPhoto = !!savedMultiPhotos && savedMultiPhotos.photos.length === 3;
   const isActiveAnalysis = !!selectedImage || !!meshImageUri;
+  const isMultiPhotoProcessing = multiPhotoProcessingStatus !== 'idle' && multiPhotoProcessingStatus !== 'complete';
 
   // Handlers
   const handleViewResults = () => {
@@ -144,20 +167,116 @@ export default function HomeScreen() {
   };
 
   const handleChangePhoto = async () => {
-    await clearSavedPhoto();
-    setShowImagePicker(true);
-  };
-
-  const handleNewScan = () => {
-    startNewAnalysis();
+    // Show mode selection dialog
+    Alert.alert(
+      t('modeSelection.title'),
+      t('modeSelection.subtitle'),
+      [
+        {
+          text: t('modeSelection.multiPhoto'),
+          onPress: async () => {
+            if (hasMultiPhoto) {
+              await clearMultiPhotoData();
+            } else {
+              await clearSavedPhoto();
+            }
+            startNewAnalysis('multi');  // ✅ Set multi-photo mode
+            setShowMultiPhotoModal(true);
+          },
+        },
+        {
+          text: t('modeSelection.singlePhoto'),
+          onPress: async () => {
+            if (hasMultiPhoto) {
+              await clearMultiPhotoData();
+            } else {
+              await clearSavedPhoto();
+            }
+            startNewAnalysis('single');  // ✅ Set single-photo mode
+            setShowImagePicker(true);
+          },
+          style: 'default',
+        },
+        {
+          text: t('common.cancel', { ns: 'common' }),
+          style: 'cancel',
+        },
+      ]
+    );
   };
 
   const handleStartScan = () => {
-    setShowImagePicker(true);
+    console.log('🎯 [SCAN] Tarama başlatılıyor');
+    startNewAnalysis('multi');
+    resetMultiPhotoState();  // Eski fotoğrafları temizle
+    setShowMultiPhotoModal(true);
   };
 
   const handleCloseImagePicker = () => {
     setShowImagePicker(false);
+  };
+
+  const handleCloseMultiPhotoModal = () => {
+    setShowMultiPhotoModal(false);
+  };
+
+  const handlePickFromGallery = async (): Promise<string[] | null> => {
+    const uris = await pickMultipleImages();
+
+    if (!uris || uris.length === 0) {
+      return null;
+    }
+
+    // Validate photo count (1-3 allowed)
+    if (uris.length > 3) {
+      Alert.alert(
+        t('multiPhoto.invalidCount.title'),
+        t('multiPhoto.invalidCount.message')
+      );
+      return null;
+    }
+
+    // If less than 3 photos, show warning
+    if (uris.length < 3) {
+      return new Promise((resolve) => {
+        Alert.alert(
+          t('multiPhoto.warning.title'),
+          t('multiPhoto.warning.message'),
+          [
+            {
+              text: t('multiPhoto.warning.retry'),
+              style: 'cancel',
+              onPress: () => resolve(null),
+            },
+            {
+              text: t('multiPhoto.warning.continue'),
+              onPress: async () => {
+                // User confirmed - process the photos
+                await processAllMultiPhotos(uris);
+                resolve(uris);
+              },
+            },
+          ]
+        );
+      });
+    }
+
+    // 3 photos selected - process directly without warning
+    await processAllMultiPhotos(uris);
+    return uris;
+  };
+
+  const handleMultiPhotoComplete = async () => {
+    await finalizeMultiPhotoAnalysis();
+    setShowMultiPhotoModal(false);
+  };
+
+  const handleRemoveMultiPhoto = (index: number) => {
+    removeMultiPhoto(index);
+  };
+
+  const handleResetMultiPhotos = () => {
+    resetMultiPhotoState();
   };
 
   // Transform meshValidation to expected format
@@ -172,8 +291,49 @@ export default function HomeScreen() {
 
   // Determine which layout to show
   const renderContent = () => {
+    console.log('🔍 [RENDER] renderContent() çağrıldı:', {
+      isMultiPhotoProcessing,
+      hasMultiPhoto,
+      hasStoredPhoto,
+      isActiveAnalysis,
+      selectedImage: !!selectedImage,
+      meshImageUri: !!meshImageUri,
+    });
+
+    // Multi-photo processing in progress
+    if (isMultiPhotoProcessing) {
+      console.log('→ [RENDER] HeroLayout (multi-photo processing)');
+      // Show processing state - modal handles this
+      return (
+        <HeroLayout
+          mediaPipeReady={mediaPipeReady}
+          tabBarHeight={tabBarHeight}
+          onStartScan={handleStartScan}
+        />
+      );
+    }
+
+    // Has saved multi-photo analysis
+    if (hasMultiPhoto && !isActiveAnalysis) {
+      console.log('→ [RENDER] SavedPhotoLayout (multi-photo)');
+      return (
+        <SavedPhotoLayout
+          multiPhotoData={savedMultiPhotos}
+          consistencyScore={consistencyScore}
+          faceAnalysisId={savedPhotoAnalysisId}
+          mediaPipeReady={mediaPipeReady}
+          isPremium={isPremium}
+          tabBarHeight={tabBarHeight}
+          onViewResults={handleViewResults}
+          onChangePhoto={handleChangePhoto}
+          onNewScan={handleStartScan}
+        />
+      );
+    }
+
+    // Has saved single photo (legacy)
     if (hasStoredPhoto && !isActiveAnalysis) {
-      // SAVED PHOTO LAYOUT
+      console.log('→ [RENDER] SavedPhotoLayout (single-photo)');
       return (
         <SavedPhotoLayout
           photoUri={savedPhotoUri!}
@@ -184,13 +344,14 @@ export default function HomeScreen() {
           tabBarHeight={tabBarHeight}
           onViewResults={handleViewResults}
           onChangePhoto={handleChangePhoto}
-          onNewScan={handleNewScan}
+          onNewScan={handleStartScan}
         />
       );
     }
 
+    // No saved photo - show hero
     if (!isActiveAnalysis) {
-      // HERO LAYOUT
+      console.log('→ [RENDER] HeroLayout (no active analysis)');
       return (
         <HeroLayout
           mediaPipeReady={mediaPipeReady}
@@ -200,7 +361,8 @@ export default function HomeScreen() {
       );
     }
 
-    // ANALYSIS LAYOUT
+    // Active analysis in progress
+    console.log('→ [RENDER] AnalysisLayout (active analysis)');
     return (
       <AnalysisLayout
         selectedImageUri={selectedImage}
@@ -208,6 +370,7 @@ export default function HomeScreen() {
         meshValidation={transformedMeshValidation}
         isAnalyzing={isAnalyzing}
         isPremium={isPremium}
+        tabBarHeight={tabBarHeight}
         onRetake={handleRetake}
         onConfirm={handleConfirmMesh}
       />
@@ -249,12 +412,29 @@ export default function HomeScreen() {
       {/* Main Content Area */}
       {renderContent()}
 
-      {/* Image Picker Modal */}
+      {/* Image Picker Modal (legacy single photo) */}
+      {showImagePicker && console.log('🔵 [MODAL] ImagePickerModal VISIBLE')}
       <ImagePickerModal
         visible={showImagePicker}
         onClose={handleCloseImagePicker}
         onTakePhoto={takePhoto}
         onPickGallery={pickImage}
+      />
+
+      {/* Multi-Photo Picker Modal */}
+      {showMultiPhotoModal && console.log('🟣 [MODAL] MultiPhotoPickerModal VISIBLE')}
+      <MultiPhotoPickerModal
+        visible={showMultiPhotoModal}
+        photos={multiPhotos}
+        processingStatus={multiPhotoProcessingStatus}
+        currentPhotoIndex={currentPhotoIndex}
+        consistencyScore={consistencyScore}
+        onPickFromGallery={handlePickFromGallery}
+        onTakePhoto={takePhoto}
+        onRemovePhoto={handleRemoveMultiPhoto}
+        onResetPhotos={handleResetMultiPhotos}
+        onComplete={handleMultiPhotoComplete}
+        onClose={handleCloseMultiPhotoModal}
       />
     </View>
   );

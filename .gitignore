@@ -12,6 +12,9 @@ expo-env.d.ts
 # Cursor editor
 .cursor/
 
+# Claude
+.claude/
+
 # VS Code
 .vscode/*
 

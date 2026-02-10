@@ -26,3 +26,9 @@ export { AnalysisLayout } from './AnalysisLayout';
 export type { MeshValidation, AnalysisLayoutProps } from './AnalysisLayout';
 export { HeroLayout } from './HeroLayout';
 export { SavedPhotoLayout } from './SavedPhotoLayout';
+
+// Multi-photo components
+export { PhotoGrid } from './PhotoGrid';
+export { PhotoGuidanceCard } from './PhotoGuidanceCard';
+export { ConsistencyBadge, ConsistencyWarningCard } from './ConsistencyBadge';
+export { MultiPhotoPickerModal } from './MultiPhotoPickerModal';
