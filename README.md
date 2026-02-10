@@ -1,50 +1,88 @@
-# Welcome to your Expo app 👋
+# FaceLoom - AI-Powered Face Analytics 👋
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+FaceLoom is a cutting-edge mobile application built with **Expo** and **React Native**, designed to provide deep insights into facial aesthetics and health. Using **MediaPipe Face Mesh** technology, FaceLoom scans 468+ facial landmarks to analyze your features with scientific precision.
 
-## Get started
+---
 
-1. Install dependencies
+## 📸 Screenshots
 
-   ```bash
-   npm install
-   ```
+<div align="center">
+  <img src="assets/screenshots/home.jpeg" width="30%" alt="Home Screen">
+  <img src="assets/screenshots/analysis-page.jpeg" width="30%" alt="Analysis Page">
+  <img src="assets/screenshots/face-analyzer-result.jpeg" width="30%" alt="Face Analyzer Result">
+</div>
 
-2. Start the app
+<div align="center">
+  <img src="assets/screenshots/analysis-result.jpeg" width="30%" alt="Detailed Analysis">
+  <img src="assets/screenshots/exercise.jpeg" width="30%" alt="Exercises">
+  <img src="assets/screenshots/progress-racking.jpeg" width="30%" alt="Progress Tracking">
+</div>
 
-   ```bash
-   npx expo start
-   ```
+---
 
-In the output, you'll find options to open the app in a
+## ✨ Key Features
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- **🎯 AI Face Scanning**: High-precision landmark detection using MediaPipe.
+- **📊 Comprehensive Metrics**: Detailed analysis of eyes, nose, jawline, lips, and facial symmetry.
+- **🔄 Consistency Check**: Compare multiple photos to ensure accurate and stable results.
+- **🤸 Personalized Exercises**: Targeted facial exercises based on your unique scan results.
+- **📈 Progress Tracking**: Monitor your facial changes over time with visual charts.
+- **🌐 Multi-Language Support**: Fully localized in English and Turkish.
+- **🔐 Secure & Private**: Built-in authentication and secure data storage with Supabase.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+---
 
-## Get a fresh project
+## 🛠️ Technology Stack
 
-When you're ready, run:
+- **Frontend**: [Expo](https://expo.dev), [React Native](https://reactnative.dev), [NativeWind (Tailwind CSS)](https://www.nativewind.dev)
+- **AI/ML**: [MediaPipe Face Mesh](https://google.github.io/mediapipe/solutions/face_mesh.html)
+- **Backend/Database**: [Supabase](https://supabase.com) (Auth, PostgreSQL, Storage)
+- **State Management**: React Context API
+- **Animations**: [React Native Reanimated](https://docs.swmansion.com/react-native-reanimated/)
+- **Charts**: [React Native Gifted Charts](https://github.com/Abhinandan-Kushal/react-native-gifted-charts)
+- **Payments**: [RevenueCat](https://www.revenuecat.com)
 
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+- Node.js (v18 or newer)
+- npm or yarn
+- Expo Go app on your phone (for testing)
+
+### 2. Installation
 ```bash
-npm run reset-project
+# Clone the repository
+git clone https://github.com/mertcantacyildiz/face-scanning-app.git
+
+# Navigate to the project
+cd face-scanning-app
+
+# Install dependencies
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 3. Environment Variables
+Create a `.env` file in the root directory and add your Supabase credentials:
+```env
+EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-## Learn more
+### 4. Running the App
+```bash
+# Start the Expo development server
+npx expo start
+```
+Scan the QR code with your **Expo Go** app (Android) or **Camera** app (iOS).
 
-To learn more about developing your project with Expo, look at the following resources:
+---
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 📄 License
 
-## Join the community
+This project is private and intended for internal use.
 
-Join our community of developers creating universal apps.
+---
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+<p align="center">Created with ❤️ by Mertcan Taçııldız</p>
