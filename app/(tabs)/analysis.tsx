@@ -166,7 +166,7 @@ const AnalysisScreen = () => {
       setFaceData(data);
     } catch (error) {
       console.error('Error loading face analysis:', error);
-      Alert.alert('Hata', 'Yüz verisi yüklenirken bir hata oluştu.');
+      Alert.alert(t('errors.title', { ns: 'errors' }), t('alerts.saveError.message', { ns: 'home' }));
     } finally {
       setLoading(false);
     }
@@ -217,7 +217,7 @@ const AnalysisScreen = () => {
       Alert.alert(
         t('spinWheel.title'),
         t('freeAnalysisUsed', { region: t(`regions.${regionId}.title`) }),
-        [{ text: 'OK' }]
+        [{ text: t('buttons.done', { ns: 'common' }) }]
       );
     }, 1000);
   };
@@ -255,14 +255,14 @@ const AnalysisScreen = () => {
     // 3. Check OpenRouter configuration
     if (!isOpenRouterConfigured()) {
       Alert.alert(
-        'API Anahtarı Bulunamadı',
-        'OpenRouter API anahtarı yapılandırılmamış.'
+        t('alerts.apiError.title', { ns: 'home' }),
+        t('alerts.apiError.message', { ns: 'home' })
       );
       return;
     }
 
     if (!faceData?.landmarks) {
-      Alert.alert('Hata', 'Yüz verisi bulunamadı');
+      Alert.alert(t('errors.title', { ns: 'errors' }), t('errors.noLandmarks', { ns: 'errors' }));
       return;
     }
 
@@ -320,7 +320,7 @@ const AnalysisScreen = () => {
       }
     } catch (error) {
       console.error('Analysis error:', error);
-      Alert.alert('Hata', 'Analiz yapılırken bir hata oluştu');
+      Alert.alert(t('errors.title', { ns: 'errors' }), t('errors.somethingWentWrong', { ns: 'errors' }));
     } finally {
       setAnalyzingRegion(null);
     }

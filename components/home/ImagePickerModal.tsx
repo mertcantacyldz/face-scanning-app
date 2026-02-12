@@ -19,8 +19,6 @@ export interface ImagePickerModalProps {
   visible: boolean;
   /** Callback to close modal */
   onClose: () => void;
-  /** Callback when camera option selected */
-  onTakePhoto: () => void;
   /** Callback when gallery option selected */
   onPickGallery: () => void;
 }
@@ -32,7 +30,6 @@ export interface ImagePickerModalProps {
 export function ImagePickerModal({
   visible,
   onClose,
-  onTakePhoto,
   onPickGallery,
 }: ImagePickerModalProps) {
   const { t } = useTranslation('home');
@@ -153,23 +150,10 @@ export function ImagePickerModal({
 
               {/* Action Buttons */}
               <View className="gap-3">
-                <Button onPress={onTakePhoto} className="w-full">
+                <Button onPress={onPickGallery} className="w-full">
                   <View className="flex-row items-center justify-center gap-2">
-                    <Ionicons name="camera-outline" size={20} color="#FFFFFF" />
+                    <Ionicons name="image-outline" size={20} color="#FFFFFF" />
                     <Text className="text-primary-foreground font-semibold text-base">
-                      {t('photoGuidelines.camera')}
-                    </Text>
-                  </View>
-                </Button>
-
-                <Button
-                  onPress={onPickGallery}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <View className="flex-row items-center justify-center gap-2">
-                    <Ionicons name="image-outline" size={20} color="#6366F1" />
-                    <Text className="text-primary font-semibold text-base">
                       {t('photoGuidelines.gallery')}
                     </Text>
                   </View>

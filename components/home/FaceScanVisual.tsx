@@ -16,70 +16,70 @@ import Svg, { Circle, Line, Defs, LinearGradient, Stop } from 'react-native-svg'
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedLine = Animated.createAnimatedComponent(Line);
 
-// Face constellation dots - coordinates for face outline
+// Face constellation dots - scaled to fit 160x160 viewBox with padding
+// Original range X(40-160) Y(10-182) → scaled to center in 160x160
 const FACE_DOTS = [
   // Head top
-  { x: 100, y: 15, delay: 0 },
-  { x: 75, y: 20, delay: 50 },
-  { x: 125, y: 20, delay: 50 },
-  { x: 55, y: 35, delay: 100 },
-  { x: 145, y: 35, delay: 100 },
+  { x: 80, y: 8, delay: 0 },
+  { x: 60, y: 12, delay: 50 },
+  { x: 100, y: 12, delay: 50 },
+  { x: 44, y: 24, delay: 100 },
+  { x: 116, y: 24, delay: 100 },
 
   // Forehead
-  { x: 70, y: 50, delay: 150 },
-  { x: 100, y: 45, delay: 150 },
-  { x: 130, y: 50, delay: 150 },
+  { x: 56, y: 38, delay: 150 },
+  { x: 80, y: 34, delay: 150 },
+  { x: 104, y: 38, delay: 150 },
 
   // Eyebrows
-  { x: 60, y: 70, delay: 200 },
-  { x: 75, y: 65, delay: 200 },
-  { x: 90, y: 68, delay: 200 },
-  { x: 110, y: 68, delay: 200 },
-  { x: 125, y: 65, delay: 200 },
-  { x: 140, y: 70, delay: 200 },
+  { x: 48, y: 54, delay: 200 },
+  { x: 60, y: 50, delay: 200 },
+  { x: 72, y: 53, delay: 200 },
+  { x: 88, y: 53, delay: 200 },
+  { x: 100, y: 50, delay: 200 },
+  { x: 112, y: 54, delay: 200 },
 
   // Eyes
-  { x: 68, y: 85, delay: 250 },
-  { x: 82, y: 85, delay: 250 },
-  { x: 118, y: 85, delay: 250 },
-  { x: 132, y: 85, delay: 250 },
+  { x: 54, y: 66, delay: 250 },
+  { x: 66, y: 66, delay: 250 },
+  { x: 94, y: 66, delay: 250 },
+  { x: 106, y: 66, delay: 250 },
 
   // Nose
-  { x: 100, y: 95, delay: 300 },
-  { x: 100, y: 110, delay: 300 },
-  { x: 90, y: 120, delay: 350 },
-  { x: 100, y: 125, delay: 350 },
-  { x: 110, y: 120, delay: 350 },
+  { x: 80, y: 74, delay: 300 },
+  { x: 80, y: 86, delay: 300 },
+  { x: 72, y: 94, delay: 350 },
+  { x: 80, y: 98, delay: 350 },
+  { x: 88, y: 94, delay: 350 },
 
   // Mouth
-  { x: 80, y: 145, delay: 400 },
-  { x: 95, y: 150, delay: 400 },
-  { x: 100, y: 152, delay: 400 },
-  { x: 105, y: 150, delay: 400 },
-  { x: 120, y: 145, delay: 400 },
+  { x: 64, y: 114, delay: 400 },
+  { x: 76, y: 118, delay: 400 },
+  { x: 80, y: 119, delay: 400 },
+  { x: 84, y: 118, delay: 400 },
+  { x: 96, y: 114, delay: 400 },
 
   // Jawline left
-  { x: 45, y: 55, delay: 450 },
-  { x: 40, y: 80, delay: 450 },
-  { x: 42, y: 110, delay: 500 },
-  { x: 50, y: 140, delay: 500 },
-  { x: 65, y: 165, delay: 550 },
-  { x: 85, y: 180, delay: 550 },
+  { x: 36, y: 40, delay: 450 },
+  { x: 32, y: 60, delay: 450 },
+  { x: 34, y: 84, delay: 500 },
+  { x: 40, y: 108, delay: 500 },
+  { x: 52, y: 128, delay: 550 },
+  { x: 68, y: 140, delay: 550 },
 
   // Chin
-  { x: 100, y: 185, delay: 600 },
+  { x: 80, y: 146, delay: 600 },
 
   // Jawline right
-  { x: 115, y: 180, delay: 550 },
-  { x: 135, y: 165, delay: 550 },
-  { x: 150, y: 140, delay: 500 },
-  { x: 158, y: 110, delay: 500 },
-  { x: 160, y: 80, delay: 450 },
-  { x: 155, y: 55, delay: 450 },
+  { x: 92, y: 140, delay: 550 },
+  { x: 108, y: 128, delay: 550 },
+  { x: 120, y: 108, delay: 500 },
+  { x: 126, y: 84, delay: 500 },
+  { x: 128, y: 60, delay: 450 },
+  { x: 124, y: 40, delay: 450 },
 ];
 
-const SVG_WIDTH = 160;
-const SVG_HEIGHT = 160;
+const SVG_SIZE = 160;
 const SCAN_DURATION = 2500;
 
 interface FaceDotProps {
@@ -96,7 +96,7 @@ function FaceDot({ x, y, delay, scanProgress, isDark }: FaceDotProps) {
 
   const animatedProps = useAnimatedProps(() => {
     // Calculate distance from scan line
-    const scanY = interpolate(scanProgress.value, [0, 1], [0, SVG_HEIGHT]);
+    const scanY = interpolate(scanProgress.value, [0, 1], [0, SVG_SIZE]);
     const distance = Math.abs(y - scanY);
     const activationThreshold = 30;
 
@@ -142,7 +142,7 @@ export function FaceScanVisual() {
     const translateY = interpolate(
       scanProgress.value,
       [0, 1],
-      [-10, SVG_HEIGHT + 10]
+      [-10, SVG_SIZE + 10]
     );
     const opacity = interpolate(
       scanProgress.value,
@@ -167,13 +167,13 @@ export function FaceScanVisual() {
     >
       <View
         style={{
-          width: SVG_WIDTH,
-          height: SVG_HEIGHT,
+          width: SVG_SIZE,
+          height: SVG_SIZE,
           position: 'relative',
         }}
       >
         {/* SVG Face Constellation */}
-        <Svg width={SVG_WIDTH} height={SVG_HEIGHT} viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}>
+        <Svg width={SVG_SIZE} height={SVG_SIZE} viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}>
           <Defs>
             <LinearGradient id="scanGradient" x1="0%" y1="0%" x2="0%" y2="100%">
               <Stop offset="0%" stopColor="transparent" />

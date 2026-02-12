@@ -10,7 +10,8 @@
     "subtitle": "İsmini bilmek deneyimini kişiselleştirmemize yardımcı olur",
     "placeholder": "İsmin",
     "skip": "Atla",
-    "continue": "Devam Et"
+    "continue": "Devam Et",
+    "error": "Lütfen bir isim girin"
   },
   "gender": {
     "title": "Cinsiyetin nedir?",

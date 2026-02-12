@@ -13,10 +13,9 @@
  */
 
 import {
-  distance2D,
   getCenterX,
   toPercentageOfWidth,
-  type Point3D,
+  type Point3D
 } from '../geometry';
 
 // ============================================

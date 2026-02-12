@@ -1,29 +1,27 @@
+import { Point3D } from '@/lib/geometry';
 import { mediaPipeHTML } from '@/lib/mediapipe-html';
 import {
-  loadAnalysisPhoto,
-  saveAnalysisPhoto,
-  deleteAnalysisPhoto,
-  loadMultiPhotoAnalysis,
-  saveMultipleAnalysisPhotos,
-  deleteMultiPhotoAnalysis,
-  loadAnyAnalysisPhoto,
-  type MultiPhotoMetadata,
-} from '@/lib/photo-storage';
-import {
-  normalizeLandmarks,
   averageLandmarks,
   calculateConsistency,
-  type NormalizedLandmarks,
-  type AveragedResult,
+  normalizeLandmarks,
   type ConsistencyResult,
+  type NormalizedLandmarks
 } from '@/lib/normalization';
-import { Point3D } from '@/lib/geometry';
+import {
+  deleteAnalysisPhoto,
+  deleteMultiPhotoAnalysis,
+  loadAnyAnalysisPhoto,
+  saveAnalysisPhoto,
+  saveMultipleAnalysisPhotos,
+  type MultiPhotoMetadata
+} from '@/lib/photo-storage';
 import { supabase } from '@/lib/supabase';
 import { Camera } from 'expo-camera';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Linking } from 'react-native';
 import { WebView } from 'react-native-webview';
 
@@ -78,7 +76,7 @@ export interface FaceLandmarks {
 }
 
 // Mesh validation fonksiyonu
-const validateMesh = (faceData: any) => {
+const validateMesh = (faceData: any, t: any) => {
   console.log('🔍 [VALIDATE_MESH] ========== BAŞLADI ==========');
   console.log('🔍 [VALIDATE_MESH] faceData keys:', Object.keys(faceData || {}));
 
@@ -96,7 +94,7 @@ const validateMesh = (faceData: any) => {
     return {
       isValid: false,
       quality: 'poor' as const,
-      message: `Yeterli nokta tespit edilemedi (${landmarks?.length || 0}). Lütfen daha net bir fotoğraf çekin.`,
+      message: t('validation.messages.notEnoughPoints', { count: landmarks?.length || 0 }),
       confidence: 0
     };
   }
@@ -131,7 +129,7 @@ const validateMesh = (faceData: any) => {
       return {
         isValid: false,
         quality: 'poor' as const,
-        message: 'Bazı önemli yüz noktaları tespit edilemedi. Yüzünüzün tamamı görünür olmalı.',
+        message: t('validation.messages.criticalPointsMissing'),
         confidence: 0
       };
     }
@@ -170,7 +168,7 @@ const validateMesh = (faceData: any) => {
     result = {
       isValid: true,
       quality: 'excellent' as const,
-      message: 'Mükemmel kalite!',
+      message: t('validation.messages.excellent'),
       confidence: confidencePercent
     };
   } else if (confidence >= 0.80) {
@@ -178,7 +176,7 @@ const validateMesh = (faceData: any) => {
     result = {
       isValid: true,
       quality: 'good' as const,
-      message: 'İyi kalite',
+      message: t('validation.messages.good'),
       confidence: confidencePercent
     };
   } else if (confidence >= 0.70) {
@@ -186,7 +184,7 @@ const validateMesh = (faceData: any) => {
     result = {
       isValid: true,
       quality: 'warning' as const,
-      message: 'Yüz çok yakın - Kamerayı biraz uzaklaştırın',
+      message: t('validation.messages.tooClose'),
       confidence: confidencePercent
     };
   } else {
@@ -194,7 +192,7 @@ const validateMesh = (faceData: any) => {
     result = {
       isValid: true,
       quality: 'poor' as const,
-      message: 'Yüz küçük - Kamerayı yaklaştırın veya yüzünüzü merkezleyin',
+      message: t('validation.messages.tooFar'),
       confidence: confidencePercent
     };
   }
@@ -205,6 +203,7 @@ const validateMesh = (faceData: any) => {
 };
 
 export function useFaceMesh() {
+  const { t } = useTranslation(['home', 'common']);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [faceLandmarks, setFaceLandmarks] = useState<FaceLandmarks | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -249,6 +248,7 @@ export function useFaceMesh() {
   // Queue for processing multiple photos
   const processingQueueRef = useRef<string[]>([]);
   const currentProcessingIndexRef = useRef<number>(-1);
+  const lastProcessingIndexRef = useRef<number>(-1); // <--- Yeni: Son işlenen index
   // ✅ Promise resolver: landmarks gelince processMultiPhoto'yu resolve eder
   const landmarksResolverRef = useRef<(() => void) | null>(null);
   // ✅ Ref: isMultiPhotoMode'un güncel değeri (state async olduğu için ref kullanıyoruz)
@@ -337,12 +337,13 @@ export function useFaceMesh() {
           setFaceLandmarks(data.data);
 
           // Mesh validation yap - TÜM data.data objesini gönder (confidence içeriyor)
-          const validation = validateMesh(data.data);
+          const validation = validateMesh(data.data, t);
           setMeshValidation(validation);
 
           // ✅ Multi-photo: landmarks'ı sakla ve promise'ı resolve et
           if (currentProcessingIndexRef.current >= 0) {
             const idx = currentProcessingIndexRef.current;
+            lastProcessingIndexRef.current = idx; // <--- Kaydet
             console.log(`📸 [LANDMARKS] Multi-photo fotoğraf ${idx + 1} kaydediliyor`);
             updateMultiPhotoWithLandmarks(
               idx as 0 | 1 | 2,
@@ -357,22 +358,40 @@ export function useFaceMesh() {
               landmarksResolverRef.current();
               landmarksResolverRef.current = null;
             }
-            currentProcessingIndexRef.current = -1;
+            // NOT: currentProcessingIndexRef.current = -1; burası taşındı
           }
 
           setIsAnalyzing(false);
           setIsProcessing(false);
+          currentProcessingIndexRef.current = -1; // Reset here
           console.log('🔓 [KUYRUK] İşlem kilidi açıldı (LANDMARKS)');
           break;
 
         case 'MESH_IMAGE':
           console.log('🖼️ [MESH GÖRÜNTÜSÜ GELDİ]', {
             meshUzunluk: data.data.meshImage?.length,
-            timestamp: Date.now(),
-            hangiResim: selectedImage?.substring(0, 50)
+            currentIdx: currentProcessingIndexRef.current,
+            isMultiPhoto: currentProcessingIndexRef.current >= 0
           });
 
           setMeshImageUri(data.data.meshImage);
+
+          // ✅ Multi-photo: mesh görüntüsünü ilgili fotoğrafa kaydet
+          // currentProcessingIndexRef -1 olmuş olabilir (LANDMARKS önce geldiyse), o yüzden lastProcessingIndexRef kullanıyoruz
+          const targetIdx = currentProcessingIndexRef.current >= 0
+            ? currentProcessingIndexRef.current
+            : lastProcessingIndexRef.current;
+
+          if (targetIdx >= 0) {
+            console.log(`🖼️ [MESH] Multi-photo fotoğraf ${targetIdx + 1} mesh kaydediliyor`);
+            setMultiPhotos(prev => {
+              const updated = [...prev];
+              updated[targetIdx] = { ...updated[targetIdx], meshImageUri: data.data.meshImage };
+              return updated;
+            });
+            multiPhotosRef.current[targetIdx].meshImageUri = data.data.meshImage;
+          }
+
           setShowMeshPreview(true);
           break;
 
@@ -380,16 +399,37 @@ export function useFaceMesh() {
           console.log('❌ [ANALİZ BAŞARISIZ]', {
             type: 'NO_FACE',
             message: 'Yüz bulunamadı',
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            isMultiPhoto: currentProcessingIndexRef.current >= 0
           });
 
           setIsAnalyzing(false);
           setIsProcessing(false);
           console.log('🔓 [KUYRUK] İşlem kilidi açıldı (NO_FACE)');
 
+          // ✅ Clear active analysis state to prevent AnalysisLayout from showing
+          setSelectedImage(null);
+          setMeshImageUri(null);
+          setFaceLandmarks(null);
+          console.log('🧹 [NO_FACE] Active analysis state temizlendi');
+
+          // ✅ Multi-photo: reject promise immediately to stop processing
+          if (currentProcessingIndexRef.current >= 0) {
+            const idx = currentProcessingIndexRef.current;
+            console.log(`❌ [MULTI-PHOTO] Fotoğraf ${idx + 1} - yüz bulunamadı, promise reject ediliyor`);
+
+            if (landmarksResolverRef.current) {
+              // Store error rejection function instead of resolver
+              const errorRejecter = landmarksResolverRef.current as any;
+              errorRejecter.reject?.(new Error('Yüz bulunamadı'));
+              landmarksResolverRef.current = null;
+            }
+            currentProcessingIndexRef.current = -1;
+          }
+
           Alert.alert(
-            'Yüz Bulunamadı',
-            'Fotoğrafta yüz tespit edilemedi. Lütfen:\n• Yüzünüz net görünsün\n• İyi ışıkta çekin\n• Kameraya düz bakın'
+            t('alerts.noFace.title'),
+            t('alerts.noFace.message')
           );
           break;
 
@@ -404,7 +444,13 @@ export function useFaceMesh() {
           setIsProcessing(false);
           console.log('🔓 [KUYRUK] İşlem kilidi açıldı (ERROR)');
 
-          Alert.alert('Analiz Hatası', data.error);
+          // ✅ Clear active analysis state to prevent AnalysisLayout from showing
+          setSelectedImage(null);
+          setMeshImageUri(null);
+          setFaceLandmarks(null);
+          console.log('🧹 [ERROR] Active analysis state temizlendi');
+
+          Alert.alert(t('alerts.processingError.title'), data.error);
           break;
       }
     } catch (error) {
@@ -491,11 +537,11 @@ export function useFaceMesh() {
         }
 
         Alert.alert(
-          'Analiz Başarılı! 🎉',
-          `${faceLandmarks.totalPoints} noktalı MediaPipe analizi kaydedildi!`,
+          t('alerts.analysisSuccess.title'),
+          t('alerts.analysisSuccess.message', { count: faceLandmarks.totalPoints }),
           [
             {
-              text: 'Tamam',
+              text: t('buttons.done', { ns: 'common' }),
               // Pass the saved ID to analysis page to ensure it loads the correct data
               onPress: () => router.push({ pathname: '/analysis', params: { faceAnalysisId: savedId } })
             }
@@ -503,9 +549,9 @@ export function useFaceMesh() {
         );
       } else {
         Alert.alert(
-          'Kayıt Hatası',
-          'Analiz kaydedilemedi. Lütfen tekrar deneyin.',
-          [{ text: 'Tamam' }]
+          t('alerts.saveError.title'),
+          t('alerts.saveError.message'),
+          [{ text: t('buttons.done', { ns: 'common' }) }]
         );
       }
     }
@@ -535,11 +581,11 @@ export function useFaceMesh() {
     const { status } = await Camera.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(
-        'İzin Gerekli',
-        'Kamera kullanmak için ayarlardan izin vermeniz gerekiyor.',
+        t('permissions.title', { ns: 'common' }),
+        t('permissions.camera', { ns: 'common' }),
         [
-          { text: 'İptal', style: 'cancel' },
-          { text: 'Ayarları Aç', onPress: () => Linking.openSettings() }
+          { text: t('buttons.cancel', { ns: 'common' }), style: 'cancel' },
+          { text: t('permissions.openSettings', { ns: 'common' }), onPress: () => Linking.openSettings() }
         ]
       );
       return false;
@@ -552,11 +598,11 @@ export function useFaceMesh() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(
-        'İzin Gerekli',
-        'Fotoğraflara erişmek için ayarlardan izin vermeniz gerekiyor.',
+        t('permissions.title', { ns: 'common' }),
+        t('permissions.gallery', { ns: 'common' }),
         [
-          { text: 'İptal', style: 'cancel' },
-          { text: 'Ayarları Aç', onPress: () => Linking.openSettings() }
+          { text: t('buttons.cancel', { ns: 'common' }), style: 'cancel' },
+          { text: t('permissions.openSettings', { ns: 'common' }), onPress: () => Linking.openSettings() }
         ]
       );
       return false;
@@ -592,7 +638,7 @@ export function useFaceMesh() {
       if (__DEV__) {
         console.error('[Camera] Kamera hatası:', error);
       }
-      Alert.alert('Hata', 'Fotoğraf çekilemedi. Lütfen tekrar deneyin.');
+      Alert.alert(t('states.error', { ns: 'common' }), t('alerts.processingError.message'));
     }
   };
 
@@ -624,14 +670,14 @@ export function useFaceMesh() {
       if (__DEV__) {
         console.error('[Gallery] Galeri hatası:', error);
       }
-      Alert.alert('Hata', 'Fotoğraf seçilemedi. Lütfen tekrar deneyin.');
+      Alert.alert(t('states.error', { ns: 'common' }), t('alerts.processingError.message'));
     }
   };
 
   // MediaPipe ile resmi işle
   const processImageWithMediaPipe = async (imageUri: string) => {
     if (!mediaPipeReady) {
-      Alert.alert('MediaPipe Hazır Değil', 'Web teknolojisi henüz yüklenmedi. Lütfen bekleyin.');
+      Alert.alert(t('alerts.mediaPipeNotReady.title'), t('alerts.mediaPipeNotReady.message'));
       return;
     }
 
@@ -721,7 +767,7 @@ export function useFaceMesh() {
       setIsAnalyzing(false);
       setIsProcessing(false);
       console.log('🔓 [KUYRUK] İşlem kilidi açıldı (ERROR)');
-      Alert.alert('İşlem Hatası', 'Resim MediaPipe ile işlenemedi. Lütfen tekrar deneyin.');
+      Alert.alert(t('alerts.processingError.title'), t('alerts.processingError.message'));
     }
   };
 
@@ -745,8 +791,10 @@ export function useFaceMesh() {
     setMeshImageUri(null);
     setMeshValidation({ isValid: true, quality: 'excellent', message: '', confidence: 0 });
 
-    // ✅ Modal açma işini index.tsx yapacak - buradan kaldırıldı (setShowImagePicker silindi)
-  };
+    if (mode === 'multi') {
+      resetMultiPhotoState();
+    }
+  };   // ✅ Modal açma işini index.tsx yapacak - buradan kaldırıldı (setShowImagePicker silindi)
 
   // Kayıtlı fotoğrafı temizle (yeni fotoğraf seçmek için)
   const clearSavedPhoto = async () => {
@@ -809,11 +857,18 @@ export function useFaceMesh() {
       setCurrentPhotoIndex(index);
       setMultiPhotoProcessingStatus('processing');
 
-      // ✅ Resolver'ı kaydet - handleWebViewMessage LANDMARKS gelince çağıracak
-      landmarksResolverRef.current = () => {
+      // ✅ Resolver/Rejecter'ı kaydet - handleWebViewMessage LANDMARKS veya NO_FACE gelince çağıracak
+      landmarksResolverRef.current = (() => {
         clearTimeout(timeout);
         console.log(`✅ [MULTI-PHOTO] Fotoğraf ${index + 1} landmarks alındı, resolve ediliyor`);
         resolve();
+      }) as any;
+
+      // ✅ Add reject function to resolver for NO_FACE case
+      (landmarksResolverRef.current as any).reject = (error: Error) => {
+        clearTimeout(timeout);
+        console.log(`❌ [MULTI-PHOTO] Fotoğraf ${index + 1} reject ediliyor:`, error.message);
+        reject(error);
       };
 
       // WebView'a image gönder (LANDMARKS mesajını tetikler)
@@ -916,20 +971,26 @@ export function useFaceMesh() {
 
       console.log(`📸 [MULTI-PHOTO] Tüm fotoğraflar işlendi (${photoUris.length} adet)`);
 
-      // ✅ YENİ: Finalize çağır
-      try {
-        await finalizeMultiPhotoAnalysis();
-        console.log('✅ [MULTI-PHOTO] Finalize başarılı, /analysis ekranına yönlendiriliyor');
-      } catch (finalizeError) {
-        console.error('❌ [MULTI-PHOTO] Finalize hatası:', finalizeError);
-        Alert.alert('Hata', 'Analiz tamamlanamadı: ' + (finalizeError as Error).message);
-      } finally {
-        setMultiPhotoProcessingStatus('idle');
-      }
-    } catch (error) {
-      console.error('📸 [MULTI-PHOTO] İşlem hatası:', error);
-      Alert.alert('Hata', 'Fotoğraflar işlenirken bir hata oluştu');
+      // ✅ Processing complete - modal stays open for user to click "Analiz Et"
       setMultiPhotoProcessingStatus('idle');
+
+    } catch (error) {
+      // ✅ Better error messages: distinguish between "no face" and "processing error"
+      const errorMessage = (error as Error).message;
+      const isNoFaceError = errorMessage.includes('Yüz bulunamadı');
+
+      if (isNoFaceError) {
+        // NO_FACE is a normal scenario, not an error - just log as info
+        console.log('ℹ️ [MULTI-PHOTO] Yüz bulunamadı (normal durum, kullanıcı başka fotoğraf seçebilir)');
+      } else {
+        // Actual processing error - log as error and show alert
+        console.error('📸 [MULTI-PHOTO] İşlem hatası:', error);
+        Alert.alert('Hata', 'Fotoğraflar işlenirken bir hata oluştu: ' + errorMessage);
+      }
+      // Note: NO_FACE error alert already shown in handleWebViewMessage
+
+      setMultiPhotoProcessingStatus('idle');
+      // ✅ Don't close modal - let user select different photos
     }
   }, [resetMultiPhotoState, processMultiPhoto, setIsMultiPhotoMode]);
 
@@ -991,10 +1052,15 @@ export function useFaceMesh() {
 
         // Update state
         setSavedPhotoAnalysisId(faceAnalysisId);
+        setSavedMultiPhotos(null); // Clear multi-photo state so we show single-photo card
 
-        // Navigate to analysis
+        // Clear active analysis state so AnalysisLayout doesn't show
+        setSelectedImage(null);
+        setMeshImageUri(null);
+
+        // ✅ Navigate to home instead of /analysis
         setMultiPhotoProcessingStatus('complete');
-        router.push('/analysis');
+        router.push('/');
         return;
       }
 
@@ -1053,7 +1119,111 @@ export function useFaceMesh() {
         console.log(`🔢 [MULTI-PHOTO] Landmark ${i} averaging check:`, logData);
       }
 
-      // Create FaceLandmarks object from averaged landmarks
+      // ============================================
+      // 🔍 DIAGNOSTIC SUMMARY - ROOT CAUSE ANALYSIS
+      // ============================================
+      console.log('\n╔════════════════════════════════════════╗');
+      console.log('║  🔍 CONSISTENCY DIAGNOSTIC SUMMARY    ║');
+      console.log('╚════════════════════════════════════════╝\n');
+
+      // Extract metrics for diagnosis
+      const scales = normalizedSets.map(s => s.transformParams.scale);
+      const rotations = normalizedSets.map(s => s.transformParams.rotationAngle * 180 / Math.PI);
+      const faceSizes = normalizedSets.map(s => s.originalFaceWidth);
+
+      const scaleRange = Math.max(...scales) - Math.min(...scales);
+      const rotationRange = Math.max(...rotations) - Math.min(...rotations);
+      const maxSizeDiff = Math.max(...faceSizes) - Math.min(...faceSizes);
+      const sizeDiffPercent = (maxSizeDiff / Math.min(...faceSizes)) * 100;
+
+      console.log('📊 Final Results:', {
+        consistencyScore: `${averaged.consistencyScore.toFixed(1)}/100`,
+        level: consistency.level,
+        recommendation: consistency.recommendation,
+      });
+
+      console.log('\n🔎 Potential Issues Detected:');
+
+      const issues: string[] = [];
+
+      // Check 1: Scale variance (camera distance)
+      if (scaleRange > 0.5) {
+        issues.push('⚠️ HIGH SCALE VARIANCE - Photos taken from different distances');
+        console.log('  ⚠️ Scale Factor Range: ' + scaleRange.toFixed(4) + ' (threshold: 0.5)');
+        console.log('    → Photos were taken from VERY DIFFERENT camera distances');
+        console.log('    → Recommendation: Retake photos from same distance');
+      } else if (scaleRange > 0.2) {
+        issues.push('⚡ Moderate scale variance detected');
+        console.log('  ⚡ Scale Factor Range: ' + scaleRange.toFixed(4) + ' (acceptable but not ideal)');
+      } else {
+        console.log('  ✅ Scale Consistency: GOOD (' + scaleRange.toFixed(4) + ')');
+      }
+
+      // Check 2: Rotation variance (head pose)
+      if (rotationRange > 15) {
+        issues.push('⚠️ HEAD POSE TOO DIFFERENT - Face angles vary significantly');
+        console.log('  ⚠️ Rotation Range: ' + rotationRange.toFixed(2) + '° (threshold: 15°)');
+        console.log('    → Photos have DIFFERENT head angles');
+        console.log('    → Recommendation: Keep head straight in all photos');
+      } else if (rotationRange > 7) {
+        issues.push('⚡ Moderate rotation variance detected');
+        console.log('  ⚡ Rotation Range: ' + rotationRange.toFixed(2) + '° (acceptable but not ideal)');
+      } else {
+        console.log('  ✅ Pose Consistency: GOOD (' + rotationRange.toFixed(2) + '°)');
+      }
+
+      // Check 3: Face size difference (raw)
+      if (sizeDiffPercent > 30) {
+        issues.push('⚠️ LARGE FACE SIZE DIFFERENCE - Head appears different sizes');
+        console.log('  ⚠️ Face Size Difference: ' + sizeDiffPercent.toFixed(1) + '% (threshold: 30%)');
+        console.log('    → Eye distances: ' + faceSizes.map(s => s.toFixed(1) + 'px').join(', '));
+        console.log('    → Recommendation: Maintain same distance from camera');
+      } else if (sizeDiffPercent > 15) {
+        issues.push('⚡ Moderate face size difference');
+        console.log('  ⚡ Face Size Difference: ' + sizeDiffPercent.toFixed(1) + '% (acceptable but not ideal)');
+      } else {
+        console.log('  ✅ Face Size Consistency: GOOD (' + sizeDiffPercent.toFixed(1) + '%)');
+      }
+
+      // Check 4: Landmark variance
+      if (averaged.varianceDetails.avgVariance > 100) {
+        issues.push('⚠️ HIGH LANDMARK VARIANCE - Facial features not aligning well');
+        console.log('  ⚠️ Average Variance: ' + averaged.varianceDetails.avgVariance.toFixed(2) + 'px²');
+      } else if (averaged.varianceDetails.avgVariance > 50) {
+        console.log('  ⚡ Moderate Variance: ' + averaged.varianceDetails.avgVariance.toFixed(2) + 'px²');
+      } else {
+        console.log('  ✅ Landmark Variance: GOOD (' + averaged.varianceDetails.avgVariance.toFixed(2) + 'px²)');
+      }
+
+      // Summary
+      if (issues.length > 0) {
+        console.log('\n❌ ROOT CAUSE(S):');
+        issues.forEach(issue => console.log('  ' + issue));
+        console.log('\n💡 RECOMMENDATION:');
+        if (scaleRange > 0.5 || sizeDiffPercent > 30) {
+          console.log('  📸 Take all photos from the SAME DISTANCE from camera');
+          console.log('  📸 Keep your face the SAME SIZE in all photos');
+        }
+        if (rotationRange > 15) {
+          console.log('  📸 Keep your head at the SAME ANGLE in all photos');
+          console.log('  📸 Look straight at camera in all photos');
+        }
+        if (averaged.varianceDetails.avgVariance > 100) {
+          console.log('  📸 Ensure good lighting and clear face visibility');
+          console.log('  📸 Avoid different facial expressions');
+        }
+      } else {
+        console.log('\n✅ NO MAJOR ISSUES DETECTED');
+        console.log('  All metrics are within acceptable ranges');
+        if (averaged.consistencyScore < 90) {
+          console.log('  Note: Score is still below 90, which may indicate minor variations');
+        }
+      }
+
+      console.log('\n╔════════════════════════════════════════╗');
+      console.log('║  END DIAGNOSTIC SUMMARY                ║');
+      console.log('╚════════════════════════════════════════╝\n');
+
       const averagedFaceLandmarks: FaceLandmarks = {
         landmarks: averaged.landmarks.map((l, i) => ({
           x: l.x,
@@ -1136,7 +1306,12 @@ export function useFaceMesh() {
       if (savedMetadata) {
         setSavedMultiPhotos(savedMetadata);
         setSavedPhotoAnalysisId(savedId);
+        setSavedPhotoUri(null); // Clear single-photo state so we show multi-photo card
       }
+
+      // Clear active analysis state so AnalysisLayout doesn't show
+      setSelectedImage(null);
+      setMeshImageUri(null);
 
       setMultiPhotoProcessingStatus('complete');
 
@@ -1178,17 +1353,8 @@ export function useFaceMesh() {
       console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
       console.log('');
 
-      // Navigate to analysis
-      Alert.alert(
-        'Analiz Tamamlandı! 🎉',
-        `${photoCount} fotoğraftan ortalama analiz oluşturuldu.\nTutarlılık: %${Math.round(averaged.consistencyScore)}`,
-        [
-          {
-            text: 'Sonuçları Gör',
-            onPress: () => router.push({ pathname: '/analysis', params: { faceAnalysisId: savedId } }),
-          },
-        ]
-      );
+      // ✅ Navigate to home page instead of /analysis
+
     } catch (error) {
       console.error('📸 [MULTI-PHOTO] Finalize hatası:', error);
       Alert.alert('Hata', 'Analiz tamamlanırken bir hata oluştu');

@@ -5,8 +5,9 @@
  * for multi-photo face analysis.
  */
 
-import { NormalizedLandmarks } from './normalize-landmarks';
 import { AveragedResult, getConsistencyLevel } from './average-landmarks';
+import { NormalizedLandmarks } from './normalize-landmarks';
+import { FACE_REGIONS } from './relevant-landmarks';
 
 // ============================================
 // TYPES
@@ -33,21 +34,6 @@ export interface ConsistencyResult {
     similarPose: boolean;
   };
 }
-
-// ============================================
-// REGION DEFINITIONS
-// ============================================
-
-/** Landmark indices for each face region (for region-specific analysis) */
-const FACE_REGIONS: Record<string, number[]> = {
-  leftEye: [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246],
-  rightEye: [362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385, 384, 398],
-  nose: [1, 2, 4, 5, 6, 168, 197, 195, 5, 4, 45, 275, 440, 344, 278, 439],
-  lips: [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146],
-  leftEyebrow: [70, 63, 105, 66, 107, 55, 65, 52, 53, 46],
-  rightEyebrow: [300, 293, 334, 296, 336, 285, 295, 282, 283, 276],
-  jawline: [10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162],
-};
 
 // ============================================
 // HELPER FUNCTIONS
@@ -149,38 +135,79 @@ export function calculateConsistency(
     language
   );
 
-  // Log consistency analysis
-  console.log('🎯 [Consistency] Analysis:', {
-    score: consistencyScore.toFixed(1),
+  // ============================================
+  // 🔍 DIAGNOSTIC LOGGING - CONSISTENCY ANALYSIS
+  // ============================================
+  console.log('\n════════════════════════════════════════');
+  console.log('🎯 [CONSISTENCY ANALYSIS]');
+  console.log('════════════════════════════════════════');
+  console.log('🎯 Main Metrics:', {
+    score: consistencyScore.toFixed(1) + '/100',
     level,
-    avgVariance: varianceDetails.avgVariance.toFixed(2),
+    avgVariance: varianceDetails.avgVariance.toFixed(2) + 'px²',
     problematicLandmarks: varianceDetails.problematicIndices.length,
   });
 
-  console.log('🔍 [Consistency] Details:', {
-    samePerson: samePerson ? '✅' : '❌',
-    similarPose: similarPose ? '✅' : '❌',
-    inconsistentRegions: inconsistentRegions.length > 0 ? inconsistentRegions : 'None',
+  console.log('\n🔍 Detailed Checks:', {
+    samePerson: samePerson ? '✅ YES' : '❌ NO',
+    similarPose: similarPose ? '✅ YES' : '❌ NO',
+    inconsistentRegions: inconsistentRegions.length > 0 ? inconsistentRegions.join(', ') : '✅ None',
   });
 
-  // Log pose comparison (dinamik fotoğraf sayısı)
+
+  // ============================================
+  // 🔍 DIAGNOSTIC LOGGING - POSE COMPARISON
+  // ============================================
   const rotations = normalizedSets.map(s => s.transformParams.rotationAngle);
-  const poseLog: Record<string, string> = {};
-  rotations.forEach((r, idx) => {
-    poseLog[`photo${idx + 1}Rotation`] = (r * 180 / Math.PI).toFixed(2) + '°';
-  });
-  poseLog.rotationRange = ((Math.max(...rotations) - Math.min(...rotations)) * 180 / Math.PI).toFixed(2) + '°';
-  poseLog.threshold = '15°';
-  console.log('📐 [Consistency] Pose comparison:', poseLog);
+  const rotationsDegrees = rotations.map(r => r * 180 / Math.PI);
+  const minRotation = Math.min(...rotationsDegrees);
+  const maxRotation = Math.max(...rotationsDegrees);
+  const rotationRange = maxRotation - minRotation;
 
-  // Log scale comparison (dinamik fotoğraf sayısı)
-  const scales = normalizedSets.map(s => s.transformParams.scale);
-  const scaleLog: Record<string, string> = {};
-  scales.forEach((s, idx) => {
-    scaleLog[`photo${idx + 1}Scale`] = s.toFixed(4);
+  console.log('\n📐 [POSE COMPARISON]:');
+
+  // Log each photo's rotation
+  rotationsDegrees.forEach((deg, idx) => {
+    console.log(`  Photo ${idx + 1} Rotation: ${deg.toFixed(2)}°`);
   });
-  scaleLog.scaleRange = (Math.max(...scales) - Math.min(...scales)).toFixed(4);
-  console.log('📏 [Consistency] Scale comparison:', scaleLog);
+
+  console.log('\n  Summary:', {
+    minRotation: `${minRotation.toFixed(2)}°`,
+    maxRotation: `${maxRotation.toFixed(2)}°`,
+    rotationRange: `${rotationRange.toFixed(2)}°`,
+    threshold: '15.00°',
+    status: rotationRange < 15 ? '✅ CONSISTENT' : '⚠️ INCONSISTENT',
+    similarPose: similarPose ? '✅ YES' : '❌ NO',
+  });
+
+
+
+  // ============================================
+  // 🔍 DIAGNOSTIC LOGGING - SCALE COMPARISON
+  // ============================================
+  const scales = normalizedSets.map(s => s.transformParams.scale);
+  const minScale = Math.min(...scales);
+  const maxScale = Math.max(...scales);
+  const scaleRange = maxScale - minScale;
+  const avgScale = scales.reduce((a, b) => a + b, 0) / scales.length;
+
+  console.log('\n📏 [SCALE COMPARISON]:');
+
+  // Log each photo's scale
+  scales.forEach((s, idx) => {
+    console.log(`  Photo ${idx + 1} Scale: ${s.toFixed(4)}`);
+  });
+
+  console.log('\n  Summary:', {
+    minScale: minScale.toFixed(4),
+    maxScale: maxScale.toFixed(4),
+    scaleRange: scaleRange.toFixed(4),
+    avgScale: avgScale.toFixed(4),
+    status: scaleRange > 0.5 ? '⚠️ HIGH VARIANCE' : '✅ CONSISTENT',
+  });
+
+  console.log('════════════════════════════════════════\n');
+
 
   return {
     score: consistencyScore,

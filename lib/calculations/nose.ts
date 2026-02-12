@@ -19,6 +19,7 @@ import {
   toPercentageOfWidth,
   type Point3D,
 } from '../geometry';
+import { calculateLinearScore } from './scoring-utils';
 
 // ============================================
 // TYPE DEFINITIONS
@@ -129,68 +130,91 @@ export interface NoseCalculations {
  * - %3.94 → 4.2 (Case 2: more noticeable)
  * - %4.32 → 2.7 (Case 3: significant deviation)
  */
+/**
+ * Calculate tip deviation score using continuous linear interpolation
+ * Customized Curve (User Request):
+ * %0 - %1.5 -> 10
+ * %2.0 -> 9.25
+ * %2.5 -> 9.0
+ * %3.0 -> 7.5
+ * %3.5 -> 5.5
+ * %4.0 -> 4.0
+ * >%6.0 -> 1.0
+ */
 function calculateTipScore(ratio: number): number {
-  const absRatio = Math.abs(ratio);
-  if (absRatio <= 1.5) return 10;                                    // Symmetric
-  if (absRatio <= 2.5) return 10 - ((absRatio - 1.5) * 0.5);        // 10 → 9.5
-  if (absRatio <= 3.0) return 9.5 - ((absRatio - 2.5) * 3);         // 9.5 → 8
-  if (absRatio <= 3.5) return 8 - ((absRatio - 3.0) * 4);           // 8 → 6
-  if (absRatio <= 4.0) return 6 - ((absRatio - 3.5) * 4);           // 6 → 4
-  if (absRatio <= 4.5) return 4 - ((absRatio - 4.0) * 4);           // 4 → 2
-  if (absRatio <= 6.0) return 2 - ((absRatio - 4.5) * 0.5);         // 2 → 1.25
-  return 1;
+  return calculateLinearScore(ratio, [
+    { value: 1.5, score: 10 },
+    { value: 2.0, score: 9.25 },
+    { value: 2.5, score: 9.0 },
+    { value: 3.0, score: 7.5 },
+    { value: 3.5, score: 5.5 },
+    { value: 4.0, score: 4.0 },
+    { value: 6.0, score: 1.0 }
+  ]);
 }
 
 /**
  * Calculate rotation score using continuous linear interpolation
+ * User Request: Balanced/Standard Approach
+ * 0-2.0° -> 10
+ * 3.5° -> 8.0
+ * 5.0° -> 6.0
+ * 8.0° -> 3.0
+ * >12.0° -> 1.0
  */
 function calculateRotationScore(angle: number): number {
-  const absAngle = Math.abs(angle);
-  if (absAngle <= 1.5) return 10;                                    // Straight
-  if (absAngle <= 3.0) return 10 - ((absAngle - 1.5) / 1.5) * 2;    // 10 → 8
-  if (absAngle <= 5.0) return 8 - ((absAngle - 3.0) / 2.0) * 3;     // 8 → 5
-  if (absAngle <= 8.0) return 5 - ((absAngle - 5.0) / 3.0) * 2;     // 5 → 3
-  if (absAngle <= 12.0) return 3 - ((absAngle - 8.0) / 4.0) * 2;    // 3 → 1
-  return 1;
+  return calculateLinearScore(angle, [
+    { value: 2.0, score: 10 },
+    { value: 3.5, score: 8.0 },
+    { value: 5.0, score: 6.0 },
+    { value: 8.0, score: 3.0 },
+    { value: 12.0, score: 1.0 }
+  ]);
 }
 
 /**
  * Calculate nostril asymmetry score using continuous linear interpolation
+ * Standard Curve
  */
 function calculateNostrilScore(ratio: number): number {
-  const absRatio = Math.abs(ratio);
-  if (absRatio <= 2.0) return 10;                                    // Equal
-  if (absRatio <= 5.0) return 10 - ((absRatio - 2.0) / 3.0) * 3;    // 10 → 7
-  if (absRatio <= 10.0) return 7 - ((absRatio - 5.0) / 5.0) * 4;    // 7 → 3
-  return 3;
+  return calculateLinearScore(ratio, [
+    { value: 2.0, score: 10 },
+    { value: 5.0, score: 8 },
+    { value: 10.0, score: 6 },
+    { value: 15.0, score: 3 },
+    { value: 25.0, score: 1 }
+  ]);
 }
 
 /**
  * Calculate bridge straightness score using continuous linear interpolation
- * Calibration:
- * - < 1.0% deviation → 10/10 (Straight)
- * - 2.0% deviation → 8/10 (Slightly curved)
- * - 4.0% deviation → 4/10 (Clearly curved)
+ * Balanced Approach
+ * %0 - %1.5 -> 10
+ * %2.5 -> 8.0
+ * %4.0 -> 6.0
+ * %6.0 -> 4.0
+ * >%8.0 -> 2.0
  */
 function calculateBridgeScore(ratio: number): number {
-  const absRatio = Math.abs(ratio);
-  if (absRatio <= 1.0) return 10;
-  if (absRatio <= 2.0) return 10 - (absRatio - 1.0) * 2;          // 10 → 8
-  if (absRatio <= 3.0) return 8 - (absRatio - 2.0) * 2;           // 8 → 6
-  if (absRatio <= 4.0) return 6 - (absRatio - 3.0) * 2;           // 6 → 4
-  if (absRatio <= 6.0) return 4 - (absRatio - 4.0) * 1;           // 4 → 2
-  return 1;
+  return calculateLinearScore(ratio, [
+    { value: 1.5, score: 10 },
+    { value: 2.5, score: 8.0 },
+    { value: 4.0, score: 6.0 },
+    { value: 6.0, score: 4.0 },
+    { value: 8.0, score: 2.0 }
+  ]);
 }
 
 /**
  * Calculate depth difference score using continuous linear interpolation
  */
 function calculateDepthScore(diff: number): number {
-  const absDiff = Math.abs(diff);
-  if (absDiff < 0.01) return 10;                                     // Planar
-  if (absDiff < 0.025) return 10 - ((absDiff - 0.01) / 0.015) * 2;  // 10 → 8
-  if (absDiff < 0.05) return 8 - ((absDiff - 0.025) / 0.025) * 2;   // 8 → 6
-  return 6;
+  return calculateLinearScore(diff, [
+    { value: 0.01, score: 10 },
+    { value: 0.025, score: 8 },
+    { value: 0.05, score: 6 },
+    { value: 0.08, score: 4 }
+  ]);
 }
 
 // ============================================
@@ -449,18 +473,15 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
 
   // === 5. SCORING (Combined rotation'a göre) ===
   // STRICT SCORING: Daha gerçekçi eşikler (klinik %4 eşiğine uygun)
-  const combinedRotationScore =
-    Math.abs(combinedRotation) < 1.5
-      ? 10 // 0-1.5° → Simetrik (göz fark etmez)
-      : Math.abs(combinedRotation) < 3
-        ? 8 // 1.5-3° → Minimal (sadece dikkatli bakınca)
-        : Math.abs(combinedRotation) < 5 // ← DÜZELTİLDİ: 6'dan 5'e
-          ? 6 // 3-5° → Fark edilebilir ama kabul edilebilir
-          : Math.abs(combinedRotation) < 8 // ← DÜZELTİLDİ: 10'dan 8'e
-            ? 4 // 5-8° → Belirgin asimetri (6.21° buraya düşer)
-            : Math.abs(combinedRotation) < 12
-              ? 2 // 8-12° → Ciddi asimetri
-              : 1; // 12°+ → Çok ciddi
+  // Customized Curve: 0-1.5 -> 10, 3.0 -> 8, 5.0 -> 6, 8.0 -> 4
+  const combinedRotationScore = calculateLinearScore(combinedRotation, [
+    { value: 1.5, score: 10 },
+    { value: 3.0, score: 8 },
+    { value: 5.0, score: 6 },
+    { value: 8.0, score: 4 },
+    { value: 12.0, score: 2 },
+    { value: 15.0, score: 1 }
+  ]);
 
   console.log('⭐ [v2.1] COMBINED ROTATION SCORE:', combinedRotationScore, '/10');
 

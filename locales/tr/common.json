@@ -24,5 +24,11 @@
   "welcome": {
     "defaultUser": "Kullanıcı"
   },
-  "locked": "Kilitli"
+  "locked": "Kilitli",
+  "permissions": {
+    "title": "İzin Gerekli",
+    "camera": "Kamera kullanmak için ayarlardan izin vermeniz gerekiyor.",
+    "gallery": "Fotoğraflara erişmek için ayarlardan izin vermeniz gerekiyor.",
+    "openSettings": "Ayarları Aç"
+  }
 }

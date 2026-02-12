@@ -4,6 +4,7 @@
 
 import type { Point3D } from '../geometry';
 import { distance2D } from '../geometry';
+import { calculateLinearScore } from './scoring-utils';
 
 export interface EyebrowCalculations {
   // === BROW HEIGHT SYMMETRY (28% - most critical) ===
@@ -188,15 +189,16 @@ export function calculateEyebrowMetrics(landmarks: Point3D[]): EyebrowCalculatio
     browHeightDirection === 'RIGHT_HIGHER' ? 'SAĞ kaş (Screen Left) daha YUKARDA' : 'KAŞLAR EŞİT');
 
   // STRICT SCORING: Based on ratio to face height (not absolute pixels)
-  // %1 fark = minimal, %1.5-2 fark = fark edilebilir, %2.5+ = belirgin
-  const browHeightSymmetryScore =
-    browHeightDifferenceRatio < 0.5 ? 10 :    // Perfect (<0.5% face height)
-      browHeightDifferenceRatio < 1 ? 8 :       // Minimal (0.5-1%)
-        browHeightDifferenceRatio < 1.5 ? 7 :     // Slight (1-1.5%)
-          browHeightDifferenceRatio < 2 ? 5 :       // Noticeable (1.5-2%)
-            browHeightDifferenceRatio < 2.5 ? 4 :     // Moderate (2-2.5%)
-              browHeightDifferenceRatio < 3.5 ? 3 :     // Visible (2.5-3.5%)
-                browHeightDifferenceRatio < 5 ? 2 : 1;    // Severe (>5%)
+  // %0.5 fark = 10, %1.5 = 7, %2.5 = 4, %5 = 1
+  const browHeightSymmetryScore = calculateLinearScore(browHeightDifferenceRatio, [
+    { value: 0.5, score: 10 },
+    { value: 1.0, score: 8 },
+    { value: 1.5, score: 7 },
+    { value: 2.0, score: 5 },
+    { value: 2.5, score: 4 },
+    { value: 3.5, score: 3 },
+    { value: 5.0, score: 1 }
+  ]);
 
   // ========================================
   // 2. ARCH HEIGHT SYMMETRY (24% weight)
@@ -210,14 +212,15 @@ export function calculateEyebrowMetrics(landmarks: Point3D[]): EyebrowCalculatio
   const archHeightDifferenceRatio = (archHeightDifference / Math.max(Math.abs(leftArchHeight), Math.abs(rightArchHeight))) * 100;
 
   // STRICT SCORING: Based on ratio (not absolute pixels)
-  // Arch height diff as % of max arch height - daha sıkı
-  const archHeightSymmetryScore =
-    archHeightDifferenceRatio < 3 ? 10 :      // Perfect (<3% diff)
-      archHeightDifferenceRatio < 5 ? 8 :       // Minimal (3-5%)
-        archHeightDifferenceRatio < 8 ? 6 :       // Noticeable (5-8%)
-          archHeightDifferenceRatio < 12 ? 5 :      // Moderate (8-12%)
-            archHeightDifferenceRatio < 18 ? 3 :      // Visible (12-18%)
-              archHeightDifferenceRatio < 25 ? 2 : 1;   // Severe (>25%)
+  // Arch height diff as % of max arch height
+  const archHeightSymmetryScore = calculateLinearScore(archHeightDifferenceRatio, [
+    { value: 3.0, score: 10 },
+    { value: 5.0, score: 8 },
+    { value: 8.0, score: 6 },
+    { value: 12.0, score: 5 },
+    { value: 18.0, score: 3 },
+    { value: 25.0, score: 1 }
+  ]);
 
   // ========================================
   // 3. BROW DISTANCE FROM EYE (18% weight)
@@ -278,12 +281,18 @@ export function calculateEyebrowMetrics(landmarks: Point3D[]): EyebrowCalculatio
       innerCornerDistanceRatio < 125 ? 'IDEAL' : 'TOO_FAR';
 
   // STRICT SCORING: Narrower optimal range
-  const innerCornerDistanceScore =
-    innerCornerDistanceRatio >= 95 && innerCornerDistanceRatio <= 115 ? 10 :   // Optimal
-      innerCornerDistanceRatio >= 85 && innerCornerDistanceRatio <= 125 ? 8 :    // Good
-        innerCornerDistanceRatio >= 75 && innerCornerDistanceRatio <= 135 ? 6 :    // Acceptable
-          innerCornerDistanceRatio >= 65 && innerCornerDistanceRatio <= 150 ? 4 :    // Wide/narrow
-            innerCornerDistanceRatio >= 55 && innerCornerDistanceRatio <= 170 ? 3 : 2; // Extreme
+  // IDEAL: 95-115%
+  let innerCornerDeviation = 0;
+  if (innerCornerDistanceRatio < 95) innerCornerDeviation = 95 - innerCornerDistanceRatio;
+  else if (innerCornerDistanceRatio > 115) innerCornerDeviation = innerCornerDistanceRatio - 115;
+
+  const innerCornerDistanceScore = calculateLinearScore(innerCornerDeviation, [
+    { value: 0, score: 10 },
+    { value: 10, score: 8 }, // 85-125
+    { value: 20, score: 6 }, // 75-135
+    { value: 35, score: 4 }, // 65-150
+    { value: 55, score: 2 }  // 55-170
+  ]);
 
   // ========================================
   // 5. BROW ANGLE/SLOPE (10% weight)
@@ -310,11 +319,14 @@ export function calculateEyebrowMetrics(landmarks: Point3D[]): EyebrowCalculatio
       rightBrowAngle < -5 ? 'DESCENDING' : 'HORIZONTAL';
 
   // STRICT SCORING
-  const browAngleSymmetryScore =
-    browAngleDifference < 3 ? 10 :
-      browAngleDifference < 6 ? 8 :
-        browAngleDifference < 10 ? 6 :
-          browAngleDifference < 15 ? 3 : 1;
+  // Angle diff: <3 = 10, <6 = 8, <10 = 6, <15 = 3
+  const browAngleSymmetryScore = calculateLinearScore(browAngleDifference, [
+    { value: 3, score: 10 },
+    { value: 6, score: 8 },
+    { value: 10, score: 6 },
+    { value: 15, score: 3 },
+    { value: 25, score: 1 }
+  ]);
 
   // ========================================
   // 6. BROW THICKNESS (6% weight)
@@ -334,11 +346,14 @@ export function calculateEyebrowMetrics(landmarks: Point3D[]): EyebrowCalculatio
   const browThicknessDifferenceRatio = (browThicknessDifference / Math.max(leftBrowThickness, rightBrowThickness)) * 100;
 
   // STRICT SCORING
-  const browThicknessSymmetryScore =
-    browThicknessDifferenceRatio < 10 ? 10 :
-      browThicknessDifferenceRatio < 20 ? 8 :
-        browThicknessDifferenceRatio < 30 ? 6 :
-          browThicknessDifferenceRatio < 40 ? 3 : 1;
+  // Thickness diff ratio: <10 = 10, <20 = 8, <30 = 6, <40 = 3
+  const browThicknessSymmetryScore = calculateLinearScore(browThicknessDifferenceRatio, [
+    { value: 10, score: 10 },
+    { value: 20, score: 8 },
+    { value: 30, score: 6 },
+    { value: 40, score: 3 },
+    { value: 50, score: 1 }
+  ]);
 
   // ========================================
   // 7. BROW LENGTH (2% weight)
@@ -351,11 +366,14 @@ export function calculateEyebrowMetrics(landmarks: Point3D[]): EyebrowCalculatio
   const browLengthDifferenceRatio = (browLengthDifference / Math.max(leftBrowLength, rightBrowLength)) * 100;
 
   // STRICT SCORING
-  const browLengthSymmetryScore =
-    browLengthDifferenceRatio < 5 ? 10 :
-      browLengthDifferenceRatio < 10 ? 8 :
-        browLengthDifferenceRatio < 15 ? 6 :
-          browLengthDifferenceRatio < 20 ? 3 : 1;
+  // Length diff ratio: <5 = 10, <10 = 8, <15 = 6, <20 = 3
+  const browLengthSymmetryScore = calculateLinearScore(browLengthDifferenceRatio, [
+    { value: 5, score: 10 },
+    { value: 10, score: 8 },
+    { value: 15, score: 6 },
+    { value: 20, score: 3 },
+    { value: 30, score: 1 }
+  ]);
 
   // ========================================
   // INDIVIDUAL BROW SCORES

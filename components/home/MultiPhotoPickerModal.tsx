@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
-import { View, Modal, Pressable, ScrollView, ActivityIndicator } from 'react-native';
-import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
+import { Text } from '@/components/ui/text';
+import { type MultiPhotoState } from '@/hooks/use-face-mesh';
 import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, View } from 'react-native';
+import { ConsistencyBadge, ConsistencyWarningCard } from './ConsistencyBadge';
 import { PhotoGrid } from './PhotoGrid';
 import { PhotoGuidanceCard } from './PhotoGuidanceCard';
-import { ConsistencyBadge, ConsistencyWarningCard } from './ConsistencyBadge';
-import { type MultiPhotoState } from '@/hooks/use-face-mesh';
+import { ValidatingMeshCarousel } from './ValidatingMeshCarousel';
 
 interface MultiPhotoPickerModalProps {
   visible: boolean;
@@ -16,7 +17,6 @@ interface MultiPhotoPickerModalProps {
   currentPhotoIndex: number;
   consistencyScore: number | null;
   onPickFromGallery: () => Promise<string[] | null>;
-  onTakePhoto: () => void;
   onRemovePhoto: (index: number) => void;
   onResetPhotos: () => void;
   onComplete: () => void;
@@ -30,7 +30,6 @@ export function MultiPhotoPickerModal({
   currentPhotoIndex,
   consistencyScore,
   onPickFromGallery,
-  onTakePhoto,
   onRemovePhoto,
   onResetPhotos,
   onComplete,
@@ -41,15 +40,34 @@ export function MultiPhotoPickerModal({
 
   const loadedCount = photos.filter(p => p.uri !== null).length;
   const processedCount = photos.filter(p => p.landmarks !== null).length;
+  const meshCount = photos.filter(p => p.meshImageUri !== null).length;
   const allProcessed = loadedCount > 0 && processedCount === loadedCount;
   const isProcessing = processingStatus === 'processing' || processingStatus === 'averaging';
+  const hasLowQualityPhotos = photos.some(
+    p => p.validation?.quality === 'warning' || p.validation?.quality === 'poor'
+  );
+
 
   const handleComplete = () => {
-    // Check consistency before completing
+    // 1. Low Consistency Check (Existing)
     if (consistencyScore !== null && consistencyScore < 60) {
       setShowLowConsistencyWarning(true);
       return;
     }
+
+    // 2. Low Quality Photos Check (New: Persistent Alert)
+    if (hasLowQualityPhotos) {
+      Alert.alert(
+        t('multiPhoto.qualityAlert.title'),
+        t('multiPhoto.qualityAlert.message'),
+        [
+          { text: t('multiPhoto.qualityAlert.edit'), style: 'cancel' },
+          { text: t('multiPhoto.qualityAlert.proceed'), onPress: onComplete, style: 'destructive' }
+        ]
+      );
+      return;
+    }
+
     onComplete();
   };
 
@@ -99,25 +117,24 @@ export function MultiPhotoPickerModal({
           </Pressable>
         </View>
 
-        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
+        <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 180 }}>
           {/* Progress indicator */}
           <View className="px-4 py-4">
-            <View className="flex-row items-center justify-center space-x-2">
+            <View className="flex-row items-center justify-center gap-2">
               {[0, 1, 2].map((i) => {
                 const photo = photos[i];
                 const isComplete = photo.landmarks !== null;
                 const isCurrent = processingStatus === 'processing' && currentPhotoIndex === i;
 
                 return (
-                  <View key={i} className="items-center">
+                  <View key={i} className=" flex items-center">
                     <View
-                      className={`w-10 h-10 rounded-full items-center justify-center ${
-                        isComplete
-                          ? 'bg-green-500'
-                          : isCurrent
+                      className={`w-10 h-10 rounded-full items-center justify-center ${isComplete
+                        ? 'bg-green-500'
+                        : isCurrent
                           ? 'bg-primary'
                           : 'bg-muted'
-                      }`}
+                        }`}
                     >
                       {isCurrent ? (
                         <ActivityIndicator size="small" color="#fff" />
@@ -129,9 +146,8 @@ export function MultiPhotoPickerModal({
                     </View>
                     {i < 2 && (
                       <View
-                        className={`absolute top-5 left-10 w-8 h-0.5 ${
-                          photos[i].landmarks ? 'bg-green-500' : 'bg-muted'
-                        }`}
+                        className={`absolute top-5 left-10 w-8 h-0.5 ${photos[i].landmarks ? 'bg-green-500' : 'bg-muted'
+                          }`}
                       />
                     )}
                   </View>
@@ -144,7 +160,7 @@ export function MultiPhotoPickerModal({
           </View>
 
           {/* Photo Grid */}
-          <View className="py-4">
+          <View className="py-1">
             <PhotoGrid
               photos={photoGridItems}
               onRemove={isProcessing ? undefined : onRemovePhoto}
@@ -170,12 +186,16 @@ export function MultiPhotoPickerModal({
             </View>
           )}
 
-          {/* Guidance Card */}
-          {!allProcessed && (
-            <View className="py-4">
-              <PhotoGuidanceCard />
-            </View>
-          )}
+          {/* Guidance or Mesh Carousel */}
+          <View className="py-1">
+            {meshCount > 0 ? (
+              <ValidatingMeshCarousel photos={photos} />
+            ) : !allProcessed ? (
+              <View className="py-2">
+                <PhotoGuidanceCard />
+              </View>
+            ) : null}
+          </View>
 
           {/* Processing status */}
           {processingStatus === 'averaging' && (
@@ -204,20 +224,6 @@ export function MultiPhotoPickerModal({
                   </Text>
                 </View>
               </Button>
-
-              <Button
-                variant="outline"
-                onPress={onTakePhoto}
-                disabled={isProcessing}
-                className="w-full"
-              >
-                <View className="flex-row items-center">
-                  <Ionicons name="camera" size={20} color="#6366f1" />
-                  <Text className="text-primary font-semibold ml-2">
-                    {t('multiPhoto.takePhotos', { defaultValue: 'Kameradan Çek' })}
-                  </Text>
-                </View>
-              </Button>
             </View>
           ) : (
             <View className="space-y-3">
@@ -238,7 +244,7 @@ export function MultiPhotoPickerModal({
                 variant="outline"
                 onPress={onResetPhotos}
                 disabled={isProcessing}
-                className="w-full"
+                className="w-full mt-2"
               >
                 <View className="flex-row items-center">
                   <Ionicons name="refresh" size={20} color="#6366f1" />

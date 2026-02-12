@@ -4,18 +4,17 @@ import { useTranslation } from 'react-i18next';
 import {
   Dimensions,
   Image,
-  Pressable,
   View,
-  useColorScheme,
+  useColorScheme
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
 import { Text } from '@/components/ui/text';
+import type { MultiPhotoMetadata } from '@/lib/photo-storage';
 import { Button } from '../ui/button';
+import { ConsistencyBadge } from './ConsistencyBadge';
 import { GlassCard } from './GlassCard';
 import { PhotoGrid } from './PhotoGrid';
-import { ConsistencyBadge } from './ConsistencyBadge';
-import type { MultiPhotoMetadata } from '@/lib/photo-storage';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -29,7 +28,6 @@ interface SavedPhotoCardProps {
   // Common
   faceAnalysisId?: string | null;
   onViewResults: () => void;
-  onChangePhoto: () => void;
   onNewScan: () => void;
 }
 
@@ -69,7 +67,6 @@ export function SavedPhotoCard({
   consistencyScore,
   faceAnalysisId,
   onViewResults,
-  onChangePhoto,
   onNewScan,
 }: SavedPhotoCardProps) {
   const { t, i18n } = useTranslation('home');
@@ -77,7 +74,8 @@ export function SavedPhotoCard({
   const isDark = colorScheme === 'dark';
 
   // Determine if multi-photo mode
-  const isMultiPhoto = !!multiPhotoData && multiPhotoData.photos.length === 3;
+  // Determine if multi-photo mode (1-3 photos supported)
+  const isMultiPhoto = !!multiPhotoData && multiPhotoData.photos.length > 0;
   const displayDate = isMultiPhoto ? multiPhotoData.savedAt : savedAt;
   const relativeDate = displayDate ? formatRelativeDate(displayDate, i18n.language) : '';
   const imageSize = screenWidth - 80;
@@ -201,7 +199,7 @@ export function SavedPhotoCard({
         {faceAnalysisId && (
           <Button
             onPress={onViewResults}
-            className=' w-full  flex-row gap-3 mb-4'
+            className='w-full flex-row items-center justify-center'
             style={({ pressed }) => ({
               backgroundColor: pressed
                 ? isDark
@@ -213,10 +211,7 @@ export function SavedPhotoCard({
               borderRadius: 16,
               paddingVertical: 16,
               paddingHorizontal: 20,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 10,
+              gap: 12,
               shadowColor: '#8B5CF6',
               shadowOffset: { width: 0, height: 4 },
               shadowOpacity: 0.3,
@@ -224,7 +219,7 @@ export function SavedPhotoCard({
               elevation: 4,
             })}
           >
-
+            <Ionicons name="bar-chart" size={20} color="#FFFFFF" />
             <Text
               style={{
                 fontSize: 16,
@@ -237,120 +232,40 @@ export function SavedPhotoCard({
           </Button>
         )}
 
-        {/* Alt Butonlar - Yan Yana */}
-        <View className='w- full flex-row justify-between gap-2 '>
-          {/* Yeni Tarama */}
-          <Pressable
-            onPress={onNewScan}
-            className='flex justify-center items-center'
-            style={({ pressed }) => ({
-
-              backgroundColor: pressed
-                ? isDark
-                  ? '#1E293B'
-                  : '#F1F5F9'
-                : isDark
-                  ? '#334155'
-                  : '#FFFFFF',
-              borderRadius: 16,
-              paddingVertical: 16,
-              paddingHorizontal: 12,
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              shadowColor: '#000000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: isDark ? 0.2 : 0.08,
-              shadowRadius: 4,
-              elevation: 2,
-            })}
+        {/* Yeni Tarama Butonu - Aynı Stil */}
+        <Button
+          onPress={onNewScan}
+          className="w-full flex-row items-center justify-center"
+          style={({ pressed }) => ({
+            backgroundColor: pressed
+              ? isDark
+                ? '#5B21B6'
+                : '#7C3AED'
+              : isDark
+                ? '#6D28D9'
+                : '#8B5CF6',
+            borderRadius: 16,
+            paddingVertical: 16,
+            paddingHorizontal: 20,
+            gap: 12,
+            shadowColor: '#8B5CF6',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 4,
+          })}
+        >
+          <Ionicons name="scan" size={20} color="#FFFFFF" />
+          <Text
+            style={{
+              fontSize: 16,
+              fontWeight: '700',
+              color: '#FFFFFF',
+            }}
           >
-            <View
-              style={{
-                backgroundColor: isDark
-                  ? 'rgba(139, 92, 246, 0.2)'
-                  : 'rgba(139, 92, 246, 0.1)',
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Ionicons
-                name="scan"
-                size={24}
-                color={isDark ? '#A78BFA' : '#8B5CF6'}
-              />
-            </View>
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: '600',
-                color: isDark ? '#E2E8F0' : '#334155',
-                textAlign: 'center',
-              }}
-            >
-              {t('savedPhoto.newScan')}
-            </Text>
-          </Pressable>
-
-          {/* Fotoğraf Değiştir */}
-          <Pressable
-            onPress={onChangePhoto}
-            className='flex justify-center items-center'
-            style={({ pressed }) => ({
-              flex: 1,
-              backgroundColor: pressed
-                ? isDark
-                  ? '#1E293B'
-                  : '#F1F5F9'
-                : isDark
-                  ? '#334155'
-                  : '#FFFFFF',
-              borderRadius: 16,
-              paddingVertical: 16,
-              paddingHorizontal: 12,
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              shadowColor: '#000000',
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: isDark ? 0.2 : 0.08,
-              shadowRadius: 4,
-              elevation: 2,
-            })}
-          >
-            <View
-              style={{
-                backgroundColor: isDark
-                  ? 'rgba(99, 102, 241, 0.2)'
-                  : 'rgba(99, 102, 241, 0.1)',
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Ionicons
-                name="images"
-                size={24}
-                color={isDark ? '#818CF8' : '#6366F1'}
-              />
-            </View>
-            <Text
-              style={{
-                fontSize: 13,
-                fontWeight: '600',
-                color: isDark ? '#E2E8F0' : '#334155',
-                textAlign: 'center',
-              }}
-            >
-              {t('savedPhoto.changePhoto')}
-            </Text>
-          </Pressable>
-        </View>
+            {t('savedPhoto.newScan')}
+          </Text>
+        </Button>
       </View>
     </GlassCard>
   );

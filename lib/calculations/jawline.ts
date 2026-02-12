@@ -3,7 +3,7 @@
 // AI will ONLY interpret these pre-calculated values
 
 import type { Point3D } from '../geometry';
-import { distance2D, distance3D } from '../geometry';
+import { distance2D } from '../geometry';
 
 export interface JawlineCalculations {
   // === CHIN CENTERING (30% - most critical) ===

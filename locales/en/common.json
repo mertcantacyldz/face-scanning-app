@@ -24,5 +24,11 @@
   "welcome": {
     "defaultUser": "User"
   },
-  "locked": "Locked"
+  "locked": "Locked",
+  "permissions": {
+    "title": "Permission Required",
+    "camera": "You need to grant camera permission from settings.",
+    "gallery": "You need to grant photo library permission from settings.",
+    "openSettings": "Open Settings"
+  }
 }

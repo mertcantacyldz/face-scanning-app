@@ -10,7 +10,8 @@
     "subtitle": "Knowing your name helps us personalize your experience",
     "placeholder": "Your name",
     "skip": "Skip",
-    "continue": "Continue"
+    "continue": "Continue",
+    "error": "Please enter a name"
   },
   "gender": {
     "title": "What's your gender?",

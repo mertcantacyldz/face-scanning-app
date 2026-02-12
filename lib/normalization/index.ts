@@ -49,6 +49,12 @@ export {
   type VarianceDetails,
 } from './average-landmarks';
 
+// Relevant Landmarks
+export {
+  FACE_REGIONS,
+  RELEVANT_LANDMARK_INDICES,
+} from './relevant-landmarks';
+
 // Consistency
 export {
   calculateConsistency,

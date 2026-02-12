@@ -19,7 +19,7 @@ export default function NameScreen() {
     if (!name.trim()) {
       Alert.alert(
         t('errors.title', { ns: 'errors' }),
-        'Lütfen bir isim girin'
+        t('name.error')
       );
       return;
     }

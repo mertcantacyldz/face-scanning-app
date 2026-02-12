@@ -14,6 +14,7 @@
 
 import { Point3D } from '../geometry';
 import { NormalizedLandmarks } from './normalize-landmarks';
+import { RELEVANT_LANDMARK_INDICES } from './relevant-landmarks';
 
 // ============================================
 // TYPES
@@ -114,6 +115,67 @@ export function averageLandmarks(
     };
   }
 
+  // ============================================
+  // 🔍 DIAGNOSTIC LOGGING - FACE SIZE COMPARISON
+  // ============================================
+  console.log('\n════════════════════════════════════════');
+  console.log('📸 [FACE SIZE ANALYSIS] Starting comparison');
+  console.log('════════════════════════════════════════');
+
+  // Extract original face sizes (before normalization)
+  const faceSizes = normalizedSets.map((set, idx) => ({
+    photoIndex: idx + 1,
+    eyeDistance: set.originalFaceWidth,
+    scale: set.transformParams.scale,
+  }));
+
+  // Log individual photo metrics
+  faceSizes.forEach(({ photoIndex, eyeDistance, scale }) => {
+    const cameraDistance = eyeDistance < 250 ? 'FAR 📹➡️' : eyeDistance > 450 ? 'CLOSE 📹←' : 'NORMAL 📹';
+    console.log(`📷 [Photo ${photoIndex}]:`, {
+      originalEyeDistance: `${eyeDistance.toFixed(1)}px`,
+      scaleFactor: scale.toFixed(4),
+      estimatedCameraDistance: cameraDistance,
+    });
+  });
+
+  // Calculate size differences (percentage)
+  if (faceSizes.length >= 2) {
+    console.log('\n📊 [SIZE DIFFERENCES]:');
+    for (let i = 0; i < faceSizes.length - 1; i++) {
+      for (let j = i + 1; j < faceSizes.length; j++) {
+        const size1 = faceSizes[i].eyeDistance;
+        const size2 = faceSizes[j].eyeDistance;
+        const diffPercent = Math.abs((size1 - size2) / size1) * 100;
+        const diffPx = Math.abs(size1 - size2);
+
+        console.log(`  Photo ${i + 1} vs Photo ${j + 1}:`, {
+          sizeDifference: `${diffPercent.toFixed(1)}%`,
+          pixelDifference: `${diffPx.toFixed(1)}px`,
+          warning: diffPercent > 20 ? '⚠️ LARGE DIFFERENCE!' : '✅ OK',
+        });
+      }
+    }
+  }
+
+  // Calculate scale factor range
+  const scales = faceSizes.map(f => f.scale);
+  const minScale = Math.min(...scales);
+  const maxScale = Math.max(...scales);
+  const scaleRange = maxScale - minScale;
+  const avgScale = scales.reduce((a, b) => a + b, 0) / scales.length;
+
+  console.log('\n⚖️ [SCALE FACTOR ANALYSIS]:');
+  console.log('  Range:', {
+    min: minScale.toFixed(4),
+    max: maxScale.toFixed(4),
+    difference: scaleRange.toFixed(4),
+    average: avgScale.toFixed(4),
+    warning: scaleRange > 0.5 ? '⚠️ HIGH VARIANCE!' : '✅ CONSISTENT',
+  });
+
+  console.log('════════════════════════════════════════\n');
+
   const landmarkCount = normalizedSets[0].landmarks.length;
   const photoCount = normalizedSets.length;
 
@@ -158,8 +220,8 @@ export function averageLandmarks(
       console.log(`🔢 [Averaging] Landmark ${i}:`, logData);
     }
 
-    // Mark as problematic if variance is too high
-    if (v > PROBLEMATIC_VARIANCE_THRESHOLD) {
+    // Mark as problematic if variance is too high (only for analysis-relevant landmarks)
+    if (v > PROBLEMATIC_VARIANCE_THRESHOLD && RELEVANT_LANDMARK_INDICES.has(i)) {
       problematicIndices.push(i);
     }
 
@@ -171,30 +233,63 @@ export function averageLandmarks(
     });
   }
 
-  // Calculate overall variance metrics
-  const avgVariance = mean(perLandmarkVariance);
-  const maxVariance = Math.max(...perLandmarkVariance);
+  // Calculate overall variance metrics (only from analysis-relevant landmarks)
+  const relevantVariances = perLandmarkVariance.filter(
+    (_, i) => RELEVANT_LANDMARK_INDICES.has(i)
+  );
+  const avgVariance = mean(relevantVariances);
+  const maxVariance = relevantVariances.length > 0 ? Math.max(...relevantVariances) : 0;
 
   // Calculate consistency score (0-100)
-  // Lower variance = higher score
-  // Score = 100 when variance = 0
-  // Score = 0 when variance >= MAX_EXPECTED_VARIANCE
+  // Using exponential decay formula for more natural score distribution
+  // Formula: score = 100 * e^(-variance / scalingFactor)
+  // 
+  // Score behavior with scaling factor = 500:
+  // - variance = 0     → score = 100 (perfect - identical photos)
+  // - variance = 50    → score ≈ 90 (excellent - minimal differences)
+  // - variance = 100   → score ≈ 82 (excellent - minor variations)
+  // - variance = 200   → score ≈ 67 (good - noticeable but acceptable)
+  // - variance = 340   → score ≈ 51 (acceptable - different expressions)
+  // - variance = 500   → score ≈ 37 (poor - significant differences)
+  // - variance = 1000+ → score ≈ 14- (very poor - different people/poses)
+  //
+  // Scaling factor of 500 balances sensitivity to real differences while
+  // being forgiving of natural expression variations (mouth, eyebrows)
   const consistencyScore = Math.max(
     0,
-    Math.min(100, 100 - (avgVariance / MAX_EXPECTED_VARIANCE) * 100)
+    Math.min(100, 100 * Math.exp(-avgVariance / 500))
   );
 
-  console.log('📊 [Averaging] Results:', {
-    photoCount,
-    avgVariance: avgVariance.toFixed(2),
-    maxVariance: maxVariance.toFixed(2),
-    consistencyScore: consistencyScore.toFixed(1),
-    problematicCount: problematicIndices.length,
+  // Log the exponential formula calculation
+  console.log('\n🧮 [EXPONENTIAL FORMULA]:');
+  console.log('  Formula: score = 100 * e^(-variance / 500)');
+  console.log('  Calculation:', {
+    avgVariance: avgVariance.toFixed(2) + 'px²',
+    exponent: `-(${avgVariance.toFixed(2)} / 500) = ${(-avgVariance / 500).toFixed(4)}`,
+    eToThePower: `e^${(-avgVariance / 500).toFixed(4)} = ${Math.exp(-avgVariance / 500).toFixed(4)}`,
+    finalScore: `100 * ${Math.exp(-avgVariance / 500).toFixed(4)} = ${consistencyScore.toFixed(1)}`,
   });
 
-  // Log top 5 highest variance landmarks
+
+  // ============================================
+  // 🔍 DIAGNOSTIC LOGGING - VARIANCE BREAKDOWN
+  // ============================================
+  console.log('\n════════════════════════════════════════');
+  console.log('📊 [VARIANCE ANALYSIS] Results');
+  console.log('════════════════════════════════════════');
+  console.log('📊 Overall Metrics:', {
+    photoCount,
+    avgVariance: avgVariance.toFixed(2) + 'px²',
+    maxVariance: maxVariance.toFixed(2) + 'px²',
+    consistencyScore: consistencyScore.toFixed(1) + '/100',
+    problematicCount: problematicIndices.length,
+    threshold: MAX_EXPECTED_VARIANCE + 'px²',
+  });
+
+  // Log top 5 highest variance landmarks (relevant only)
   const topVariances = perLandmarkVariance
     .map((v, i) => ({ index: i, variance: v }))
+    .filter(t => RELEVANT_LANDMARK_INDICES.has(t.index))
     .sort((a, b) => b.variance - a.variance)
     .slice(0, 5);
 
@@ -202,15 +297,17 @@ export function averageLandmarks(
     topVariances.map(t => `L${t.index}=${t.variance.toFixed(2)}`).join(', ')
   );
 
-  // Log variance distribution
+  // Log variance distribution (relevant landmarks only)
   const varianceRanges = {
-    perfect: perLandmarkVariance.filter(v => v < 10).length,
-    good: perLandmarkVariance.filter(v => v >= 10 && v < 50).length,
-    acceptable: perLandmarkVariance.filter(v => v >= 50 && v < 100).length,
-    problematic: perLandmarkVariance.filter(v => v >= 100).length,
+    perfect: relevantVariances.filter(v => v < 10).length,
+    good: relevantVariances.filter(v => v >= 10 && v < 50).length,
+    acceptable: relevantVariances.filter(v => v >= 50 && v < 100).length,
+    problematic: relevantVariances.filter(v => v >= 100).length,
+    totalRelevant: relevantVariances.length,
   };
 
-  console.log('📈 [Averaging] Variance distribution:', varianceRanges);
+  console.log('\n📈 Variance Distribution:', varianceRanges);
+  console.log('════════════════════════════════════════\n');
 
   return {
     landmarks: averagedLandmarks,
@@ -241,8 +338,14 @@ export function isConsistencyAcceptable(result: AveragedResult): boolean {
 export function getConsistencyLevel(
   score: number
 ): 'excellent' | 'good' | 'acceptable' | 'poor' {
-  if (score >= 90) return 'excellent';
-  if (score >= 75) return 'good';
-  if (score >= 60) return 'acceptable';
+  // Updated thresholds for exponential scoring system (scaling factor = 500)
+  // These thresholds match the natural distribution of exponential decay:
+  // - excellent (85+): variance < 80px² (very minimal differences)
+  // - good (70-84): variance 80-175px² (small acceptable variations)
+  // - acceptable (50-69): variance 175-350px² (medium differences, e.g. different expressions)
+  // - poor (<50): variance > 350px² (significant differences or different people)
+  if (score >= 85) return 'excellent';
+  if (score >= 70) return 'good';
+  if (score >= 50) return 'acceptable';
   return 'poor';
 }

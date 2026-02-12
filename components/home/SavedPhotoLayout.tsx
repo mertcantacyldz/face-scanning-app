@@ -4,12 +4,12 @@
  * Supports both single photo (legacy) and multi-photo modes
  */
 
+import type { MultiPhotoMetadata } from '@/lib/photo-storage';
 import { useTranslation } from 'react-i18next';
 import { ScrollView, View } from 'react-native';
 import { PremiumPromotionCard } from './PremiumPromotionCard';
 import { SavedPhotoCard } from './SavedPhotoCard';
 import { StatusPill } from './StatusPill';
-import type { MultiPhotoMetadata } from '@/lib/photo-storage';
 
 // ============================================
 // TYPES
@@ -34,8 +34,6 @@ export interface SavedPhotoLayoutProps {
   tabBarHeight: number;
   /** Callback to view analysis results */
   onViewResults: () => void;
-  /** Callback to change/retake photo */
-  onChangePhoto: () => void;
   /** Callback to start new scan */
   onNewScan: () => void;
   /** Callback for premium upgrade */
@@ -56,7 +54,6 @@ export function SavedPhotoLayout({
   isPremium,
   tabBarHeight,
   onViewResults,
-  onChangePhoto,
   onNewScan,
   onUpgradePress,
 }: SavedPhotoLayoutProps) {
@@ -85,7 +82,6 @@ export function SavedPhotoLayout({
         consistencyScore={consistencyScore}
         faceAnalysisId={faceAnalysisId}
         onViewResults={onViewResults}
-        onChangePhoto={onChangePhoto}
         onNewScan={onNewScan}
       />
 
