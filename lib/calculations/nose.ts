@@ -422,12 +422,13 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
     noseAxisVector.dx * midlineVector.dy -
     noseAxisVector.dy * midlineVector.dx;
 
+  // Selfie (aynalı) varsayımı: pozitif crossProduct = ekranda sağa eğik = kişinin sağına eğik
   const geometricTiltDirection =
     Math.abs(geometricTilt) < 3
       ? 'STRAIGHT'
       : crossProduct > 0
-        ? 'TILTED_RIGHT' // Kişinin sağına eğik
-        : 'TILTED_LEFT'; // Kişinin soluna eğik
+        ? 'TILTED_RIGHT' // Kişinin sağına eğik (ekranda sağa kayık)
+        : 'TILTED_LEFT'; // Kişinin soluna eğik (ekranda sola kayık)
 
   console.log('📐 [v2.0] GEOMETRIC TILT:');
   console.log('  Nose axis vector:', noseAxisVector.dx.toFixed(2), noseAxisVector.dy.toFixed(2));
@@ -490,13 +491,13 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
   const dy = noseTip.y - bridge.y;
   const rotationAngle = Math.atan2(dx, dy) * (180 / Math.PI);
 
-  // Direction: positive = tilted right (from person's perspective)
+  // Selfie (aynalı) varsayımı: pozitif açı = ekranda sola eğik = kişinin soluna eğik
   const rotationDirection: 'TILTED_LEFT' | 'TILTED_RIGHT' | 'STRAIGHT' =
     Math.abs(rotationAngle) < 3
       ? 'STRAIGHT'
       : rotationAngle > 0
-        ? 'TILTED_RIGHT'
-        : 'TILTED_LEFT';
+        ? 'TILTED_LEFT'
+        : 'TILTED_RIGHT';
 
   // CONTINUOUS SCORING: Smooth linear interpolation
   const rotationScore = calculateRotationScore(rotationAngle);

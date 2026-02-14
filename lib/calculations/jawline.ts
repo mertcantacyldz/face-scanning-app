@@ -3,7 +3,7 @@
 // AI will ONLY interpret these pre-calculated values
 
 import type { Point3D } from '../geometry';
-import { distance2D } from '../geometry';
+import { distance2D, getDirection } from '../geometry';
 
 export interface JawlineCalculations {
   // === CHIN CENTERING (30% - most critical) ===
@@ -118,10 +118,9 @@ export function calculateJawlineMetrics(landmarks: Point3D[]): JawlineCalculatio
   const chinDeviation = chinTip.x - faceCenterX;
   const chinDeviationRatio = (Math.abs(chinDeviation) / faceWidth) * 100;
 
-  // Kişinin kendi perspektifinden: ekranda sağ = kişinin solu
+  // Selfie (aynalı) varsayımı: pozitif = ekranda sağ = kişinin sağı
   const chinDirection: 'LEFT' | 'RIGHT' | 'CENTER' =
-    Math.abs(chinDeviation) < 2 ? 'CENTER' :
-      chinDeviation > 0 ? 'LEFT' : 'RIGHT';
+    getDirection(chinDeviation, 2);
 
   console.log('🔍 DEBUG CHIN CALCULATION:');
   console.log('  chinTip.x:', chinTip.x.toFixed(2));

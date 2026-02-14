@@ -170,10 +170,14 @@ export function getCenterX(leftPoint: Point, rightPoint: Point): number {
 }
 
 /**
- * Determine direction of deviation from center (from subject's perspective)
- * @param value Deviation value (positive = subject's LEFT, negative = subject's RIGHT)
+ * Determine direction of deviation from center (from subject's perspective).
+ *
+ * SELFIE CONVENTION: Tüm fotoğraflar aynalı selfie varsayılır.
+ * Aynalı selfie'de ekranda sağ (pozitif değer) = kişinin sağı.
+ *
+ * @param value Deviation value (positive = screen right, negative = screen left)
  * @param threshold Threshold for considering it centered (in pixels)
- * @returns Direction label from subject's own perspective (mirror view)
+ * @returns Direction label from subject's anatomical perspective
  */
 export function getDirection(
   value: number,
@@ -182,8 +186,8 @@ export function getDirection(
   if (Math.abs(value) < threshold) {
     return 'CENTER';
   }
-  // Kişinin kendi perspektifinden: ekranda sağ = kişinin solu
-  return value > 0 ? 'LEFT' : 'RIGHT';
+  // Selfie (aynalı) varsayımı: ekranda sağ (pozitif) = kişinin sağı
+  return value > 0 ? 'RIGHT' : 'LEFT';
 }
 
 /**
