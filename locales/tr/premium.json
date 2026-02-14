@@ -4,7 +4,7 @@
     "subtitle": "Tüm özelliklerin kilidini aç",
     "featuresTitle": "Premium Özellikleri",
     "features": {
-      "fullAnalysis": "6 bölge tam AI analizi",
+      "fullAnalysis": "5 bölge tam AI analizi",
       "detailedScore": "Detaylı çekicilik skoru",
       "allExercises": "Tüm egzersiz adımları",
       "progressTracking": "İlerleme takibi & grafikler",
@@ -51,7 +51,7 @@
     "subtitle": "\"{{feature}}\" için Premium üyelik gerekli",
     "benefitsTitle": "Premium ile neler kazanırsın:",
     "benefits": {
-      "detailedAnalysis": "6 bölge detaylı AI analizi",
+      "detailedAnalysis": "5 bölge detaylı AI analizi",
       "personalizedExercises": "Kişiselleştirilmiş egzersizler",
       "progressTracking": "İlerleme takibi & grafikler",
       "unlimitedHistory": "Sınırsız analiz geçmişi"

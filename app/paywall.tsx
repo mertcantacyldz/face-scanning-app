@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
-import {
-  View,
-  ScrollView,
-  Pressable,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
-import { useTranslation } from 'react-i18next';
-import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
-import { Ionicons } from '@expo/vector-icons';
+import { Text } from '@/components/ui/text';
 import { usePremium } from '@/hooks/use-premium';
 import { calculateSavings } from '@/lib/revenuecat';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const FEATURE_KEYS = [
   { iconName: 'search-outline', key: 'fullAnalysis' },
@@ -22,7 +22,7 @@ const FEATURE_KEYS = [
   { iconName: 'barbell-outline', key: 'allExercises' },
   { iconName: 'trending-up-outline', key: 'progressTracking' },
   { iconName: 'calendar-outline', key: 'unlimitedHistory' },
-  { iconName: 'target-outline', key: 'personalizedRecommendations' },
+  { iconName: 'pie-chart-outline', key: 'personalizedRecommendations' },
 ];
 
 const PaywallScreen = () => {
@@ -35,6 +35,10 @@ const PaywallScreen = () => {
     isLoading,
   } = usePremium();
 
+  console.log('💲 Paywall Screen - Monthly Package:', monthlyPackage ? 'Price: ' + monthlyPackage.product.priceString : 'UNDEFINED');
+  console.log('💲 Paywall Screen - Yearly Package:', yearlyPackage ? 'Price: ' + yearlyPackage.product.priceString : 'UNDEFINED');
+  console.log('💲 Paywall Screen - Is Loading:', isLoading);
+
   const [selectedPackage, setSelectedPackage] = useState<'yearly' | 'monthly'>('yearly');
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -44,6 +48,12 @@ const PaywallScreen = () => {
 
   const handlePurchase = async () => {
     const pkg = selectedPackage === 'yearly' ? yearlyPackage : monthlyPackage;
+    console.log('🛒 Attempting purchase:', {
+      selectedPackage,
+      pkgExists: !!pkg,
+      pkgIdentifier: pkg?.identifier
+    });
+
     if (!pkg) {
       Alert.alert(t('paywall.alerts.noPackageTitle'), t('paywall.alerts.noPackageMessage'));
       return;
@@ -82,6 +92,28 @@ const PaywallScreen = () => {
     return (
       <View className="flex-1 bg-background items-center justify-center">
         <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
+
+  // If loading is done but packages are missing (e.g. network error)
+  if (!monthlyPackage && !yearlyPackage) {
+    return (
+      <View className="flex-1 bg-background items-center justify-center p-6">
+        <Ionicons name="cloud-offline-outline" size={64} color="#8B5CF6" style={{ marginBottom: 16 }} />
+        <Text className="text-xl font-bold text-center mb-2">
+          {t('paywall.alerts.noPackageTitle')}
+        </Text>
+        <Text className="text-muted-foreground text-center mb-6">
+          {t('paywall.alerts.noPackageMessage')}
+        </Text>
+
+        <Pressable
+          onPress={() => router.back()}
+          className="bg-primary/10 px-6 py-3 rounded-full"
+        >
+          <Text className="text-primary font-bold">{t('common.close', { defaultValue: 'Close' })}</Text>
+        </Pressable>
       </View>
     );
   }
@@ -136,11 +168,10 @@ const PaywallScreen = () => {
             className="mb-3"
           >
             <Card
-              className={`p-5 border-2 ${
-                selectedPackage === 'yearly'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border bg-card'
-              }`}
+              className={`p-5 border-2 ${selectedPackage === 'yearly'
+                ? 'border-primary bg-primary/5'
+                : 'border-border bg-card'
+                }`}
             >
               {/* Best Value Badge */}
               <View className="absolute -top-3 left-4 bg-primary px-3 py-1 rounded-full">
@@ -172,11 +203,10 @@ const PaywallScreen = () => {
 
               {/* Selection indicator */}
               <View
-                className={`absolute top-5 right-5 w-6 h-6 rounded-full border-2 items-center justify-center ${
-                  selectedPackage === 'yearly'
-                    ? 'border-primary bg-primary'
-                    : 'border-muted-foreground'
-                }`}
+                className={`absolute top-5 right-5 w-6 h-6 rounded-full border-2 items-center justify-center ${selectedPackage === 'yearly'
+                  ? 'border-primary bg-primary'
+                  : 'border-muted-foreground'
+                  }`}
               >
                 {selectedPackage === 'yearly' && (
                   <Ionicons name="checkmark" size={14} color="#FFFFFF" />
@@ -190,11 +220,10 @@ const PaywallScreen = () => {
             onPress={() => setSelectedPackage('monthly')}
           >
             <Card
-              className={`p-5 border-2 ${
-                selectedPackage === 'monthly'
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border bg-card'
-              }`}
+              className={`p-5 border-2 ${selectedPackage === 'monthly'
+                ? 'border-primary bg-primary/5'
+                : 'border-border bg-card'
+                }`}
             >
               <View className="flex-row items-center justify-between pr-10">
                 <View>
@@ -212,11 +241,10 @@ const PaywallScreen = () => {
 
               {/* Selection indicator */}
               <View
-                className={`absolute top-5 right-5 w-6 h-6 rounded-full border-2 items-center justify-center ${
-                  selectedPackage === 'monthly'
-                    ? 'border-primary bg-primary'
-                    : 'border-muted-foreground'
-                }`}
+                className={`absolute top-5 right-5 w-6 h-6 rounded-full border-2 items-center justify-center ${selectedPackage === 'monthly'
+                  ? 'border-primary bg-primary'
+                  : 'border-muted-foreground'
+                  }`}
               >
                 {selectedPackage === 'monthly' && (
                   <Ionicons name="checkmark" size={14} color="#FFFFFF" />
@@ -254,9 +282,8 @@ const PaywallScreen = () => {
         <Pressable
           onPress={handlePurchase}
           disabled={purchasing || restoring}
-          className={`py-4 rounded-xl items-center mb-3 ${
-            purchasing || restoring ? 'bg-primary/50' : 'bg-primary'
-          }`}
+          className={`py-4 rounded-xl items-center mb-3 ${purchasing || restoring ? 'bg-primary/50' : 'bg-primary'
+            }`}
         >
           {purchasing ? (
             <ActivityIndicator color="white" />

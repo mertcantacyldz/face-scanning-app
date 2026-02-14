@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePremium } from '@/hooks/use-premium';
+import { clearAllUserData } from '@/lib/account-deletion';
 import { getOrCreateDeviceId } from '@/lib/device-id-with-fallback';
 import { getFreeAnalysisStatus } from '@/lib/premium-database';
 import { supabase } from '@/lib/supabase';
@@ -48,6 +49,7 @@ export default function ProfileScreen() {
   const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Statistics state
   const [totalAnalyses, setTotalAnalyses] = useState(0);
@@ -174,6 +176,57 @@ export default function ProfileScreen() {
     } finally {
       setRestoring(false);
     }
+  };
+
+  const handleDeleteData = () => {
+    Alert.alert(
+      t('deleteData.confirmTitle'),
+      t('deleteData.confirmMessage'),
+      [
+        { text: t('deleteData.cancelButton'), style: 'cancel' },
+        {
+          text: t('deleteData.confirmButton'),
+          style: 'destructive',
+          onPress: () => {
+            // Second confirmation — point of no return
+            Alert.alert(
+              t('deleteData.finalConfirmTitle'),
+              t('deleteData.finalConfirmMessage'),
+              [
+                { text: t('deleteData.cancelButton'), style: 'cancel' },
+                {
+                  text: t('deleteData.confirmButton'),
+                  style: 'destructive',
+                  onPress: async () => {
+                    setDeleting(true);
+                    const result = await clearAllUserData();
+                    setDeleting(false);
+
+                    if (result.success) {
+                      Alert.alert(
+                        t('deleteData.successTitle'),
+                        t('deleteData.successMessage'),
+                        [
+                          {
+                            text: 'OK',
+                            onPress: () => router.replace('/'),
+                          },
+                        ]
+                      );
+                    } else {
+                      Alert.alert(
+                        t('deleteData.errorTitle'),
+                        t('deleteData.errorMessage')
+                      );
+                    }
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
   };
 
   const onRefresh = () => {
@@ -547,7 +600,7 @@ export default function ProfileScreen() {
           <Button
             onPress={handleSignOut}
             variant="outline"
-            className="h-14 border-destructive/30 bg-destructive/10 mb-8"
+            className="h-14 border-destructive/30 bg-destructive/10 mb-4"
           >
             <Ionicons name="log-out" size={20} className="text-destructive" />
             <Text className="text-destructive font-semibold ml-2">
@@ -556,13 +609,34 @@ export default function ProfileScreen() {
           </Button>
         )}
 
+        {/* Clear My Data — disabled for v1.0, enable if Apple requests it */}
+        {/* <Button
+          onPress={handleDeleteData}
+          disabled={deleting}
+          variant="outline"
+          className="h-14 border-destructive bg-destructive/5 mb-8"
+        >
+          {deleting ? (
+            <>
+              <ActivityIndicator size="small" color="#EF4444" />
+              <Text className="text-destructive font-semibold ml-2">
+                {t('deleteData.loading')}
+              </Text>
+            </>
+          ) : (
+            <>
+              <Ionicons name="trash-outline" size={20} color="#EF4444" />
+              <Text className="text-destructive font-semibold ml-2">
+                {t('deleteData.button')}
+              </Text>
+            </>
+          )}
+        </Button> */}
+
         {/* App Info */}
         <View className="items-center">
           <Text className="text-muted-foreground">
             FaceLoom v1.0
-          </Text>
-          <Text className="text-muted-foreground/70 text-xs mt-1">
-            Üyelik Tarihi: {new Date(profile.created_at).toLocaleDateString('tr-TR')}
           </Text>
         </View>
 

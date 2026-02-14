@@ -59,5 +59,19 @@
     "noSubscriptionMessage": "No active subscription found.",
     "errorTitle": "Error",
     "errorMessage": "An error occurred while restoring purchases."
+  },
+  "deleteData": {
+    "button": "Clear My Data",
+    "confirmTitle": "Clear My Data",
+    "confirmMessage": "All your analyses, exercise history, and profile data will be permanently deleted. This action cannot be undone.",
+    "finalConfirmTitle": "Are you sure?",
+    "finalConfirmMessage": "This is your last chance. All data will be permanently deleted and a fresh session will start.",
+    "confirmButton": "Delete Permanently",
+    "cancelButton": "Cancel",
+    "successTitle": "Data Cleared",
+    "successMessage": "All your data has been permanently deleted. A fresh session will start now.",
+    "errorTitle": "Error",
+    "errorMessage": "Failed to delete data. Please try again.",
+    "loading": "Deleting data..."
   }
 }

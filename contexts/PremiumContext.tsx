@@ -1,19 +1,18 @@
-import {
-  checkPremiumStatus,
-  getOfferings,
-  initializeRevenueCat,
-  logoutRevenueCat,
-  purchasePackage,
-  restorePurchases
-} from '@/lib/revenuecat';
-import { supabase } from '@/lib/supabase';
+import { getOrCreateDeviceId } from '@/lib/device-id-with-fallback';
 import {
   checkDatabasePremiumStatus,
   getFreeAnalysisStatus,
   incrementFreeAnalysisCount,
   setFreeAnalysisRegion
 } from '@/lib/premium-database';
-import { getOrCreateDeviceId } from '@/lib/device-id-with-fallback';
+import {
+  checkPremiumStatus,
+  getOfferings,
+  initializeRevenueCat,
+  purchasePackage,
+  restorePurchases
+} from '@/lib/revenuecat';
+import { supabase } from '@/lib/supabase';
 import type { PremiumContextValue } from '@/types/premium';
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
@@ -46,6 +45,18 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
   // Get monthly and yearly packages from offerings
   const monthlyPackage = offerings?.monthly ?? null;
   const yearlyPackage = offerings?.annual ?? null;
+
+  useEffect(() => {
+    if (offerings) {
+      console.log('📦 PremiumContext - Offerings Updated:', {
+        hasMonthly: !!monthlyPackage,
+        hasYearly: !!yearlyPackage,
+        monthlyID: monthlyPackage?.identifier,
+        yearlyID: yearlyPackage?.identifier,
+        allOfferings: Object.keys(offerings),
+      });
+    }
+  }, [offerings, monthlyPackage, yearlyPackage]);
 
   // Check combined premium status from both RevenueCat and Database
   const checkCombinedPremiumStatus = useCallback(async (userId: string): Promise<{ combined: boolean; revenueCat: boolean; database: boolean }> => {
@@ -160,6 +171,12 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
   const refreshPremiumStatus = useCallback(async (): Promise<boolean> => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
+
+      // Always try to refresh offerings when refreshing status
+      console.log('🔄 Refreshing offerings...');
+      const currentOfferings = await getOfferings();
+      setOfferings(currentOfferings);
+
       if (!user) {
         console.log('🔄 Refresh: No user, setting all to false');
         setIsRevenueCatPremium(false);

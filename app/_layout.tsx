@@ -62,7 +62,8 @@ export default function RootLayout() {
               <Stack screenOptions={{ headerShown: false, animation: 'fade' }}>
                 <Stack.Screen name="index" options={{ headerShown: false }} />
                 <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                {/* Auth screens disabled for v1.0 — anonymous-only mode */}
+                {/* <Stack.Screen name="(auth)" options={{ headerShown: false }} /> */}
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen name="paywall" options={{ presentation: 'modal' }} />
                 <Stack.Screen name="premium/subscribe" options={{ presentation: 'modal' }} />

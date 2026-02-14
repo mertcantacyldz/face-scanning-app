@@ -59,5 +59,19 @@
     "noSubscriptionMessage": "Aktif bir abonelik bulunamadı.",
     "errorTitle": "Hata",
     "errorMessage": "Geri yükleme sırasında bir hata oluştu."
+  },
+  "deleteData": {
+    "button": "Verilerimi Sil",
+    "confirmTitle": "Verilerimi Sil",
+    "confirmMessage": "Tüm analizleriniz, egzersiz geçmişiniz ve profil verileriniz kalıcı olarak silinecektir. Bu işlem geri alınamaz.",
+    "finalConfirmTitle": "Emin misiniz?",
+    "finalConfirmMessage": "Bu son şansınız. Tüm verileriniz kalıcı olarak silinecek ve yeni bir oturum başlayacaktır.",
+    "confirmButton": "Kalıcı Olarak Sil",
+    "cancelButton": "İptal",
+    "successTitle": "Veriler Silindi",
+    "successMessage": "Tüm verileriniz kalıcı olarak silindi. Yeni bir oturum başlayacak.",
+    "errorTitle": "Hata",
+    "errorMessage": "Veriler silinemedi. Lütfen tekrar deneyin.",
+    "loading": "Veriler siliniyor..."
   }
 }

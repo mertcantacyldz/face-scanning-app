@@ -4,7 +4,7 @@
     "subtitle": "Unlock all features",
     "featuresTitle": "Premium Features",
     "features": {
-      "fullAnalysis": "6-region full AI analysis",
+      "fullAnalysis": "5-region full AI analysis",
       "detailedScore": "Detailed attractiveness score",
       "allExercises": "All exercise steps",
       "progressTracking": "Progress tracking & charts",
@@ -51,7 +51,7 @@
     "subtitle": "\"{{feature}}\" requires Premium membership",
     "benefitsTitle": "What you get with Premium:",
     "benefits": {
-      "detailedAnalysis": "6-region detailed AI analysis",
+      "detailedAnalysis": "5-region detailed AI analysis",
       "personalizedExercises": "Personalized exercises",
       "progressTracking": "Progress tracking & charts",
       "unlimitedHistory": "Unlimited analysis history"
