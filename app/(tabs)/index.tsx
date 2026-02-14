@@ -154,7 +154,7 @@ export default function HomeScreen() {
 
   // State determination
   const hasStoredPhoto = !!savedPhotoUri;
-  const hasMultiPhoto = !!savedMultiPhotos && savedMultiPhotos.photos.length === 3;
+  const hasMultiPhoto = !!savedMultiPhotos && savedMultiPhotos.photos.length >= 1;
   const isMultiPhotoProcessing = multiPhotoProcessingStatus !== 'idle' && multiPhotoProcessingStatus !== 'complete';
 
   // Handlers

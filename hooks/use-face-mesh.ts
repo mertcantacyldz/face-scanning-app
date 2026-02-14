@@ -1050,6 +1050,11 @@ export function useFaceMesh() {
           setSavedPhotoDate(new Date().toISOString());
         }
 
+        // ✅ FIX: Eski multi-photo verisini AsyncStorage'dan da sil
+        // Yoksa loadAnyAnalysisPhoto() eski multi-photo'yu bulup onu döndürüyor
+        await deleteMultiPhotoAnalysis();
+        console.log('🗑️ [SINGLE-PHOTO] Eski multi-photo verisi silindi');
+
         // Update state
         setSavedPhotoAnalysisId(faceAnalysisId);
         setSavedMultiPhotos(null); // Clear multi-photo state so we show single-photo card
