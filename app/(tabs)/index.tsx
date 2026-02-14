@@ -83,13 +83,13 @@ export default function HomeScreen() {
   useEffect(() => {
     const fetchProfile = async () => {
       if (!session?.user) {
-        console.log('No session yet, waiting...');
+        console.log('[HOME] No session yet, waiting...');
         return;
       }
 
       try {
         const userId = session.user.id;
-        console.log('Fetching profile for user:', userId);
+        console.log('[HOME] Fetching profile for user:', userId);
 
         const { data: profileData, error } = await supabase
           .from('profiles')
@@ -98,10 +98,22 @@ export default function HomeScreen() {
           .single();
 
         if (profileData) {
-          console.log('Profile loaded successfully:', profileData);
+          console.log('[HOME] Profile loaded:', JSON.stringify({
+            onboarding_completed: profileData.onboarding_completed,
+            full_name: profileData.full_name,
+            gender: profileData.gender,
+          }));
+
+          // 🛡️ Fallback onboarding guard: if profile says onboarding not done, redirect
+          if (!profileData.onboarding_completed || !profileData.full_name || profileData.full_name === 'Kullanıcı') {
+            console.log('🚨 [HOME] Onboarding not completed! Redirecting to onboarding...');
+            router.replace('/(onboarding)/welcome');
+            return;
+          }
+
           setProfile(profileData);
         } else {
-          console.log('Profile not found, error:', error);
+          console.log('[HOME] Profile not found, error:', error);
           setProfile({
             id: userId,
             full_name: t('welcome.defaultUser', { ns: 'common' }),
@@ -109,7 +121,7 @@ export default function HomeScreen() {
           });
         }
       } catch (error) {
-        console.error('Profil yükleme hatası:', error);
+        console.error('[HOME] Profil yükleme hatası:', error);
         if (session?.user) {
           setProfile({
             id: session.user.id,
