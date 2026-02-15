@@ -28,7 +28,9 @@
   "permissions": {
     "title": "İzin Gerekli",
     "camera": "Kamera kullanmak için ayarlardan izin vermeniz gerekiyor.",
+    "cameraRationale": "Yüz analizi yapabilmek için kameranıza erişmemiz gerekiyor.",
     "gallery": "Fotoğraflara erişmek için ayarlardan izin vermeniz gerekiyor.",
+    "galleryRationale": "Galerinizden fotoğraf seçebilmek için fotoğraf kütüphanenize erişmemiz gerekiyor.",
     "openSettings": "Ayarları Aç"
   }
 }

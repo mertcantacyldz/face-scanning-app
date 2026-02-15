@@ -1,0 +1,4 @@
+{
+    "NSCameraUsageDescription": "FaceLoom uses your camera to capture photos for face analysis.",
+    "NSPhotoLibraryUsageDescription": "FaceLoom needs access to your photo library to select photos for face analysis."
+}

@@ -578,6 +578,20 @@ export function useFaceMesh() {
 
   // Kamera iznini kontrol et
   const checkCameraPermission = async () => {
+    // Önce mevcut durumu kontrol et
+    const { status: currentStatus, canAskAgain } = await Camera.getCameraPermissionsAsync();
+
+    // Eğer henüz sorulmadıysa (undetermined), kullanıcıya neden istediğimizi açıklayalım
+    if (currentStatus === 'undetermined') {
+      await new Promise<void>((resolve) => {
+        Alert.alert(
+          t('permissions.title', { ns: 'common' }),
+          t('permissions.cameraRationale', { ns: 'common', defaultValue: 'Yüz analizi yapabilmek için kameranıza erişmemiz gerekiyor.' }),
+          [{ text: t('buttons.continue', { ns: 'common' }), onPress: () => resolve() }]
+        );
+      });
+    }
+
     const { status } = await Camera.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(
@@ -595,6 +609,20 @@ export function useFaceMesh() {
 
   // Galeri iznini kontrol et
   const checkGalleryPermission = async () => {
+    // Önce mevcut durumu kontrol et
+    const { status: currentStatus } = await ImagePicker.getMediaLibraryPermissionsAsync();
+
+    // Eğer henüz sorulmadıysa (undetermined), kullanıcıya neden istediğimizi açıklayalım
+    if (currentStatus === 'undetermined') {
+      await new Promise<void>((resolve) => {
+        Alert.alert(
+          t('permissions.title', { ns: 'common' }),
+          t('permissions.galleryRationale', { ns: 'common', defaultValue: 'Galerinizden fotoğraf seçebilmek için fotoğraf kütüphanenize erişmemiz gerekiyor.' }),
+          [{ text: t('buttons.continue', { ns: 'common' }), onPress: () => resolve() }]
+        );
+      });
+    }
+
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(

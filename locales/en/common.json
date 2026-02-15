@@ -28,7 +28,9 @@
   "permissions": {
     "title": "Permission Required",
     "camera": "You need to grant camera permission from settings.",
+    "cameraRationale": "We need to access your camera to perform face analysis.",
     "gallery": "You need to grant photo library permission from settings.",
+    "galleryRationale": "We need to access your photo library to select photos for face analysis.",
     "openSettings": "Open Settings"
   }
 }

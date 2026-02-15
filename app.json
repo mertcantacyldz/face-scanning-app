@@ -19,7 +19,8 @@
       }
     },
     "locales": {
-      "tr": "./locales/ios/tr.json"
+      "tr": "./locales/ios/tr.json",
+      "en": "./locales/ios/en.json"
     },
     "android": {
       "adaptiveIcon": {
