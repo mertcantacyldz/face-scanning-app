@@ -4,11 +4,11 @@
 // and regional feature integration.
 
 import {
-  SCORING_WEIGHTS,
-  PENALTY_CONFIG,
   CONFIDENCE_THRESHOLDS,
-  SCORE_LABELS,
-  SMOOTH_SCORING,
+  PENALTY_CONFIG,
+  SCORE_CALIBRATION,
+  SCORING_WEIGHTS,
+  SMOOTH_SCORING
 } from './constants/scoring';
 
 export interface Landmark {
@@ -475,6 +475,12 @@ export function calculateAttractivenessScore(
 
     overallScore = weightedAverage;
   }
+
+  // Apply calibration (Score Dampening)
+  const rawScore = overallScore;
+  overallScore = overallScore * SCORE_CALIBRATION.SCORE_MULTIPLIER + SCORE_CALIBRATION.SCORE_OFFSET;
+
+  console.log(`📉 Score Calibration: ${rawScore.toFixed(2)} -> ${overallScore.toFixed(2)} (x${SCORE_CALIBRATION.SCORE_MULTIPLIER})`);
 
   // Round and clamp score
   overallScore = Math.min(Math.max(Math.round(overallScore * 10) / 10, 0), 10);

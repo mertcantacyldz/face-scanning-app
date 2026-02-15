@@ -155,3 +155,18 @@ export const SMOOTH_SCORING = {
         // > 2.0x tolerance = severe (0-3)
     },
 } as const;
+
+// ============================================
+// SCORE CALIBRATION
+// ============================================
+
+export const SCORE_CALIBRATION = {
+    // Global score multiplier to calibrate overall results
+    // Example: 0.9125 (9.1/10) reduces scores by ~8.75%
+    // 8.0 -> 7.3
+    // 7.0 -> 6.38
+    SCORE_MULTIPLIER: 0.9125,
+
+    // Optional offset to add/subtract after multiplication
+    SCORE_OFFSET: 0,
+} as const;

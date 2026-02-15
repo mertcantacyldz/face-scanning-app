@@ -80,7 +80,7 @@ export function RegionProgressCard({
             {latestScore !== null ? (
               <View className="flex-row items-center">
                 <Text className={`text-2xl font-bold ${scoreColor}`}>
-                  {latestScore}
+                  {latestScore.toFixed(1)}
                 </Text>
                 <Text className="text-sm text-muted-foreground">/10</Text>
 
@@ -128,7 +128,7 @@ export function RegionProgressCard({
           </View>
         )}
       </Card>
-    </Pressable>
+    </Pressable >
   );
 }
 
