@@ -50,7 +50,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
  * TEST MODE: Skip AI call, only show TypeScript calculations
  * Set to true to avoid spending money on API calls during development
  */
-const TEST_MODE = true;
+const TEST_MODE = false;
 
 // ============================================
 // TYPES
