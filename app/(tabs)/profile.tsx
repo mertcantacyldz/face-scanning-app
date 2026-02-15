@@ -358,10 +358,10 @@ export default function ProfileScreen() {
               <View className="flex-row gap-3 mt-2">
                 <Button
                   onPress={updateProfile}
-                  className="flex-1 bg-success"
+                  className=" w-1/2 bg-success"
                 >
                   <Ionicons name="checkmark" size={20} color="white" />
-                  <Text className="text-success-foreground font-semibold ml-2">{t('editProfile.saveButton')}</Text>
+                  <Text className="text-success-foreground font-semibold ml-1">{t('editProfile.saveButton')}</Text>
                 </Button>
                 <Button
                   onPress={() => {
@@ -370,7 +370,7 @@ export default function ProfileScreen() {
                     setGender(profile.gender);
                   }}
                   variant="outline"
-                  className="flex-1"
+                  className="w-1/2 "
                 >
                   <Text className="text-muted-foreground">{t('editProfile.cancelButton')}</Text>
                 </Button>
@@ -491,7 +491,7 @@ export default function ProfileScreen() {
         <View className="flex flex-col gap-4 mb-6">
           {!isPremium && (
             <Button
-              onPress={() => router.push('/premium/subscribe')}
+              onPress={() => router.push('/paywall')}
               className="h-16 bg-warning"
             >
               <Ionicons name="star" size={24} color="white" />

@@ -3,7 +3,7 @@
  * Replaces template variables in region prompts with calculated metrics
  */
 
-import { METRIC_TRANSLATIONS, type SupportedLanguage, type FaceRegion } from '@/lib/face-prompts';
+import { METRIC_TRANSLATIONS, type FaceRegion, type SupportedLanguage } from '@/lib/face-prompts';
 
 // ============================================
 // TYPE DEFINITIONS
@@ -536,9 +536,18 @@ export function replaceLanguageLabels(prompt: string, language: SupportedLanguag
 export function preparePromptForRegion(
   region: FaceRegion,
   calculatedMetrics: any,
-  language: SupportedLanguage
+  language: SupportedLanguage,
+  gender?: 'female' | 'male' | 'other' | null
 ): string {
   let finalPrompt = region.prompt;
+
+  // Replace gender placeholder
+  const genderText = gender === 'female' ? (language === 'tr' ? 'Kadın' : 'Female')
+    : gender === 'male' ? (language === 'tr' ? 'Erkek' : 'Male')
+      : gender === 'other' ? (language === 'tr' ? 'Diğer / Nötr' : 'Other / Neutral')
+        : (language === 'tr' ? 'Belirtilmemiş' : 'Not specified');
+
+  finalPrompt = finalPrompt.replace(/{gender}/g, genderText);
 
   // Replace metrics based on region
   switch (region.id) {

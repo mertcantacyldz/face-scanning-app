@@ -276,7 +276,7 @@ const AnalysisScreen = () => {
       // 5. Prepare prompt using extracted utility
       const currentLang = (i18n.language || 'en') as SupportedLanguage;
       const finalPrompt = calculatedMetrics
-        ? preparePromptForRegion(region, calculatedMetrics, currentLang)
+        ? preparePromptForRegion(region, calculatedMetrics, currentLang, userGender)
         : region.prompt;
 
       console.log('📝 Final prompt prepared for', region.id);

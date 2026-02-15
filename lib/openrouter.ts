@@ -38,6 +38,7 @@ export async function analyzeFaceRegion(
     console.log('🚀 Calling Supabase Edge Function: analyze-face-region');
     console.log('Region:', request.region);
     console.log('Language:', request.language || 'en');
+    console.log('📝 AI Prompt:', request.customPrompt);
 
     // Get current user session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -92,6 +93,7 @@ export async function analyzeFaceRegion(
     if (data && data.success) {
       console.log('✅ Analysis completed successfully');
       console.log('Tokens used:', data.tokens_used);
+      console.log('🤖 AI Analysis Response:', data.analysis);
 
       return {
         success: true,

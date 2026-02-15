@@ -111,6 +111,7 @@ export interface FaceRegion {
   prompt: string;
 }
 
+
 export const FACE_REGIONS: FaceRegion[] = [
   {
     id: 'eyebrows',
@@ -203,7 +204,7 @@ OUTPUT JSON FORMAT
     "quick_tip": "string (immediately actionable tip, in user's language)",
     "exercise_suggestion": "string (eyebrow exercises can help symmetry, in user's language)",
     "exercise_region": "eyebrows",
-    "professional_advice": "string or null (filled if score < 5, in user's language)"
+    "professional_advice": "string (targeted professional perspective, MUST NOT be null, in user's language)"
   },
 
   "metadata": {
@@ -320,7 +321,7 @@ OUTPUT JSON FORMAT
     "quick_tip": "string (immediately actionable tip, in user's language)",
     "exercise_suggestion": "string (eye exercises can help eye muscle tone, in user's language)",
     "exercise_region": "eyes",
-    "professional_advice": "string or null (filled if score < 5, in user's language)"
+    "professional_advice": "string (targeted professional perspective, MUST NOT be null, in user's language)"
   },
 
   "metadata": {
@@ -565,7 +566,7 @@ OUTPUT JSON FORMAT
     "quick_tip": "string (immediately actionable tip, in user's language)",
     "exercise_suggestion": "string (lip exercises can help with symmetry, in user's language)",
     "exercise_region": "lips",
-    "professional_advice": "string or null (filled if score < 5, in user's language)"
+    "professional_advice": "string (targeted professional perspective, MUST NOT be null, in user's language)"
   },
 
   "metadata": {
@@ -665,7 +666,7 @@ OUTPUT JSON FORMAT
     "quick_tip": "string (immediately actionable tip, in user's language)",
     "exercise_suggestion": "string (jaw and facial exercises can help with symmetry, in user's language)",
     "exercise_region": "jawline",
-    "professional_advice": "string or null (filled if score < 5, in user's language)"
+    "professional_advice": "string (targeted professional perspective, MUST NOT be null, in user's language)"
   },
 
   "metadata": {

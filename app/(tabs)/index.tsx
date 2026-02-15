@@ -288,6 +288,7 @@ export default function HomeScreen() {
           tabBarHeight={tabBarHeight}
           onViewResults={handleViewResults}
           onNewScan={handleStartScan}
+          onUpgradePress={() => router.push('/paywall')}
         />
       );
     }
@@ -305,6 +306,7 @@ export default function HomeScreen() {
           tabBarHeight={tabBarHeight}
           onViewResults={handleViewResults}
           onNewScan={handleStartScan}
+          onUpgradePress={() => router.push('/paywall')}
         />
       );
     }
