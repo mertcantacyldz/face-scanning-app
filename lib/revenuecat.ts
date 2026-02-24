@@ -75,7 +75,7 @@ export async function initializeRevenueCat(deviceId?: string): Promise<void> {
   }
 
   // Start initialization
-  initializationPromise = (async () => {
+  initializationPromise = new Promise(async (resolve) => {
     try {
       // Set log level for debugging (remove in production)
       if (__DEV__) {
@@ -83,27 +83,55 @@ export async function initializeRevenueCat(deviceId?: string): Promise<void> {
       }
 
       // Configure RevenueCat
+      console.log('🔧 Configuring RevenueCat with API key...');
       await Purchases.configure({ apiKey });
       isRevenueCatInitialized = true;
+      console.log('✅ RevenueCat configured successfully');
 
       // Identify with device ID (stable across sessions)
       if (deviceId) {
-        await Purchases.logIn(deviceId);
-        console.log('RevenueCat: Logged in with device ID:', deviceId);
+        try {
+          await Purchases.logIn(deviceId);
+          console.log('👤 RevenueCat: Logged in with device ID:', deviceId);
+        } catch (loginError) {
+          console.error('❌ RevenueCat login error during init:', loginError);
+        }
       }
-
-      console.log('RevenueCat initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize RevenueCat:', error);
-      initializationPromise = null; // Allow retry on failure
+      console.error('❌ Failed to configure RevenueCat:', error);
+      // DO NOT reset initializationPromise to null here because we want to remember 
+      // that we ALREADY TRIED AND FAILED, to prevent infinite re-tries that crash the app.
+      isRevenueCatInitialized = false;
+    } finally {
+      resolve();
     }
-  })();
+  });
 
   await initializationPromise;
 }
 
+// Ensure RevenueCat is initialized before calling its methods
+async function ensureConfigured(): Promise<boolean> {
+  if (isRevenueCatInitialized) return true;
+
+  // If initialization is currently in progress, wait for it
+  if (initializationPromise) {
+    try {
+      await initializationPromise;
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  if (isRevenueCatInitialized) return true;
+
+  console.warn('RevenueCat is not configured. Method call aborted.');
+  return false;
+}
+
 // Login user to RevenueCat (call when user logs in)
 export async function loginRevenueCat(userId: string): Promise<CustomerInfo | null> {
+  if (!(await ensureConfigured())) return null;
   try {
     const { customerInfo } = await Purchases.logIn(userId);
     return customerInfo;
@@ -115,6 +143,7 @@ export async function loginRevenueCat(userId: string): Promise<CustomerInfo | nu
 
 // Logout user from RevenueCat
 export async function logoutRevenueCat(): Promise<void> {
+  if (!(await ensureConfigured())) return;
   try {
     await Purchases.logOut();
   } catch (error) {
@@ -124,6 +153,7 @@ export async function logoutRevenueCat(): Promise<void> {
 
 // Check if user has premium access
 export async function checkPremiumStatus(): Promise<boolean> {
+  if (!(await ensureConfigured())) return false;
   try {
     const customerInfo = await Purchases.getCustomerInfo();
     return customerInfo.entitlements.active[PREMIUM_ENTITLEMENT] !== undefined;
@@ -135,6 +165,7 @@ export async function checkPremiumStatus(): Promise<boolean> {
 
 // Get customer info
 export async function getCustomerInfo(): Promise<CustomerInfo | null> {
+  if (!(await ensureConfigured())) return null;
   try {
     return await Purchases.getCustomerInfo();
   } catch (error) {
@@ -145,6 +176,7 @@ export async function getCustomerInfo(): Promise<CustomerInfo | null> {
 
 // Get available offerings (subscription packages)
 export async function getOfferings(): Promise<PurchasesOffering | null> {
+  if (!(await ensureConfigured())) return null;
   try {
     const offerings = await Purchases.getOfferings();
     return offerings.current;
@@ -158,6 +190,9 @@ export async function getOfferings(): Promise<PurchasesOffering | null> {
 export async function purchasePackage(
   pkg: PurchasesPackage
 ): Promise<{ success: boolean; customerInfo?: CustomerInfo; error?: string }> {
+  if (!(await ensureConfigured())) {
+    return { success: false, error: 'RevenueCat is not configured' };
+  }
   try {
     const { customerInfo } = await Purchases.purchasePackage(pkg);
     const isPremium = customerInfo.entitlements.active[PREMIUM_ENTITLEMENT] !== undefined;
@@ -186,6 +221,9 @@ export async function restorePurchases(): Promise<{
   isPremium: boolean;
   error?: string;
 }> {
+  if (!(await ensureConfigured())) {
+    return { success: false, isPremium: false, error: 'RevenueCat is not configured' };
+  }
   try {
     console.log('🔄 Starting restore purchases...');
 

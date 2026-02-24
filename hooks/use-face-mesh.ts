@@ -738,14 +738,14 @@ export function useFaceMesh() {
     try {
       console.log('🔒 [KUYRUK] İşlem kilitlendi');
 
-      // Resmi optimize et (1024x1024 - MediaPipe için optimal, yüksek hassasiyet)
+      // Resmi optimize et (600x600 - Köprü aşımını ve donmayı önlemek için, 0.8 kalite)
       const manipulatedImage = await (async () => {
         const context = ImageManipulator.manipulate(imageUri);
-        context.resize({ width: 1024, height: 1024 });
+        context.resize({ width: 600, height: 600 });
         const image = await context.renderAsync();
         const result = await image.saveAsync({
           format: SaveFormat.JPEG,
-          compress: 0.95,
+          compress: 0.8,
           base64: true
         });
         return result;

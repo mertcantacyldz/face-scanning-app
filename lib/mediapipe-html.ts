@@ -422,9 +422,9 @@ export const mediaPipeHTML = `
 
                 window.ReactNativeWebView.postMessage(JSON.stringify(result));
 
-                // Canvas'ı base64 PNG olarak gönder (mesh görselleştirme için)
+                // Canvas'ı base64 JPEG olarak gönder (PNG çok ağır, %80 kalite yeterli)
                 setTimeout(() => {
-                    const canvasDataUrl = canvasElement.toDataURL('image/png');
+                    const canvasDataUrl = canvasElement.toDataURL('image/jpeg', 0.8);
 
                     console.log('[WEBVIEW] 🖼️ MESH_IMAGE gönderiliyor', {
                         meshImageLength: canvasDataUrl.length,
