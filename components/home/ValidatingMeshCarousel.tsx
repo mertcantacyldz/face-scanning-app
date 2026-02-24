@@ -1,6 +1,7 @@
 import { Text } from '@/components/ui/text';
 import { type MultiPhotoState } from '@/hooks/use-face-mesh';
 import React, { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dimensions, Image, View } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 import { HorizontalValidationCard } from './HorizontalValidationCard';
@@ -13,14 +14,9 @@ const { width: screenWidth } = Dimensions.get('window');
 const CAROUSEL_WIDTH = screenWidth - 140;
 const CAROUSEL_HEIGHT = CAROUSEL_WIDTH * 1.3;
 
-const QUALITY_LABELS = {
-    excellent: 'Mükemmel Kalite',
-    good: 'İyi Kalite',
-    warning: 'Düşük Kalite',
-    poor: 'Kötü Kalite',
-};
 
 export function ValidatingMeshCarousel({ photos }: ValidatingMeshCarouselProps) {
+    const { t } = useTranslation('home');
     const processedPhotos = photos.filter((p) => p.meshImageUri !== null);
     const carouselRef = useRef<any>(null);
     const [activeIndex, setActiveIndex] = useState(0);
@@ -37,7 +33,7 @@ export function ValidatingMeshCarousel({ photos }: ValidatingMeshCarouselProps) 
                     {item.validation && (
                         <HorizontalValidationCard
                             quality={item.validation.quality}
-                            title={QUALITY_LABELS[item.validation.quality]}
+                            title={t(`validation.quality.${item.validation.quality}`)}
                         />
                     )}
                 </View>

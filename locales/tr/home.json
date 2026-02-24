@@ -56,6 +56,12 @@
       "good": "İyi kalite",
       "tooClose": "Yüz çok yakın - Kamerayı biraz uzaklaştırın",
       "tooFar": "Yüz küçük - Kamerayı yaklaştırın veya yüzünüzü merkezleyin"
+    },
+    "quality": {
+      "excellent": "Mükemmel Kalite",
+      "good": "İyi Kalite",
+      "warning": "Düşük Kalite",
+      "poor": "Kötü Kalite"
     }
   },
   "disclaimer": "Sonuçlar yapay zeka tarafından üretilen yaklaşık değerlendirmelerdir. Fotoğraf kalitesi ve ışık sonuçları etkileyebilir.",
