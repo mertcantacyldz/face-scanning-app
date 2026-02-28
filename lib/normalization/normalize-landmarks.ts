@@ -11,7 +11,7 @@
  * 3. Scale: Normalize so eye distance equals standard value (400px)
  */
 
-import { Point3D, distance2D, angleBetweenPoints } from '../geometry';
+import { Point3D, angleBetweenPoints, distance2D } from '../geometry';
 
 // ============================================
 // CONSTANTS
@@ -272,14 +272,14 @@ export function validateLandmarksForNormalization(landmarks: Point3D[]): {
     const points = [noseTip, rightEyeOuter, leftEyeOuter];
     for (const point of points) {
       if (
-        point.x < 0 ||
-        point.x > CANVAS_SIZE ||
-        point.y < 0 ||
-        point.y > CANVAS_SIZE
+        point.x < -100 ||
+        point.x > 10000 ||
+        point.y < -100 ||
+        point.y > 10000
       ) {
         return {
           isValid: false,
-          error: 'Reference points outside canvas bounds',
+          error: 'Reference points out of range'
         };
       }
     }

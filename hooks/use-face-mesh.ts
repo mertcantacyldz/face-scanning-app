@@ -119,12 +119,16 @@ const validateMesh = (faceData: any, t: any) => {
 
   for (const idx of criticalIndices) {
     const point = landmarks[idx];
-    // Koordinatlar fotoğraf içinde mi? (1024x1024 piksel)
-    if (!point || point.x < 0 || point.x > 1024 || point.y < 0 || point.y > 1024) {
+    const width = faceData.imageSize?.width || 1024;
+    const height = faceData.imageSize?.height || 1024;
+
+    // Koordinatlar fotoğraf içinde mi?
+    if (!point || point.x < 0 || point.x > width || point.y < 0 || point.y > height) {
       console.log(`❌ [VALIDATE_MESH] FAIL: Kritik nokta ${idx} geçersiz!`, {
         point,
         x: point?.x,
-        y: point?.y
+        y: point?.y,
+        bounds: { width, height }
       });
       return {
         isValid: false,
