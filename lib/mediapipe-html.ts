@@ -775,18 +775,28 @@ export const mediaPipeHTML = `
         };
 
         // Base64 image'ı işle
-        window.processImage = function(base64Image) {
-            if (!isReady) {
-                window.ReactNativeWebView.postMessage(JSON.stringify({
-                    type: 'ERROR',
-                    error: 'MediaPipe henüz hazır değil'
-                }));
-                return;
+        let currentProcessingId = null;
+
+        window.processImage = function(payload) {
+            const statusDiv = document.getElementById('status');
+            const icons = {
+                loading: '<svg class="animate-spin" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>',
+                check: '<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></path></svg>'
+            };
+
+            // Payload yapısını kontrol et (ID desteği için)
+            let base64Image = '';
+            if (typeof payload === 'object' && payload.image) {
+                base64Image = payload.image;
+                currentProcessingId = payload.id;
+            } else {
+                base64Image = payload;
+                currentProcessingId = null;
             }
 
-            // Eski image'i temizle
             if (currentImage) {
                 currentImage.onload = null;
+                currentImage.onerror = null;
                 currentImage.src = '';
                 currentImage = null;
             }
@@ -800,11 +810,16 @@ export const mediaPipeHTML = `
 
                 img.onload = async function() {
                     try {
+                        // ✅ DINAMIK CANVAS BOYUTLANDIRMA (Yüz Kaymasını Önler)
+                        canvasElement.width = img.width;
+                        canvasElement.height = img.height;
+                        console.log('🖼️ Dynamic Canvas size:', img.width, 'x', img.height);
+
                         await faceMesh.send({image: img});
-                        // CLEANUP KALDIRILDI - bir sonraki processImage çağrısında temizlenecek
                     } catch (error) {
                         window.ReactNativeWebView.postMessage(JSON.stringify({
                             type: 'ERROR',
+                            processingId: currentProcessingId,
                             error: 'Analiz sırasında hata: ' + error.message
                         }));
                     }
@@ -813,6 +828,7 @@ export const mediaPipeHTML = `
                 img.onerror = function() {
                     window.ReactNativeWebView.postMessage(JSON.stringify({
                         type: 'ERROR',
+                        processingId: currentProcessingId,
                         error: 'Resim yüklenemedi'
                     }));
                 };
@@ -823,15 +839,67 @@ export const mediaPipeHTML = `
             } catch (error) {
                 window.ReactNativeWebView.postMessage(JSON.stringify({
                     type: 'ERROR',
+                    processingId: currentProcessingId,
                     error: error.message
                 }));
             }
         };
 
+        function onResults(results) {
+            const canvasCtx = canvasElement.getContext('2d');
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+                const landmarks = results.multiFaceLandmarks[0];
+                
+                // Noktaları Çiz (Ters orantı olmadan direkt canvas boyutuna göre)
+                // drawConnectors ve drawLandmarks içten canvasElement.width/height kullanıyor
+                drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, {color: '#C0C0C070', lineWidth: 1});
+                drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYE, {color: '#FF3030', lineWidth: 1});
+                drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYE, {color: '#30FF30', lineWidth: 1});
+                drawConnectors(canvasCtx, landmarks, FACEMESH_FACE_OVAL, {color: '#E0E0E0', lineWidth: 2});
+                drawLandmarks(canvasCtx, landmarks, {color: '#FFFFFF', lineWidth: 0.1, radius: 1});
+
+                // RN'e gönder (processingId ile)
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                    type: 'LANDMARKS',
+                    processingId: currentProcessingId,
+                    data: {
+                        landmarks: landmarks,
+                        totalPoints: landmarks.length,
+                        confidence: 0.99,
+                        imageSize: { width: canvasElement.width, height: canvasElement.height }
+                    }
+                }));
+
+                const canvasDataUrl = canvasElement.toDataURL('image/jpeg', 0.8);
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                    type: 'MESH_IMAGE',
+                    processingId: currentProcessingId,
+                    data: { meshImage: canvasDataUrl }
+                }));
+
+                const statusDiv = document.getElementById('status');
+                statusDiv.innerHTML = '<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg><span>Tamamlandı</span>';
+                statusDiv.className = 'complete';
+
+            } else {
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                    type: 'NO_FACE',
+                    processingId: currentProcessingId
+                }));
+                const statusDiv = document.getElementById('status');
+                statusDiv.innerHTML = '<span>Yüz bulunamadı</span>';
+                statusDiv.className = '';
+            }
+            canvasCtx.restore();
+        }
+
         // MediaPipe'ı başlat
         initMediaPipe();
     </script>
 </body>
-</html>
 `;
 

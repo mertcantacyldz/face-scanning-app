@@ -261,6 +261,7 @@ export function useFaceMesh() {
   ]);
 
   const webViewRef = useRef<WebView>(null);
+  const processingRef = useRef<boolean>(false); // ✅ Yeni: Senkron işlem kilidi
 
   // Mount'ta kayıtlı fotoğrafı yükle (multi-photo veya legacy)
   useEffect(() => {
@@ -300,162 +301,145 @@ export function useFaceMesh() {
   const handleWebViewMessage = async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
+      const processingId = data.processingId;
 
       console.log('📥 [WEBVIEW MESAJI]', {
         type: data.type,
+        id: processingId,
         timestamp: Date.now()
       });
 
       switch (data.type) {
         case 'READY':
-          if (__DEV__) {
-            console.log('[WebView] READY mesajı alındı');
-          }
           setMediaPipeReady(true);
           break;
 
         case 'LANDMARKS':
-          console.log('🎯 [LANDMARKS GELDİ]', {
+          console.log(`🎯 [LANDMARKS GELDİ] ID: ${processingId}`, {
             noktaSayisi: data.data.totalPoints,
-            guvenilirlik: data.data.confidence,
-            timestamp: data.data.timestamp,
-            hangiResim: selectedImage?.substring(0, 50)
+            imageSize: data.data.imageSize
           });
 
-          // DEBUG-MIRROR: Ayna kontrolü için kritik landmark'lar
-          console.log('🎯 [DEBUG-MIRROR] LANDMARKS ALINDI - AYNA KONTROLÜ:', {
-            P4_noseTip_x: data.data.landmarks[4]?.x.toFixed(2),
-            P33_rightEyeOuter_x: data.data.landmarks[33]?.x.toFixed(2),
-            P263_leftEyeOuter_x: data.data.landmarks[263]?.x.toFixed(2),
-            // Aynalama kontrolü: Normal durumda P263 > P33 (sol göz sağda)
-            mirrorCheck: data.data.landmarks[263]?.x > data.data.landmarks[33]?.x ? 'NORMAL' : 'MIRRORED',
-            faceCenter: ((data.data.landmarks[33]?.x + data.data.landmarks[263]?.x) / 2).toFixed(2),
-            tipDeviation: (data.data.landmarks[4]?.x - (data.data.landmarks[33]?.x + data.data.landmarks[263]?.x) / 2).toFixed(2),
-            imageTimestamp: Date.now()
-          });
+          // Eğer bu bir multi-photo ise, direkt ID'yi kullan
+          const landmarksIdx = processingId !== null ? parseInt(processingId) : -1;
 
-          setFaceLandmarks(data.data);
-
-          // Mesh validation yap - TÜM data.data objesini gönder (confidence içeriyor)
-          const validation = validateMesh(data.data, t);
-          setMeshValidation(validation);
-
-          // ✅ Multi-photo: landmarks'ı sakla ve promise'ı resolve et
-          if (currentProcessingIndexRef.current >= 0) {
-            const idx = currentProcessingIndexRef.current;
-            lastProcessingIndexRef.current = idx; // <--- Kaydet
-            console.log(`📸 [LANDMARKS] Multi-photo fotoğraf ${idx + 1} kaydediliyor`);
+          if (landmarksIdx >= 0 && landmarksIdx < 3) {
+            lastProcessingIndexRef.current = landmarksIdx;
             updateMultiPhotoWithLandmarks(
-              idx as 0 | 1 | 2,
+              landmarksIdx as 0 | 1 | 2,
               data.data,
-              meshImageUri,
-              validation
+              null, // mesh henüz gelmedi
+              validateMesh(data.data, t)
             );
 
-            // ✅ Landmarks geldi - processMultiPhoto promise'ını resolve et
-            if (landmarksResolverRef.current) {
-              console.log(`✅ [LANDMARKS] Resolver çağrılıyor, fotoğraf ${idx + 1} tamamlandı`);
+            // Eğer bu beklediğimiz mevcut index ise resolve et
+            if (landmarksResolverRef.current && currentProcessingIndexRef.current === landmarksIdx) {
+              processingRef.current = false; // ✅ Kilidi aç
               landmarksResolverRef.current();
               landmarksResolverRef.current = null;
             }
-            // NOT: currentProcessingIndexRef.current = -1; burası taşındı
+          } else {
+            // Single photo modu
+            setFaceLandmarks(data.data);
+            setMeshValidation(validateMesh(data.data, t));
+            setIsAnalyzing(false);
+            setIsProcessing(false);
+            processingRef.current = false; // Kilidi aç
           }
-
-          setIsAnalyzing(false);
-          setIsProcessing(false);
-          currentProcessingIndexRef.current = -1; // Reset here
-          console.log('🔓 [KUYRUK] İşlem kilidi açıldı (LANDMARKS)');
           break;
 
         case 'MESH_IMAGE':
-          console.log('🖼️ [MESH GÖRÜNTÜSÜ GELDİ]', {
-            meshUzunluk: data.data.meshImage?.length,
-            currentIdx: currentProcessingIndexRef.current,
-            isMultiPhoto: currentProcessingIndexRef.current >= 0
-          });
+          console.log(`🖼️ [MESH GÖRÜNTÜSÜ GELDİ] ID: ${processingId}`);
 
-          setMeshImageUri(data.data.meshImage);
+          const meshIdx = processingId !== null ? parseInt(processingId) : -1;
 
-          // ✅ Multi-photo: mesh görüntüsünü ilgili fotoğrafa kaydet
-          // currentProcessingIndexRef -1 olmuş olabilir (LANDMARKS önce geldiyse), o yüzden lastProcessingIndexRef kullanıyoruz
-          const targetIdx = currentProcessingIndexRef.current >= 0
-            ? currentProcessingIndexRef.current
-            : lastProcessingIndexRef.current;
-
-          if (targetIdx >= 0) {
-            console.log(`🖼️ [MESH] Multi-photo fotoğraf ${targetIdx + 1} mesh kaydediliyor`);
+          if (meshIdx >= 0 && meshIdx < 3) {
             setMultiPhotos(prev => {
               const updated = [...prev];
-              updated[targetIdx] = { ...updated[targetIdx], meshImageUri: data.data.meshImage };
+              updated[meshIdx] = { ...updated[meshIdx], meshImageUri: data.data.meshImage };
               return updated;
             });
-            multiPhotosRef.current[targetIdx].meshImageUri = data.data.meshImage;
+            multiPhotosRef.current[meshIdx].meshImageUri = data.data.meshImage;
+          } else {
+            // Single photo modu
+            setMeshImageUri(data.data.meshImage);
+            setShowMeshPreview(true);
           }
-
-          setShowMeshPreview(true);
           break;
 
         case 'NO_FACE':
-          console.log('❌ [ANALİZ BAŞARISIZ]', {
-            type: 'NO_FACE',
-            message: 'Yüz bulunamadı',
-            timestamp: Date.now(),
-            isMultiPhoto: currentProcessingIndexRef.current >= 0
-          });
+          console.log(`❌ [YÜZ BULUNAMADI] ID: ${processingId}`);
+          processingRef.current = false; // Kilidi aç
 
-          setIsAnalyzing(false);
-          setIsProcessing(false);
-          console.log('🔓 [KUYRUK] İşlem kilidi açıldı (NO_FACE)');
+          const noFaceIdx = processingId !== null ? parseInt(processingId) : -1;
 
-          // ✅ Clear active analysis state to prevent AnalysisLayout from showing
-          setSelectedImage(null);
-          setMeshImageUri(null);
-          setFaceLandmarks(null);
-          console.log('🧹 [NO_FACE] Active analysis state temizlendi');
+          if (noFaceIdx >= 0 && noFaceIdx < 3) {
+            // Multi-photo hata kaydı
+            setMultiPhotos(prev => {
+              const updated = [...prev];
+              updated[noFaceIdx] = {
+                ...updated[noFaceIdx],
+                validation: {
+                  isValid: false,
+                  quality: 'poor',
+                  message: t('alerts.noFace.message'),
+                  confidence: 0
+                }
+              };
+              return updated;
+            });
 
-          // ✅ Multi-photo: reject promise immediately to stop processing
-          if (currentProcessingIndexRef.current >= 0) {
-            const idx = currentProcessingIndexRef.current;
-            console.log(`❌ [MULTI-PHOTO] Fotoğraf ${idx + 1} - yüz bulunamadı, promise reject ediliyor`);
-
-            if (landmarksResolverRef.current) {
-              // Store error rejection function instead of resolver
+            if (landmarksResolverRef.current && currentProcessingIndexRef.current === noFaceIdx) {
               const errorRejecter = landmarksResolverRef.current as any;
               errorRejecter.reject?.(new Error('Yüz bulunamadı'));
               landmarksResolverRef.current = null;
             }
-            currentProcessingIndexRef.current = -1;
+          } else {
+            // Single photo
+            setIsAnalyzing(false);
+            setIsProcessing(false);
+            setSelectedImage(null);
+            Alert.alert(t('alerts.noFace.title'), t('alerts.noFace.message'));
           }
-
-          Alert.alert(
-            t('alerts.noFace.title'),
-            t('alerts.noFace.message')
-          );
           break;
 
         case 'ERROR':
-          console.log('❌ [ANALİZ BAŞARISIZ]', {
-            type: 'ERROR',
-            message: data.error,
-            timestamp: Date.now()
-          });
+          console.log(`❌ [WEBVIEW HATASI] ID: ${processingId}`, data.error);
+          processingRef.current = false; // Kilidi aç
+
+          const errIdx = processingId !== null ? parseInt(processingId) : -1;
+
+          if (errIdx >= 0 && errIdx < 3) {
+            // Multi-photo hata kaydı
+            setMultiPhotos(prev => {
+              const updated = [...prev];
+              updated[errIdx] = {
+                ...updated[errIdx],
+                validation: {
+                  isValid: false,
+                  quality: 'poor',
+                  message: data.error || 'İşlem hatası',
+                  confidence: 0
+                }
+              };
+              return updated;
+            });
+
+            if (landmarksResolverRef.current && currentProcessingIndexRef.current === errIdx) {
+              const errorRejecter = landmarksResolverRef.current as any;
+              errorRejecter.reject?.(new Error(data.error));
+              landmarksResolverRef.current = null;
+            }
+          }
 
           setIsAnalyzing(false);
           setIsProcessing(false);
-          console.log('🔓 [KUYRUK] İşlem kilidi açıldı (ERROR)');
-
-          // ✅ Clear active analysis state to prevent AnalysisLayout from showing
-          setSelectedImage(null);
-          setMeshImageUri(null);
-          setFaceLandmarks(null);
-          console.log('🧹 [ERROR] Active analysis state temizlendi');
-
           Alert.alert(t('alerts.processingError.title'), data.error);
           break;
       }
     } catch (error) {
       if (__DEV__) {
-        console.error('[WebView] mesaj parse hatası:', error);
+        console.error('❌ [handleWebViewMessage] Parse hatası:', error);
       }
     }
   };
@@ -702,27 +686,19 @@ export function useFaceMesh() {
     }
   };
 
-  // MediaPipe ile resmi işle
-  const processImageWithMediaPipe = async (imageUri: string) => {
+  // ImageURI'yi base64 yapıp MediaPipe'a gönder
+  const processImageWithMediaPipe = async (imageUri: string, processingId: number | null = null) => {
     if (!mediaPipeReady) {
       Alert.alert(t('alerts.mediaPipeNotReady.title'), t('alerts.mediaPipeNotReady.message'));
       return;
     }
-
-    console.log('🔵 [İŞLEM BAŞLADI]', {
-      timestamp: Date.now(),
-      imageUri: imageUri.substring(0, 50),
-      mevcutLandmarks: faceLandmarks ? 'VAR' : 'YOK',
-      mevcutMeshUri: meshImageUri ? 'VAR' : 'YOK'
-    });
-
-    // İşlem kuyruğu kontrolü
-    if (isProcessing) {
+    if (processingRef.current) {
       console.warn('⚠️ [KUYRUK] Zaten işleniyor, atlıyorum');
       return;
     }
 
-    console.log('🧹 [STATE TEMİZLENİYOR]');
+    console.log(`🧹 [STATE TEMİZLENİYOR] ID: ${processingId}`);
+    processingRef.current = true; // ✅ Kilidi hemen tak
 
     // ÖNCELİKLE tüm eski state'i temizle
     setFaceLandmarks(null);
@@ -736,12 +712,13 @@ export function useFaceMesh() {
     setIsProcessing(true);
 
     try {
-      console.log('🔒 [KUYRUK] İşlem kilitlendi');
+      console.log(`🔒 [KUYRUK] İşlem kilitlendi ID: ${processingId}`);
 
-      // Resmi optimize et (600x600 - Köprü aşımını ve donmayı önlemek için, 0.8 kalite)
+      // ✅ ORANLI KÜÇÜLTME (800px max side) - Drift ve Çökme Çözümü
       const manipulatedImage = await (async () => {
         const context = ImageManipulator.manipulate(imageUri);
-        context.resize({ width: 600, height: 600 });
+        // Sadece width verince Expo aspect ratio'yu korur
+        context.resize({ width: 800 });
         const image = await context.renderAsync();
         const result = await image.saveAsync({
           format: SaveFormat.JPEG,
@@ -754,33 +731,19 @@ export function useFaceMesh() {
       console.log('✅ [RESİM İŞLENDİ]', {
         width: manipulatedImage.width,
         height: manipulatedImage.height,
-        base64Uzunluk: manipulatedImage.base64?.length,
-        timestamp: Date.now()
-      });
-
-      console.log('📤 [WEBVIEW\'A GÖNDERİLİYOR]', {
-        mediaPipeReady,
-        timestamp: Date.now()
+        id: processingId
       });
 
       // WebView'e base64 image gönder ve canvas'ı temizle
       const injectedJS = `
         (function() {
-          // Canvas'ı HEMEN temizle
-          const canvas = document.getElementById('output_canvas');
-          if (canvas) {
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            console.log('[WEBVIEW] Canvas enjeksiyon sırasında temizlendi');
-          }
-
           if (window.processImage && typeof window.processImage === 'function') {
-            window.processImage('${manipulatedImage.base64}');
+            window.processImage({
+              image: '${manipulatedImage.base64}',
+              id: ${processingId !== null ? processingId : 'null'}
+            });
           } else {
-            window.ReactNativeWebView.postMessage(JSON.stringify({
-              type: 'ERROR',
-              error: 'MediaPipe fonksiyonu bulunamadı'
-            }));
+            console.error('[WEBVIEW] MediaPipe function not found');
           }
         })();
         true;
@@ -789,12 +752,10 @@ export function useFaceMesh() {
       webViewRef.current?.injectJavaScript(injectedJS);
 
     } catch (error) {
-      if (__DEV__) {
-        console.error('[MediaPipe] process hatası:', error);
-      }
+      console.error('[MediaPipe] process hatası:', error);
+      processingRef.current = false; // Hata durumunda kilidi aç
       setIsAnalyzing(false);
       setIsProcessing(false);
-      console.log('🔓 [KUYRUK] İşlem kilidi açıldı (ERROR)');
       Alert.alert(t('alerts.processingError.title'), t('alerts.processingError.message'));
     }
   };
@@ -822,7 +783,11 @@ export function useFaceMesh() {
     if (mode === 'multi') {
       resetMultiPhotoState();
     }
-  };   // ✅ Modal açma işini index.tsx yapacak - buradan kaldırıldı (setShowImagePicker silindi)
+
+    // Safety reset
+    processingRef.current = false;
+  };
+  // ✅ Modal açma işini index.tsx yapacak - buradan kaldırıldı (setShowImagePicker silindi)
 
   // Kayıtlı fotoğrafı temizle (yeni fotoğraf seçmek için)
   const clearSavedPhoto = async () => {
@@ -876,6 +841,7 @@ export function useFaceMesh() {
       const timeout = setTimeout(() => {
         currentProcessingIndexRef.current = -1;
         landmarksResolverRef.current = null;
+        processingRef.current = false; // ✅ Kilidi aç (timeout durumunda)
         console.error(`⚠️ [MULTI-PHOTO] Fotoğraf ${index + 1} timeout (15s)`);
         reject(new Error(`Fotoğraf ${index + 1} timeout`));
       }, 15000);
@@ -900,7 +866,7 @@ export function useFaceMesh() {
       };
 
       // WebView'a image gönder (LANDMARKS mesajını tetikler)
-      processImageWithMediaPipe(photoUri)
+      processImageWithMediaPipe(photoUri, index)
         .catch((err) => {
           clearTimeout(timeout);
           currentProcessingIndexRef.current = -1;
@@ -1003,22 +969,19 @@ export function useFaceMesh() {
       setMultiPhotoProcessingStatus('idle');
 
     } catch (error) {
-      // ✅ Better error messages: distinguish between "no face" and "processing error"
+      // ✅ Better error messages
       const errorMessage = (error as Error).message;
       const isNoFaceError = errorMessage.includes('Yüz bulunamadı');
 
-      if (isNoFaceError) {
-        // NO_FACE is a normal scenario, not an error - just log as info
-        console.log('ℹ️ [MULTI-PHOTO] Yüz bulunamadı (normal durum, kullanıcı başka fotoğraf seçebilir)');
-      } else {
-        // Actual processing error - log as error and show alert
+      if (!isNoFaceError) {
         console.error('📸 [MULTI-PHOTO] İşlem hatası:', error);
         Alert.alert('Hata', 'Fotoğraflar işlenirken bir hata oluştu: ' + errorMessage);
       }
-      // Note: NO_FACE error alert already shown in handleWebViewMessage
 
       setMultiPhotoProcessingStatus('idle');
-      // ✅ Don't close modal - let user select different photos
+      setIsProcessing(false);
+      setIsAnalyzing(false);
+      processingRef.current = false;
     }
   }, [resetMultiPhotoState, processMultiPhoto, setIsMultiPhotoMode]);
 
@@ -1392,6 +1355,9 @@ export function useFaceMesh() {
       console.error('📸 [MULTI-PHOTO] Finalize hatası:', error);
       Alert.alert('Hata', 'Analiz tamamlanırken bir hata oluştu');
       setMultiPhotoProcessingStatus('idle');
+      setIsProcessing(false);
+      setIsAnalyzing(false);
+      processingRef.current = false;
     }
   }, []);  // ref kullanıldığı için dependency gerekmiyor
 
@@ -1501,6 +1467,8 @@ export function useFaceMesh() {
     updateMultiPhotoWithLandmarks,
     // Constants
     mediaPipeHTML,
+    isProcessing, // UI indication
+    processingRef, // Debug/Internal
   };
 }
 
