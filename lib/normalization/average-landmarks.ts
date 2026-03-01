@@ -329,7 +329,7 @@ export function averageLandmarks(
  * @returns True if variance is acceptable
  */
 export function isConsistencyAcceptable(result: AveragedResult): boolean {
-  return result.consistencyScore >= 60;
+  return result.consistencyScore >= 50;
 }
 
 /**

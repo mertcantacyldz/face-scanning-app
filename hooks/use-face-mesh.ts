@@ -167,39 +167,58 @@ const validateMesh = (faceData: any, t: any) => {
   }
 
   let result;
-  if (confidence >= 0.94) {
-    console.log('✅ [VALIDATE_MESH] Quality: EXCELLENT (confidence >= 0.94)');
+  if (confidence >= 0.92) {
+    console.log('✅ [VALIDATE_MESH] Quality: EXCELLENT');
     result = {
       isValid: true,
       quality: 'excellent' as const,
       message: t('validation.messages.excellent'),
       confidence: confidencePercent
     };
-  } else if (confidence >= 0.80) {
-    console.log('✅ [VALIDATE_MESH] Quality: GOOD (confidence >= 0.80)');
+  } else if (confidence >= 0.82) {
+    console.log('✅ [VALIDATE_MESH] Quality: GOOD');
     result = {
       isValid: true,
       quality: 'good' as const,
       message: t('validation.messages.good'),
       confidence: confidencePercent
     };
-  } else if (confidence >= 0.70) {
-    console.log('⚠️ [VALIDATE_MESH] Quality: WARNING (confidence >= 0.70)');
-    result = {
-      isValid: true,
-      quality: 'warning' as const,
-      message: t('validation.messages.tooClose'),
-      confidence: confidencePercent
-    };
   } else {
-    console.log('❌ [VALIDATE_MESH] Quality: POOR (confidence < 0.70)');
-    result = {
-      isValid: true,
-      quality: 'poor' as const,
-      message: t('validation.messages.tooFar'),
-      confidence: confidencePercent
-    };
+    // ⚠️ Detaylı hata mesajı belirle
+    let message = t('validation.messages.good'); // Fallback
+    const details = faceData.confidenceDetails;
+
+    if (details) {
+      if (details.yaw.score < 0.8) message = t('validation.messages.yawWarning');
+      else if (details.pitch.score < 0.8) message = t('validation.messages.pitchWarning');
+      else if (details.roll.score < 0.8) message = t('validation.messages.rollWarning');
+      else if (details.size.score < 0.7) {
+        message = details.size.value < 0.12
+          ? t('validation.messages.tooFar')
+          : t('validation.messages.tooClose');
+      }
+    }
+
+    if (confidence >= 0.70) {
+      console.log('⚠️ [VALIDATE_MESH] Result: WARNING (Quality usable but flawed)');
+      result = {
+        isValid: true,
+        quality: 'warning' as const,
+        message: message,
+        confidence: confidencePercent
+      };
+    } else {
+      console.log('❌ [VALIDATE_MESH] Result: POOR (Quality very low)');
+      result = {
+        isValid: true,
+        quality: 'poor' as const,
+        message: message,
+        confidence: confidencePercent
+      };
+    }
   }
+
+  console.log('🎯 [VALIDATE_MESH] FINAL DECISION:', result);
 
   console.log('🔍 [VALIDATE_MESH] SONUÇ:', result);
   console.log('🔍 [VALIDATE_MESH] ========== BİTTİ ==========');
@@ -321,8 +340,21 @@ export function useFaceMesh() {
         case 'LANDMARKS':
           console.log(`🎯 [LANDMARKS GELDİ] ID: ${processingId}`, {
             noktaSayisi: data.data.totalPoints,
-            imageSize: data.data.imageSize
+            imageSize: data.data.imageSize,
+            rawConfidence: data.data.confidence
           });
+
+          // 📊 KALİTE LOGU (Terminalde görülmesi için)
+          if (data.data.confidenceDetails) {
+            const det = data.data.confidenceDetails;
+            console.log('📊 [Puan Dökümü (Quality Details)]', {
+              finalScore: (det.totalScore * 100).toFixed(1) + '%',
+              yaw: det.yaw?.value?.toFixed(1) + '° (Hizalama: ' + (det.yaw?.score * 100).toFixed(0) + '%)',
+              pitch: det.pitch?.value?.toFixed(1) + '° (Hizalama: ' + (det.pitch?.score * 100).toFixed(0) + '%)',
+              roll: det.roll?.value?.toFixed(1) + '° (Hizalama: ' + (det.roll?.score * 100).toFixed(0) + '%)',
+              size: (det.size?.value * 100).toFixed(1) + ' (Hizalama: ' + (det.size?.score * 100).toFixed(0) + '%)'
+            });
+          }
 
           // Eğer bu bir multi-photo ise, direkt ID'yi kullan
           const landmarksIdx = processingId !== null ? parseInt(processingId) : -1;

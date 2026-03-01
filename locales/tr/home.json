@@ -54,8 +54,11 @@
       "criticalPointsMissing": "Bazı önemli yüz noktaları tespit edilemedi. Yüzünüzün tamamı görünür olmalı.",
       "excellent": "Mükemmel kalite!",
       "good": "İyi kalite",
-      "tooClose": "Yüz çok yakın - Kamerayı biraz uzaklaştırın",
-      "tooFar": "Yüz küçük - Kamerayı yaklaştırın veya yüzünüzü merkezleyin"
+      "tooClose": "Fotoğraf çok yakından çekilmiş",
+      "tooFar": "Yüz fotoğrafta çok küçük kalmış",
+      "yawWarning": "Yüz açısı tam karşıda değil (Sağa/sola dönük)",
+      "pitchWarning": "Yüz açısı hatalı (Yukarı/aşağı bakıyor)",
+      "rollWarning": "Kafa pozisyonu eğik (Yana yatık)"
     },
     "quality": {
       "excellent": "Mükemmel Kalite",

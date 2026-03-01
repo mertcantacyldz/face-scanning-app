@@ -105,7 +105,6 @@ export const mediaPipeHTML = `
             const height = canvasElement.height;
             canvasCtx.clearRect(0, 0, width, height);
             
-            // Draw the original image as background
             if (results.image) {
                 canvasCtx.drawImage(results.image, 0, 0, width, height);
             }
@@ -119,19 +118,71 @@ export const mediaPipeHTML = `
                     index: index
                 }));
 
+                // --- Gelişmiş Pose ve Kalite Analizi ---
+                // 1. Açı Hesaplamaları (Yaw, Pitch, Roll)
+                const leftEye = landmarks[33];
+                const rightEye = landmarks[263];
+                const noseTip = landmarks[4];
+                const bridge = landmarks[6];
+                const forehead = landmarks[10];
+                const chin = landmarks[152];
+
+                // Yaw (Sağa-Sola Dönüş)
+                const eyeDist = Math.sqrt(Math.pow(leftEye.x - rightEye.x, 2) + Math.pow(leftEye.y - rightEye.y, 2));
+                const noseOffset = (noseTip.x - bridge.x) / eyeDist;
+                const yaw = noseOffset * 50; // Derece bazlı yaklaşık değer
+
+                // Pitch (Yukarı-Aşağı Bakış)
+                const faceHeight = Math.abs(forehead.y - chin.y);
+                const noseVerticalDist = (noseTip.y - bridge.y) / faceHeight;
+                const pitch = (noseVerticalDist - 0.05) * 60; // 0.05 ideal merkez ofseti
+
+                // Roll (Kafa Eğimi)
+                const roll = Math.atan2(rightEye.y - leftEye.y, rightEye.x - leftEye.x) * (180 / Math.PI);
+
+                // 2. Kalite Puanlama (Penaltı Sistemi)
+                let totalScore = 1.0;
+                const details = {
+                    yaw: { score: 1.0, value: yaw },
+                    pitch: { score: 1.0, value: pitch },
+                    roll: { score: 1.0, value: roll },
+                    size: { score: 1.0, value: eyeDist }
+                };
+
+                // Yaw Penaltısı (Max 10 derece tolerans)
+                if (Math.abs(yaw) > 10) details.yaw.score = Math.max(0.4, 1 - (Math.abs(yaw) - 10) / 20);
+                
+                // Pitch Penaltısı (Max 10 derece tolerans)
+                if (Math.abs(pitch) > 10) details.pitch.score = Math.max(0.4, 1 - (Math.abs(pitch) - 10) / 15);
+                
+                // Roll Penaltısı (Max 5 derece tolerans)
+                if (Math.abs(roll) > 5) details.roll.score = Math.max(0.5, 1 - (Math.abs(roll) - 5) / 10);
+                
+                // Boyut/Mesafe Penaltısı (İdeal göz mesafesi oranı: 0.15 - 0.45)
+                if (eyeDist < 0.10) details.size.score = 0.85; // Çok uzak (minimum %85)
+                if (eyeDist > 0.45) details.size.score = 0.85; // Çok yakın (minimum %85)
+
+                totalScore = details.yaw.score * details.pitch.score * details.roll.score * details.size.score;
+
+                // DIAGNOSTIC LOG: Neden düşük puan aldığımızı görmek için
+                console.log('📊 [WEBVIEW QUALITY DIAGNOSTIC]', {
+                    finalScore: (totalScore * 100).toFixed(1) + '%',
+                    yaw: { val: yaw.toFixed(2), score: details.yaw.score.toFixed(2) },
+                    pitch: { val: pitch.toFixed(2), score: details.pitch.score.toFixed(2) },
+                    roll: { val: roll.toFixed(2), score: details.roll.score.toFixed(2) },
+                    eyeDist: { val: eyeDist.toFixed(3), score: details.size.score.toFixed(2) }
+                });
+
                 // Görselleştirme (Daha dengeli - hem mesh hem yüz belli olsun)
                 drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, {color: '#EEEEEE70', lineWidth: 1});
                 drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYE, {color: '#FF3030', lineWidth: 1.5});
                 drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYE, {color: '#30FF30', lineWidth: 1.5});
                 drawConnectors(canvasCtx, landmarks, FACEMESH_FACE_OVAL, {color: '#E0E0E0A0', lineWidth: 1.5});
                 
-                // Noktaları hafiflet (Dengeli görünüm)
                 drawLandmarks(canvasCtx, landmarks, {
                     color: '#6366F180',
                     lineWidth: 0.5,
-                    radius: (data) => {
-                        return 0.8; // Daha küçük ve şeffaf noktalar
-                    }
+                    radius: (data) => 0.8
                 });
 
                 window.ReactNativeWebView.postMessage(JSON.stringify({
@@ -140,7 +191,14 @@ export const mediaPipeHTML = `
                     data: {
                         landmarks: pixelLandmarks,
                         totalPoints: pixelLandmarks.length,
-                        confidence: 0.99,
+                        confidence: totalScore,
+                        confidenceDetails: {
+                            totalScore: totalScore,
+                            yaw: details.yaw,
+                            pitch: details.pitch,
+                            roll: details.roll,
+                            size: details.size
+                        },
                         imageSize: { width, height }
                     }
                 }));
@@ -152,7 +210,7 @@ export const mediaPipeHTML = `
                     data: { meshImage }
                 }));
 
-                statusDiv.innerHTML = icons.success + '<span>Tamamlandı</span>';
+                statusDiv.innerHTML = icons.success + '<span>Analiz: ' + (totalScore * 100).toFixed(0) + '%</span>';
             } else {
                 window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'NO_FACE', processingId: currentProcessingId }));
                 statusDiv.innerHTML = icons.error + '<span>Yüz bulunamadı</span>';

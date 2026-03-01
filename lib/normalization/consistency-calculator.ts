@@ -288,13 +288,13 @@ export function getQuickConsistencyStatus(score: number): {
   color: string;
   icon: string;
 } {
-  if (score >= 90) {
+  if (score >= 85) {
     return { level: 'excellent', color: '#10B981', icon: 'checkmark-circle' };
   }
-  if (score >= 75) {
+  if (score >= 70) {
     return { level: 'good', color: '#3B82F6', icon: 'checkmark-circle-outline' };
   }
-  if (score >= 60) {
+  if (score >= 50) {
     return { level: 'acceptable', color: '#F59E0B', icon: 'alert-circle' };
   }
   return { level: 'poor', color: '#EF4444', icon: 'close-circle' };
