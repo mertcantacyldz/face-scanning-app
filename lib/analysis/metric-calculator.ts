@@ -3,6 +3,7 @@
  * Centralized metric calculation dispatch for all face regions
  */
 
+import { calculateAttractivenessScore } from '@/lib/attractiveness';
 import type { RegionId } from '@/lib/exercises';
 
 // ============================================
@@ -114,6 +115,56 @@ export async function calculateMetricsForRegion(
   } catch (error) {
     console.error(`❌ Error calculating metrics for ${regionId}:`, error);
     return null;
+  }
+}
+
+/**
+ * Calculate all regional metrics for storage in the database.
+ * This function handles all regions on the device to avoid storing raw landmarks.
+ * 
+ * @param landmarks - Array of 468 face landmarks
+ * @returns Object with metrics for all supported regions
+ */
+export async function calculateAllRegionalMetrics(
+  landmarks: Point3D[]
+): Promise<Record<string, CalculatedMetrics>> {
+  try {
+    const [eyebrows, nose, eyes, lips, jawline] = await Promise.all([
+      import('@/lib/calculations/eyebrows').then(m => m.calculateEyebrowMetrics(landmarks)),
+      import('@/lib/calculations/nose').then(m => m.calculateNoseMetrics(landmarks)),
+      import('@/lib/calculations/eyes').then(m => m.calculateEyeMetrics(landmarks)),
+      import('@/lib/calculations/lips').then(m => m.calculateLipMetrics(landmarks)),
+      import('@/lib/calculations/jawline').then(m => m.calculateJawlineMetrics(landmarks)),
+    ]);
+
+    // KVKK: Genel çekicilik skorunu da (simetri, oranlar vb.) hesapla ve sakla
+    // Bu sayede landmarklar silinse bile analiz ekranı tüm veriyi hazır bulur.
+    const attractiveness = calculateAttractivenessScore(
+      landmarks,
+      null, // Cinsiyet bilgisi gerekirse sonra eklenebilir
+      {
+        eyebrows: eyebrows.overallScore,
+        nose: nose.overallScore,
+        eyes: eyes.overallScore,
+        lips: lips.overallScore,
+        jawline: jawline.overallScore,
+      }
+    );
+
+    const allMetrics = {
+      eyebrows: eyebrows as CalculatedMetrics,
+      nose: nose as CalculatedMetrics,
+      eyes: eyes as CalculatedMetrics,
+      lips: lips as CalculatedMetrics,
+      jawline: jawline as CalculatedMetrics,
+      attractiveness: attractiveness as any, // AttractivenesResult tipinde
+    };
+
+    console.log('📊 Calculated all regional metrics and attractiveness for storage');
+    return allMetrics;
+  } catch (error) {
+    console.error('❌ Error calculating all regional metrics:', error);
+    return {};
   }
 }
 

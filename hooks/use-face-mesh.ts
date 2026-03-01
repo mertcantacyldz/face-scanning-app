@@ -1,3 +1,6 @@
+import {
+  calculateAllRegionalMetrics
+} from '@/lib/analysis/metric-calculator';
 import { Point3D } from '@/lib/geometry';
 import { mediaPipeHTML } from '@/lib/mediapipe-html';
 import {
@@ -481,7 +484,10 @@ export function useFaceMesh() {
   };
 
   // Veritabanına kaydet - returns the saved record ID
-  const saveAnalysisToDatabase = async (landmarksData: FaceLandmarks): Promise<string | null> => {
+  const saveAnalysisToDatabase = async (
+    landmarksData: FaceLandmarks,
+    metrics: Record<string, any> | null = null
+  ): Promise<string | null> => {
     try {
       // DEBUG-MIRROR: DB'ye kaydedilmeden önce kontrol
       console.log('💾 [DEBUG-MIRROR] DB\'YE KAYDEDİLİYOR:', {
@@ -500,7 +506,8 @@ export function useFaceMesh() {
         .insert([
           {
             user_id: user.id,
-            landmarks: landmarksData.landmarks,
+            landmarks: null, // KVKK Uyumu: Ham landmarkları kaydetmiyoruz
+            metrics: metrics, // Önceden hesaplanmış metrikler
             analysis_data: {
               totalPoints: landmarksData.totalPoints,
               confidence: landmarksData.confidence,
@@ -542,7 +549,12 @@ export function useFaceMesh() {
     setShowMeshPreview(false);
 
     if (faceLandmarks) {
-      const savedId = await saveAnalysisToDatabase(faceLandmarks);
+      // KVKK: Kayıt öncesi tüm metrikleri yerelde hesapla
+      const metrics = await calculateAllRegionalMetrics(
+        faceLandmarks.landmarks.map((l, i) => ({ x: l.x, y: l.y, z: l.z, index: l.index ?? i }))
+      );
+
+      const savedId = await saveAnalysisToDatabase(faceLandmarks, metrics);
 
       if (savedId) {
         // Fotoğrafı kalıcı olarak kaydet
@@ -1057,16 +1069,13 @@ export function useFaceMesh() {
           timestamp: Date.now(),
         };
 
+        // KVKK: Kayıt öncesi tüm metrikleri (çekicilik dahil) hesapla
+        const metrics = await calculateAllRegionalMetrics(
+          singlePhotoLandmarks.landmarks.map((l, i) => ({ x: l.x, y: l.y, z: l.z, index: l.index ?? i }))
+        );
+
         // Save to database
-        const faceAnalysisId = await saveAnalysisToDatabase({
-          ...singlePhotoLandmarks,
-          analysis_data: {
-            totalPoints: photo.landmarks.landmarks.length,
-            confidence: photo.landmarks.confidence || 0,
-            singlePhotoMode: true,
-            processedAt: new Date().toISOString(),
-          },
-        } as any);
+        const faceAnalysisId = await saveAnalysisToDatabase(singlePhotoLandmarks, metrics);
 
         console.log('💾 [SINGLE-PHOTO] Database kayıt ID:', faceAnalysisId);
 
@@ -1290,12 +1299,16 @@ export function useFaceMesh() {
         return;
       }
 
+      // Ortalama landmarklar üzerinden tüm metrikleri hesapla
+      const metrics = await calculateAllRegionalMetrics(averagedFaceLandmarks.landmarks);
+
       const { data, error } = await supabase
         .from('face_analysis')
         .insert([
           {
             user_id: user.id,
-            landmarks: averagedFaceLandmarks.landmarks,
+            landmarks: null, // KVKK Uyumu
+            metrics: metrics, // Hesaplanan metrikler
             analysis_data: {
               totalPoints: averagedFaceLandmarks.totalPoints,
               confidence: averagedFaceLandmarks.confidence,

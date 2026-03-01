@@ -21,7 +21,7 @@ import {
   preparePromptForRegion,
   validateAndCorrectScores,
 } from '@/lib/analysis';
-import { calculateAttractivenessScore } from '@/lib/attractiveness';
+import { calculateAttractivenessScore, type RegionalScores } from '@/lib/attractiveness';
 import type { RegionId } from '@/lib/exercises';
 import { FACE_REGIONS, type FaceRegion, type SupportedLanguage } from '@/lib/face-prompts';
 import { extractMetrics } from '@/lib/metrics';
@@ -58,7 +58,8 @@ const TEST_MODE = false;
 
 interface FaceAnalysisData {
   id: string;
-  landmarks: { x: number; y: number; z: number; index: number }[];
+  landmarks: { x: number; y: number; z: number; index: number }[] | null;
+  metrics: Record<string, any> | null;
   created_at: string;
 }
 
@@ -105,7 +106,7 @@ const AnalysisScreen = () => {
   }, [faceAnalysisId]);
 
   useEffect(() => {
-    if (faceData?.landmarks) {
+    if (faceData) {
       calculateAttractivenessWithRegional();
     }
   }, [faceData, userGender]);
@@ -140,7 +141,7 @@ const AnalysisScreen = () => {
       // Fetch face analysis
       let query = supabase
         .from('face_analysis')
-        .select('id, landmarks, created_at')
+        .select('id, landmarks, metrics, created_at')
         .eq('user_id', user.id);
 
       if (specificId) {
@@ -164,6 +165,12 @@ const AnalysisScreen = () => {
       }
 
       setFaceData(data);
+      console.log('📡 [ANALYSIS_LOAD] Face data loaded:', {
+        id: data.id,
+        hasMetrics: !!data.metrics,
+        hasLandmarks: !!data.landmarks,
+        metricsKeys: data.metrics ? Object.keys(data.metrics) : []
+      });
     } catch (error) {
       console.error('Error loading face analysis:', error);
       Alert.alert(t('errors.title', { ns: 'errors' }), t('alerts.saveError.message', { ns: 'home' }));
@@ -177,30 +184,60 @@ const AnalysisScreen = () => {
   // ============================================
 
   const calculateAttractivenessWithRegional = async () => {
-    if (!faceData?.landmarks) return;
+    if (!faceData) return;
 
     try {
-      const [eyebrowsCalc, noseCalc, eyesCalc, lipsCalc, jawlineCalc] = await Promise.all([
-        import('@/lib/calculations/eyebrows').then(m => m.calculateEyebrowMetrics(faceData.landmarks)),
-        import('@/lib/calculations/nose').then(m => m.calculateNoseMetrics(faceData.landmarks)),
-        import('@/lib/calculations/eyes').then(m => m.calculateEyeMetrics(faceData.landmarks)),
-        import('@/lib/calculations/lips').then(m => m.calculateLipMetrics(faceData.landmarks)),
-        import('@/lib/calculations/jawline').then(m => m.calculateJawlineMetrics(faceData.landmarks)),
-      ]);
+      let regionalScores: RegionalScores;
 
-      const regionalScores = {
-        eyebrows: eyebrowsCalc.overallScore,
-        nose: noseCalc.overallScore,
-        eyes: eyesCalc.overallScore,
-        lips: lipsCalc.overallScore,
-        jawline: jawlineCalc.overallScore,
-      };
+      if (faceData.metrics) {
+        // Yeni sistem: Hazır metriklerden skorları al
+        regionalScores = {
+          eyebrows: faceData.metrics.eyebrows?.overallScore ?? 0,
+          nose: faceData.metrics.nose?.overallScore ?? 0,
+          eyes: faceData.metrics.eyes?.overallScore ?? 0,
+          lips: faceData.metrics.lips?.overallScore ?? 0,
+          jawline: faceData.metrics.jawline?.overallScore ?? 0,
+        };
+        console.log('📊 [ANALYSIS] Using stored regional scores for overall calculation');
 
-      const result = calculateAttractivenessScore(faceData.landmarks, userGender, regionalScores);
+        // KVKK Geliştirmesi: Eğer genel çekicilik skoru zaten hesaplanmışsa landmarklara hiç bakma
+        if (faceData.metrics.attractiveness) {
+          const attr = faceData.metrics.attractiveness;
+          console.log('✨ [ANALYSIS] Using pre-calculated overall attractiveness:', attr.overallScore);
+          setAttractivenessScore(attr.overallScore);
+          return;
+        }
+      } else if (faceData.landmarks) {
+        // Eski sistem: Landmarklardan hesapla
+        console.log('🔄 [ANALYSIS] Calculating metrics from legacy landmarks');
+        const [eyebrowsCalc, noseCalc, eyesCalc, lipsCalc, jawlineCalc] = await Promise.all([
+          import('@/lib/calculations/eyebrows').then(m => m.calculateEyebrowMetrics(faceData.landmarks!)),
+          import('@/lib/calculations/nose').then(m => m.calculateNoseMetrics(faceData.landmarks!)),
+          import('@/lib/calculations/eyes').then(m => m.calculateEyeMetrics(faceData.landmarks!)),
+          import('@/lib/calculations/lips').then(m => m.calculateLipMetrics(faceData.landmarks!)),
+          import('@/lib/calculations/jawline').then(m => m.calculateJawlineMetrics(faceData.landmarks!)),
+        ]);
+
+        regionalScores = {
+          eyebrows: eyebrowsCalc.overallScore,
+          nose: noseCalc.overallScore,
+          eyes: eyesCalc.overallScore,
+          lips: lipsCalc.overallScore,
+          jawline: jawlineCalc.overallScore,
+        };
+      } else {
+        return;
+      }
+
+      const result = calculateAttractivenessScore(
+        (faceData.landmarks || []).map((l, i) => ({ ...l, index: l.index ?? i })),
+        userGender,
+        regionalScores
+      );
       setAttractivenessScore(result.overallScore);
     } catch (error) {
       console.error('Error calculating attractiveness:', error);
-      const result = calculateAttractivenessScore(faceData.landmarks, userGender);
+      const result = calculateAttractivenessScore(faceData.landmarks || [], userGender);
       setAttractivenessScore(result.overallScore);
     }
   };
@@ -247,10 +284,14 @@ const AnalysisScreen = () => {
       return;
     }
 
-    // Increment count if needed
     if (accessResult.action === 'increment_count') {
       await incrementFreeAnalysisCount(region.id);
     }
+
+    console.log(`🔍 [REGION_START] Analyzing ${region.id}`, {
+      hasMetrics: !!faceData?.metrics?.[region.id],
+      hasLandmarks: !!faceData?.landmarks
+    });
 
     // 3. Check OpenRouter configuration
     if (!isOpenRouterConfigured()) {
@@ -261,7 +302,7 @@ const AnalysisScreen = () => {
       return;
     }
 
-    if (!faceData?.landmarks) {
+    if (!faceData?.landmarks && !faceData?.metrics) {
       Alert.alert(t('errors.title', { ns: 'errors' }), t('errors.noLandmarks', { ns: 'errors' }));
       return;
     }
@@ -270,8 +311,24 @@ const AnalysisScreen = () => {
       setAnalyzingRegion(region.id);
       setSelectedRegion(region);
 
-      // 4. Calculate metrics using extracted utility
-      const calculatedMetrics = await calculateMetricsForRegion(region.id, faceData.landmarks);
+      // 4. Calculate or fetch metrics
+      let calculatedMetrics: any = null;
+
+      if (faceData.metrics?.[region.id]) {
+        // Yeni sistem: Kayıtlı metriği kullan
+        console.log(`📊 [ANALYSIS] Using stored metrics for region: ${region.id}`);
+        calculatedMetrics = faceData.metrics[region.id];
+      } else if (faceData.landmarks) {
+        // Eski sistem: Landmarklardan hesapla
+        console.log(`🔄 [ANALYSIS] Calculating metrics for legacy landmarks: ${region.id}`);
+        calculatedMetrics = await calculateMetricsForRegion(region.id, faceData.landmarks);
+      }
+
+      console.log(`📊 [METRICS_READY] Metrics for ${region.id}:`, {
+        score: calculatedMetrics?.overallScore,
+        asymmetry: calculatedMetrics?.asymmetryLevel,
+        isFromStored: !!faceData.metrics?.[region.id]
+      });
 
       // 5. Prepare prompt using extracted utility
       const currentLang = (i18n.language || 'en') as SupportedLanguage;
