@@ -9,8 +9,7 @@ import { usePremium } from '@/hooks/use-premium';
 import { compareAnalysis } from '@/lib/comparison';
 import {
   getExercisesByRegion,
-  getRegionTitle,
-  type RegionId,
+  type RegionId
 } from '@/lib/exercises';
 import { FACE_REGIONS } from '@/lib/face-prompts';
 import { supabase } from '@/lib/supabase';
@@ -39,7 +38,7 @@ interface AnalysisRecord {
 const RegionDetailScreen = () => {
   const { id } = useLocalSearchParams<{ id: string }>();
   const regionId = id as RegionId;
-  const { t, i18n } = useTranslation('region');
+  const { t, i18n } = useTranslation(['region', 'analysis']);
 
   const [loading, setLoading] = useState(true);
   const [analyses, setAnalyses] = useState<AnalysisRecord[]>([]);
@@ -50,7 +49,7 @@ const RegionDetailScreen = () => {
   // Premium check
   const { isPremium } = usePremium();
 
-  const title = getRegionTitle(regionId);
+  const title = t(`regions.${regionId}.title`, { ns: 'analysis' });
   const region = FACE_REGIONS.find((r) => r.id === regionId);
   const exercises = getExercisesByRegion(regionId);
 
