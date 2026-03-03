@@ -229,7 +229,7 @@ export default function HomeScreen() {
     // Don't close modal - user will click "Analiz Et" when ready
     return uris;
   };
-
+  // V1.0
   const handleMultiPhotoComplete = async () => {
     console.log('✅ [COMPLETE] Yeni analiz tamamlanıyor');
 
