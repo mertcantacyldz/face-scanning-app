@@ -416,7 +416,7 @@ export function calculateLipMetrics(landmarks: Point3D[]): LipCalculations {
             : 1; // Severe (0-1)
 
   // ============================================
-  // I. 3D DEPTH ANALYSIS
+  // I. 3D DEPTH ANALYSIS (Normalized for scoring)
   // ============================================
 
   // Calculate average Z depth for each side
@@ -430,9 +430,15 @@ export function calculateLipMetrics(landmarks: Point3D[]): LipCalculations {
       rightUpperOuter.z +
       rightLowerOuter.z) /
     5;
-  const depthDifference = Math.abs(leftSideDepth - rightSideDepth);
+  const depthDifferenceRaw = Math.abs(leftSideDepth - rightSideDepth);
+  const depthDifference = depthDifferenceRaw / faceWidth;
+
+  console.log('⚖️ LIPS DEPTH ANALYSIS:');
+  console.log('  Raw depth diff:', depthDifferenceRaw.toFixed(4));
+  console.log('  Normalized depth diff (diff / faceWidth):', depthDifference.toFixed(4));
 
   // STRICT SCORING: Z-axis is photo-quality dependent, minimal weight
+  // Normalized thresholds: 0.008 (Perfect), 0.015 (Mild)
   const depthScore =
     depthDifference < 0.008
       ? 10 // Planar symmetry (10)

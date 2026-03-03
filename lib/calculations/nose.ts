@@ -507,13 +507,22 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
   console.log('  Old rotationScore:', rotationScore.toFixed(1), '/10');
 
   // ============================================
-  // E. 3D DEPTH DIFFERENCE
+  // E. 3D DEPTH DIFFERENCE (Normalized for scoring)
   // ============================================
+  const depthDifferenceRaw = Math.abs(leftNostril.z - rightNostril.z);
+  const depthDifference = depthDifferenceRaw / faceWidth;
 
-  const depthDifference = Math.abs(leftNostril.z - rightNostril.z);
+  console.log('⚖️ NOSE DEPTH ANALYSIS:');
+  console.log('  Raw depth diff:', depthDifferenceRaw.toFixed(4));
+  console.log('  Normalized depth diff (diff / faceWidth):', depthDifference.toFixed(4));
 
   // CONTINUOUS SCORING: Smooth linear interpolation
-  const depthScore = calculateDepthScore(depthDifference);
+  const depthScore = calculateLinearScore(depthDifference, [
+    { value: 0.01, score: 10 },
+    { value: 0.025, score: 8 },
+    { value: 0.05, score: 6 },
+    { value: 0.08, score: 4 }
+  ]);
 
   // ============================================
   // G. ADDITIONAL METRICS
@@ -565,8 +574,13 @@ export function calculateNoseMetrics(landmarks: Point3D[]): NoseCalculations {
         ? 'PROPORTIONATE'
         : 'LONG';
 
-  // G3. Nose Tip Projection (Z-axis)
-  const tipProjection = Math.abs(noseTip.z - bridge.z);
+  // G3. Nose Tip Projection (Z-axis - Normalized for scoring)
+  const tipProjectionRaw = Math.abs(noseTip.z - bridge.z);
+  const tipProjection = tipProjectionRaw / faceWidth;
+
+  console.log('⚖️ NOSE PROJECTION ANALYSIS:');
+  console.log('  Raw projection:', tipProjectionRaw.toFixed(4));
+  console.log('  Normalized projection (proj / faceWidth):', tipProjection.toFixed(4));
 
   // IDEAL RANGE: 0.06-0.09 units (from 1024x1024 real data analysis)
   const projectionScore =

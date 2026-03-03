@@ -450,14 +450,20 @@ export function calculateEyeMetrics(landmarks: Point3D[]): EyeCalculations {
   const eyelidScore = Math.round(upperLidScore * 0.6 + lowerLidScore * 0.4);
 
   // ============================================
-  // H. 3D DEPTH ANALYSIS
+  // H. 3D DEPTH ANALYSIS (Normalized for scoring)
   // ============================================
 
   const leftEyeDepth = (leftEyeTop.z + leftEyeBottom.z + leftEyeOuter.z + leftEyeInner.z) / 4;
   const rightEyeDepth = (rightEyeTop.z + rightEyeBottom.z + rightEyeOuter.z + rightEyeInner.z) / 4;
-  const depthDifference = Math.abs(leftEyeDepth - rightEyeDepth);
+  const depthDifferenceRaw = Math.abs(leftEyeDepth - rightEyeDepth);
+  const depthDifference = depthDifferenceRaw / faceWidth;
+
+  console.log('⚖️ EYES DEPTH ANALYSIS:');
+  console.log('  Raw depth diff:', depthDifferenceRaw.toFixed(4));
+  console.log('  Normalized depth diff (diff / faceWidth):', depthDifference.toFixed(4));
 
   // STRICT SCORING: Z-axis is photo-quality dependent, minimal weight
+  // Normalized thresholds: 0.008 (Perfect), 0.015 (Mild)
   const depthScore =
     depthDifference < 0.008
       ? 10 // Planar symmetry (10)

@@ -5,7 +5,6 @@
 
 import { Card } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
-import { getScoreLabelTr } from '@/lib/attractiveness';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
@@ -31,6 +30,16 @@ export function AttractivenessCard({
 }: AttractivenessCardProps) {
   const { t } = useTranslation('analysis');
 
+  const getLocalizedScoreLabel = (s: number) => {
+    if (s >= 9) return t('score.labels.exceptional');
+    if (s >= 8) return t('score.labels.veryAttractive');
+    if (s >= 7) return t('score.labels.attractive');
+    if (s >= 6) return t('score.labels.aboveAverage');
+    if (s >= 5) return t('score.labels.average');
+    if (s >= 4) return t('score.labels.belowAverage');
+    return t('score.labels.needsImprovement');
+  };
+
   return (
     <Card className="mb-6 p-5 bg-primary/10 border border-primary/20">
       <View className="flex-row items-center justify-between">
@@ -43,7 +52,7 @@ export function AttractivenessCard({
             {score.toFixed(1)}/10
           </Text>
           <Text className="text-sm text-primary font-medium">
-            {getScoreLabelTr(score)}
+            {getLocalizedScoreLabel(score)}
           </Text>
         </View>
 

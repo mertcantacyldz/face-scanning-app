@@ -220,7 +220,16 @@
     "overall": "Genel Çekicilik Puanı",
     "outOf": "/ 100",
     "detailsTitle": "Detaylı Puan Dökümü",
-    "upgradePremium": "Detaylı puan dökümü için Premium'a geçin"
+    "upgradePremium": "Detaylı puan dökümü için Premium'a geçin",
+    "labels": {
+      "exceptional": "Olağanüstü",
+      "veryAttractive": "Çok Çekici",
+      "attractive": "Çekici",
+      "aboveAverage": "Ortalamanın Üstünde",
+      "average": "Ortalama",
+      "belowAverage": "Ortalamanın Altında",
+      "needsImprovement": "Geliştirilebilir"
+    }
   },
   "freeAnalysis": {
     "title": "Ücretsiz Analiz Hakkın Var!",

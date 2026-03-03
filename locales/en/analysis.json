@@ -220,7 +220,16 @@
     "overall": "Overall Attractiveness Score",
     "outOf": "out of 100",
     "detailsTitle": "Detailed Score Breakdown",
-    "upgradePremium": "Upgrade to Premium for detailed score breakdown"
+    "upgradePremium": "Upgrade to Premium for detailed score breakdown",
+    "labels": {
+      "exceptional": "Exceptional",
+      "veryAttractive": "Very Attractive",
+      "attractive": "Attractive",
+      "aboveAverage": "Above Average",
+      "average": "Average",
+      "belowAverage": "Below Average",
+      "needsImprovement": "Needs Improvement"
+    }
   },
   "freeAnalysis": {
     "title": "You Have a Free Analysis!",
