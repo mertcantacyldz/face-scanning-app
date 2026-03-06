@@ -1,17 +1,17 @@
 import React, { useEffect } from 'react';
 import { View, useColorScheme } from 'react-native';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  useAnimatedProps,
-  withRepeat,
-  withTiming,
-  withDelay,
-  interpolate,
   Easing,
   FadeIn,
+  SharedValue,
+  interpolate,
+  useAnimatedProps,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming
 } from 'react-native-reanimated';
-import Svg, { Circle, Line, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, Line, LinearGradient, Stop } from 'react-native-svg';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedLine = Animated.createAnimatedComponent(Line);
@@ -86,7 +86,7 @@ interface FaceDotProps {
   x: number;
   y: number;
   delay: number;
-  scanProgress: Animated.SharedValue<number>;
+  scanProgress: SharedValue<number>;
   isDark: boolean;
 }
 

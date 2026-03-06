@@ -1,14 +1,14 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useMemo } from 'react';
-import { View, StyleSheet, Dimensions, useColorScheme } from 'react-native';
+import { Dimensions, StyleSheet, useColorScheme, View } from 'react-native';
 import Animated, {
-  useSharedValue,
+  Easing,
   useAnimatedStyle,
+  useSharedValue,
+  withDelay,
   withRepeat,
   withTiming,
-  withDelay,
-  Easing,
 } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -100,8 +100,8 @@ export function AnimatedBackground() {
 
   // Gradient colors based on theme
   const gradientColors = isDark
-    ? ['#0F172A', '#1E1B4B', '#0F172A'] // Dark: deep space
-    : ['#EEF2FF', '#E0E7FF', '#EEF2FF']; // Light: soft indigo
+    ? (['#0F172A', '#1E1B4B', '#0F172A'] as const) // Dark: deep space
+    : (['#EEF2FF', '#E0E7FF', '#EEF2FF'] as const); // Light: soft indigo
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
