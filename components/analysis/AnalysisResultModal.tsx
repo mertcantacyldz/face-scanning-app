@@ -6,7 +6,6 @@
 import { Card } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
 import type { FaceRegion } from '@/lib/face-prompts';
-import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,

@@ -1,7 +1,6 @@
 import { Card } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
 import type { RegionId } from '@/lib/exercises';
-import { getRegionTitle, getRegionTitleEn } from '@/lib/exercises';
 import { FACE_REGIONS } from '@/lib/face-prompts';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -25,7 +24,7 @@ export function RegionProgressCard({
   onPress,
 }: RegionProgressCardProps) {
   const { t, i18n } = useTranslation('region');
-  const title = i18n.language === 'tr' ? getRegionTitle(regionId) : getRegionTitleEn(regionId);
+  const title = t(`names.${regionId}`);
   const region = FACE_REGIONS.find((r) => r.id === regionId);
 
   // Calculate change

@@ -1,6 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 interface HeroCardProps {
@@ -32,6 +33,8 @@ function getEnumColor(value: string): 'green' | 'yellow' | 'red' | 'gray' {
 }
 
 export function HeroCard({ data }: HeroCardProps) {
+  const { t } = useTranslation('analysis');
+
   // Determine score (overall_score or confidence_score)
   const score = data.overall_score ?? data.confidence_score ?? 0;
 
@@ -63,6 +66,11 @@ export function HeroCard({ data }: HeroCardProps) {
     gray: 'text-gray-800',
   }[badgeColor];
 
+  // Translated badge text
+  const translatedBadgeValue = badgeValue
+    ? t(`enums.${badgeValue.toUpperCase()}`, { defaultValue: badgeValue })
+    : null;
+
   return (
     <Card className="bg-primary/10 p-8 mb-6 border-2 border-primary/20">
       {/* Score Circle */}
@@ -78,7 +86,7 @@ export function HeroCard({ data }: HeroCardProps) {
       </View>
 
       {/* Badge (Asymmetry Level or Face Shape) */}
-      {badgeValue && (
+      {translatedBadgeValue && (
         <View className="items-center mb-6">
           <View
             className={`${badgeColorClasses} border-2 px-6 py-2 rounded-full`}
@@ -86,7 +94,7 @@ export function HeroCard({ data }: HeroCardProps) {
             <Text
               className={`${badgeTextColorClasses} text-base font-bold tracking-wide`}
             >
-              {badgeValue}
+              {translatedBadgeValue}
             </Text>
           </View>
         </View>

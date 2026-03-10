@@ -1,14 +1,14 @@
 // Exercise Region Stats Card Component
 // Compact square card with modal for details
 
-import React, { useState, useEffect } from 'react';
-import { View, Pressable, ActivityIndicator, Modal, ScrollView, Dimensions } from 'react-native';
-import { Text } from '@/components/ui/text';
 import { Card } from '@/components/ui/card';
-import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
+import { Text } from '@/components/ui/text';
 import { getRegionMonthlyStats, type RegionMonthlyStats } from '@/lib/exercise-tracking';
-import { getExercisesByRegion, getRegionTitle, type RegionId } from '@/lib/exercises';
+import { getExercisesByRegion, type RegionId } from '@/lib/exercises';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { ActivityIndicator, Dimensions, Modal, Pressable, ScrollView, View } from 'react-native';
 import { ExerciseCompletionBadge } from './ExerciseCompletionBadge';
 
 interface ExerciseRegionStatsCardProps {
@@ -28,7 +28,7 @@ export function ExerciseRegionStatsCard({
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const regionTitle = getRegionTitle(regionId);
+  const regionTitle = t(`names.${regionId}`, { ns: 'region' });
   const exercises = getExercisesByRegion(regionId);
   const currentLanguage = i18n.language;
 
