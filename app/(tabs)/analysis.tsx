@@ -9,7 +9,9 @@ import {
   FreeUserRightsCard,
   RegionButton,
 } from '@/components/analysis';
+import { AIConsentModal } from '@/components/AIConsentModal';
 import { PremiumModal } from '@/components/PremiumModal';
+
 import { SpinWheel } from '@/components/SpinWheel';
 import { Card } from '@/components/ui/card';
 import { Text } from '@/components/ui/text';
@@ -40,7 +42,9 @@ import {
   ScrollView,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 
 // ============================================
 // CONSTANTS
@@ -84,6 +88,10 @@ const AnalysisScreen = () => {
   const [showSpinWheel, setShowSpinWheel] = useState(false);
   const [attractivenessScore, setAttractivenessScore] = useState<number | null>(null);
   const [userGender, setUserGender] = useState<'female' | 'male' | 'other' | null>(null);
+  const [showAIConsentModal, setShowAIConsentModal] = useState(false);
+  const [aiConsentGiven, setAiConsentGiven] = useState(false);
+  const [pendingRegion, setPendingRegion] = useState<FaceRegion | null>(null);
+
 
   // ============================================
   // PREMIUM CONTEXT
@@ -127,15 +135,18 @@ const AnalysisScreen = () => {
         return;
       }
 
-      // Fetch user's gender from profile
+      // Fetch user's gender and AI consent from profile
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('gender')
+        .select('gender, ai_consent_given')
         .eq('id', user.id)
         .single();
 
-      if (profileData?.gender) {
-        setUserGender(profileData.gender as 'female' | 'male' | 'other');
+      if (profileData) {
+        if (profileData.gender) {
+          setUserGender(profileData.gender as 'female' | 'male' | 'other');
+        }
+        setAiConsentGiven(!!profileData.ai_consent_given);
       }
 
       // Fetch face analysis
@@ -264,7 +275,15 @@ const AnalysisScreen = () => {
   // ============================================
 
   const handleRegionAnalysis = async (region: FaceRegion, bypassPremiumCheck = false) => {
+    // 0. AI Consent Check (Guideline 2.1)
+    if (!aiConsentGiven) {
+      setPendingRegion(region);
+      setShowAIConsentModal(true);
+      return;
+    }
+
     // 1. JIT Premium Check
+
     const isStillPremium = await refreshPremiumStatus();
 
     // 2. Check access using extracted logic
@@ -382,6 +401,37 @@ const AnalysisScreen = () => {
       setAnalyzingRegion(null);
     }
   };
+
+  const handleAcceptConsent = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase
+          .from('profiles')
+          .update({ ai_consent_given: true })
+          .eq('id', user.id);
+      }
+      
+      setAiConsentGiven(true);
+      setShowAIConsentModal(false);
+      
+      if (pendingRegion) {
+        handleRegionAnalysis(pendingRegion);
+        setPendingRegion(null);
+      }
+    } catch (error) {
+      console.error('Error saving consent:', error);
+      // Fallback to local state if DB update fails
+      setAiConsentGiven(true);
+      setShowAIConsentModal(false);
+    }
+  };
+
+  const handleDeclineConsent = () => {
+    setShowAIConsentModal(false);
+    setPendingRegion(null);
+  };
+
 
   // ============================================
   // HELPER FUNCTIONS
@@ -618,6 +668,13 @@ const AnalysisScreen = () => {
         featureIconName="lock-closed-outline"
       />
 
+      {/* AI Consent Modal */}
+      <AIConsentModal
+        visible={showAIConsentModal}
+        onAccept={handleAcceptConsent}
+        onDecline={handleDeclineConsent}
+      />
+
       {/* Analysis Result Modal */}
       <AnalysisResultModal
         visible={showResultModal}
@@ -626,6 +683,7 @@ const AnalysisScreen = () => {
         analysisResult={analysisResult}
       />
     </View>
+
   );
 };
 

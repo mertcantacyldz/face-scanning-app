@@ -269,5 +269,15 @@
   },
   "closeButton": "Close",
   "aiDisclaimer": "This analysis was created by artificial intelligence using MediaPipe Face Mesh data. Results are for informational purposes only.",
-  "thisFeature": "This feature"
+  "thisFeature": "This feature",
+  "aiConsent": {
+    "title": "Privacy-First AI Analysis",
+    "description": "Elevate your journey with advanced AI insights. We designed FaceLoom to be powerful yet private:",
+    "bulletLocal": "**Stay Local:** Your photos and raw facial data never leave your phone.",
+    "bulletProportions": "**Smart Proportions:** We only process anonymized, text-based ratios to generate your advice.",
+    "bulletTraining": "**No Training:** Your data is yours—it's never used for AI training and is instantly cleared.",
+    "privacyLink": "Learn more about our Privacy Standards",
+    "decline": "Not Now",
+    "accept": "Enable Analysis"
+  }
 }

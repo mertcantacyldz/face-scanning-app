@@ -259,19 +259,23 @@ const PaywallScreen = () => {
           <Text className="text-xs text-muted-foreground text-center">
             {t('paywall.termsPrefix')}
             <Text
-              className="text-primary underline"
-              onPress={() => WebBrowser.openBrowserAsync('https://faceloom.netlify.app/terms')}
+              className="text-primary underline font-semibold"
+              onPress={() => WebBrowser.openBrowserAsync('https://faceloom.netlify.app/terms.html')}
             >
               {t('paywall.termsOfUse')}
             </Text>
             {t('paywall.and')}
             <Text
-              className="text-primary underline"
-              onPress={() => WebBrowser.openBrowserAsync('https://faceloom.netlify.app/privacy')}
+              className="text-primary underline font-semibold"
+              onPress={() => WebBrowser.openBrowserAsync('https://faceloom.netlify.app/privacy.html')}
             >
               {t('paywall.privacyPolicy')}
             </Text>
             {t('paywall.termsSuffix')}
+          </Text>
+          <Text className="text-[10px] text-muted-foreground text-center mt-4">
+            Subscriptions will be charged to your iTunes account at confirmation of purchase. 
+            Standard Apple Terms of Use (EULA) apply.
           </Text>
         </View>
       </ScrollView>

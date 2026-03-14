@@ -269,5 +269,15 @@
   },
   "closeButton": "Kapat",
   "aiDisclaimer": "Bu analiz yapay zeka tarafından MediaPipe Face Mesh verisi kullanılarak oluşturulmuştur. Sonuçlar bilgilendirme amaçlıdır.",
-  "thisFeature": "Bu özellik"
+  "thisFeature": "Bu özellik",
+  "aiConsent": {
+    "title": "Gizlilik Öncelikli AI Analizi",
+    "description": "Gelişmiş yapay zeka analizleriyle yolculuğunu bir üst seviyeye taşı. FaceLoom'u güçlü ama gizli olacak şekilde tasarladık:",
+    "bulletLocal": "**Lokal Kalır:** Fotoğrafların ve ham yüz verilerin asla telefonundan çıkmaz.",
+    "bulletProportions": "**Akıllı Oranlar:** Size tavsiye oluşturmak için yalnızca anonim, metin tabanlı oranları işliyoruz.",
+    "bulletTraining": "**Eğitim Yok:** Verileriniz sizindir; asla yapay zeka eğitimi için kullanılmaz ve anında temizlenir.",
+    "privacyLink": "Gizlilik Standartlarımız hakkında daha fazlasını öğrenin",
+    "decline": "Şimdi Değil",
+    "accept": "Analizi Etkinleştir"
+  }
 }

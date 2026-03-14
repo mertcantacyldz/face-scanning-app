@@ -1,0 +1,233 @@
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+/* Header */
+header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 60px 40px;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+/* Main Content */
+main {
+    padding: 40px;
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 24px;
+    margin-bottom: 40px;
+}
+
+.card {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+    text-decoration: none;
+    color: #333;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(102, 126, 234, 0.3);
+    border-color: #667eea;
+}
+
+.card-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+}
+
+.card h2 {
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+    color: #667eea;
+}
+
+.card p {
+    color: #666;
+    font-size: 0.95rem;
+}
+
+/* Info Section */
+.info-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 32px;
+    border-left: 4px solid #667eea;
+}
+
+.info-section h2 {
+    color: #667eea;
+    margin-bottom: 16px;
+    font-size: 1.8rem;
+}
+
+.info-section p {
+    color: #666;
+    font-size: 1.05rem;
+}
+
+/* Legal Content Pages */
+.legal-content {
+    padding: 40px;
+}
+
+.legal-content h1 {
+    color: #667eea;
+    font-size: 2.5rem;
+    margin-bottom: 16px;
+}
+
+.last-updated {
+    color: #999;
+    font-style: italic;
+    margin-bottom: 32px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.legal-content h2 {
+    color: #333;
+    font-size: 1.8rem;
+    margin-top: 32px;
+    margin-bottom: 16px;
+}
+
+.legal-content h3 {
+    color: #555;
+    font-size: 1.3rem;
+    margin-top: 24px;
+    margin-bottom: 12px;
+}
+
+.legal-content p, .legal-content ul {
+    margin-bottom: 16px;
+    color: #666;
+}
+
+.legal-content ul {
+    padding-left: 24px;
+}
+
+.legal-content li {
+    margin-bottom: 8px;
+}
+
+.legal-content a {
+    color: #667eea;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s ease;
+}
+
+.legal-content a:hover {
+    border-bottom-color: #667eea;
+}
+
+/* Back Link */
+.back-link {
+    display: inline-block;
+    margin-bottom: 24px;
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+    transition: transform 0.2s ease;
+}
+
+.back-link:hover {
+    transform: translateX(-4px);
+}
+
+/* Footer */
+footer {
+    background: #f8f9fa;
+    padding: 32px 40px;
+    text-align: center;
+    color: #666;
+    border-top: 1px solid #e9ecef;
+}
+
+.footer-links {
+    margin-top: 12px;
+}
+
+.footer-links a {
+    color: #667eea;
+    text-decoration: none;
+    margin: 0 8px;
+    transition: color 0.2s ease;
+}
+
+.footer-links a:hover {
+    color: #764ba2;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    header {
+        padding: 40px 24px;
+    }
+
+    header h1 {
+        font-size: 2rem;
+    }
+
+    main, .legal-content {
+        padding: 24px;
+    }
+
+    .card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .legal-content h1 {
+        font-size: 2rem;
+    }
+
+    .legal-content h2 {
+        font-size: 1.5rem;
+    }
+}
