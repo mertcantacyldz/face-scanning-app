@@ -122,36 +122,36 @@ const PaywallScreen = () => {
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header */}
-        <View className="bg-primary/10 pb-8 px-6">
+        <View className="bg-primary/10 pb-4 px-6">
           {/* Close button */}
           <Pressable
             onPress={() => router.back()}
-            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/10 items-center justify-center"
+            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/10 items-center justify-center z-10"
           >
-            <Text className="text-2xl">×</Text>
+            <Text className="text-xl">×</Text>
           </Pressable>
 
           <View className="items-center">
-            <Ionicons name="diamond-outline" size={64} color="#8B5CF6" style={{ marginBottom: 16 }} />
-            <Text className="text-3xl font-bold text-center mb-2">
+            <Ionicons name="diamond-outline" size={40} color="#8B5CF6" style={{ marginBottom: 8, marginTop: 12 }} />
+            <Text className="text-2xl font-bold text-center mb-1">
               {t('paywall.title')}
             </Text>
-            <Text className="text-muted-foreground text-center">
+            <Text className="text-sm text-muted-foreground text-center">
               {t('paywall.subtitle')}
             </Text>
           </View>
         </View>
 
         {/* Features */}
-        <View className="px-6 py-6">
-          <Card className="p-5 bg-card border border-border">
-            <Text className="text-lg font-bold mb-4">{t('paywall.featuresTitle')}</Text>
-            <View className="gap-3">
+        <View className="px-6 py-4">
+          <Card className="p-4 bg-card border border-border">
+            <Text className="text-base font-bold mb-2">{t('paywall.featuresTitle')}</Text>
+            <View className="gap-2">
               {FEATURE_KEYS.map((feature, index) => (
                 <View key={index} className="flex-row items-center">
-                  <Ionicons name={feature.iconName as any} size={24} color="#8B5CF6" />
-                  <Text className="text-foreground flex-1 ml-3">{t(`paywall.features.${feature.key}`)}</Text>
-                  <Ionicons name="checkmark-circle" size={20} color="#10B981" />
+                  <Ionicons name={feature.iconName as any} size={18} color="#8B5CF6" />
+                  <Text className="text-sm text-foreground flex-1 ml-2">{t(`paywall.features.${feature.key}`)}</Text>
+                  <Ionicons name="checkmark-circle" size={16} color="#10B981" />
                 </View>
               ))}
             </View>
@@ -159,42 +159,42 @@ const PaywallScreen = () => {
         </View>
 
         {/* Packages */}
-        <View className="px-6 pb-6">
-          <Text className="text-lg font-bold mb-4">{t('paywall.plans.selectPlan')}</Text>
+        <View className="px-6 pb-4">
+          <Text className="text-base font-bold mb-2">{t('paywall.plans.selectPlan')}</Text>
 
           {/* Yearly Package */}
           <Pressable
             onPress={() => setSelectedPackage('yearly')}
-            className="mb-3"
+            className="mb-2"
           >
             <Card
-              className={`p-5 border-2 ${selectedPackage === 'yearly'
+              className={`p-3 border-2 ${selectedPackage === 'yearly'
                 ? 'border-primary bg-primary/5'
                 : 'border-border bg-card'
                 }`}
             >
               {/* Best Value Badge */}
-              <View className="absolute -top-3 left-4 bg-primary px-3 py-1 rounded-full">
-                <Text className="text-primary-foreground text-xs font-bold">
+              <View className="absolute -top-2 left-4 bg-primary px-2 py-0.5 rounded-full z-10">
+                <Text className="text-primary-foreground text-[10px] font-bold">
                   {t('paywall.plans.mostPopular')}
                 </Text>
               </View>
 
-              <View className="flex-row items-center justify-between mt-2 pr-10">
+              <View className="flex-row items-center justify-between mt-1 pr-8">
                 <View>
-                  <Text className="text-lg font-bold text-foreground">
+                  <Text className="text-base font-bold text-foreground">
                     {t('paywall.plans.yearly')}
                   </Text>
-                  <Text className="text-muted-foreground text-sm">
+                  <Text className="text-muted-foreground text-xs">
                     {yearlyPackage ? `${(yearlyPackage.product.price / 12).toFixed(2)}${t('paywall.plans.perMonth')}` : `$3.83${t('paywall.plans.perMonth')}`}
                   </Text>
                 </View>
                 <View className="items-end">
-                  <Text className="text-2xl font-bold text-foreground">
+                  <Text className="text-xl font-bold text-foreground">
                     {yearlyPackage?.product.priceString || '$45.99'}
                   </Text>
-                  <View className="bg-green-100 px-2 py-0.5 rounded-full mt-1">
-                    <Text className="text-green-800 text-xs font-semibold">
+                  <View className="bg-green-100 px-2 py-0.5 rounded-full mt-0.5">
+                    <Text className="text-green-800 text-[10px] font-semibold">
                       {t('paywall.plans.save', { percent: savings || 52 })}
                     </Text>
                   </View>
@@ -203,13 +203,13 @@ const PaywallScreen = () => {
 
               {/* Selection indicator */}
               <View
-                className={`absolute top-5 right-5 w-6 h-6 rounded-full border-2 items-center justify-center ${selectedPackage === 'yearly'
-                  ? 'border-primary bg-primary'
+                className={`absolute top-4 right-4 w-5 h-5 rounded-full border-2 items-center justify-center flex-row ${selectedPackage === 'yearly'
+                  ? 'border-primary bg-primary' // Changed here to flex-row and items-center
                   : 'border-muted-foreground'
                   }`}
               >
                 {selectedPackage === 'yearly' && (
-                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                  <Ionicons name="checkmark" size={12} color="#FFFFFF" style={{ marginLeft: 1, marginTop: 1 }} />
                 )}
               </View>
             </Card>
@@ -220,34 +220,34 @@ const PaywallScreen = () => {
             onPress={() => setSelectedPackage('monthly')}
           >
             <Card
-              className={`p-5 border-2 ${selectedPackage === 'monthly'
+              className={`p-3 border-2 ${selectedPackage === 'monthly'
                 ? 'border-primary bg-primary/5'
                 : 'border-border bg-card'
                 }`}
             >
-              <View className="flex-row items-center justify-between pr-10">
+              <View className="flex-row items-center justify-between pr-8">
                 <View>
-                  <Text className="text-lg font-bold text-foreground">
+                  <Text className="text-base font-bold text-foreground">
                     {t('paywall.plans.monthly')}
                   </Text>
-                  <Text className="text-muted-foreground text-sm">
+                  <Text className="text-muted-foreground text-xs">
                     {t('paywall.plans.renewsMonthly')}
                   </Text>
                 </View>
-                <Text className="text-2xl font-bold text-foreground">
+                <Text className="text-xl font-bold text-foreground">
                   {monthlyPackage?.product.priceString || '$7.99'}
                 </Text>
               </View>
 
               {/* Selection indicator */}
               <View
-                className={`absolute top-5 right-5 w-6 h-6 rounded-full border-2 items-center justify-center ${selectedPackage === 'monthly'
-                  ? 'border-primary bg-primary'
+                className={`absolute top-4 right-4 w-5 h-5 rounded-full border-2 items-center justify-center flex-row ${selectedPackage === 'monthly'
+                  ? 'border-primary bg-primary' // Changed here to flex-row and items-center
                   : 'border-muted-foreground'
                   }`}
               >
                 {selectedPackage === 'monthly' && (
-                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                  <Ionicons name="checkmark" size={12} color="#FFFFFF" style={{ marginLeft: 1, marginTop: 1 }} />
                 )}
               </View>
             </Card>
@@ -255,7 +255,7 @@ const PaywallScreen = () => {
         </View>
 
         {/* Terms */}
-        <View className="px-6 pb-6">
+        <View className="px-6 pb-10">
           <Text className="text-xs text-muted-foreground text-center">
             {t('paywall.termsPrefix')}
             <Text
@@ -274,25 +274,25 @@ const PaywallScreen = () => {
             {t('paywall.termsSuffix')}
           </Text>
           <Text className="text-[10px] text-muted-foreground text-center mt-4">
-            Subscriptions will be charged to your iTunes account at confirmation of purchase. 
+            Subscriptions will be charged to your iTunes account at confirmation of purchase.
             Standard Apple Terms of Use (EULA) apply.
           </Text>
         </View>
       </ScrollView>
 
       {/* Bottom CTA */}
-      <View className="absolute bottom-0 left-0 right-0 bg-background border-t border-border p-6 pb-10">
+      <View className="absolute bottom-0 left-0 right-0 bg-background border-t border-border p-4 pb-6">
         {/* Purchase Button */}
         <Pressable
           onPress={handlePurchase}
           disabled={purchasing || restoring}
-          className={`py-4 rounded-xl items-center mb-3 ${purchasing || restoring ? 'bg-primary/50' : 'bg-primary'
+          className={`py-3.5 rounded-lg items-center mb-2 ${purchasing || restoring ? 'bg-primary/50' : 'bg-primary'
             }`}
         >
           {purchasing ? (
             <ActivityIndicator color="white" />
           ) : (
-            <Text className="text-primary-foreground font-bold text-lg">
+            <Text className="text-primary-foreground font-bold text-base">
               {selectedPackage === 'yearly' ? t('paywall.cta.startYearly') : t('paywall.cta.startMonthly')}
             </Text>
           )}
@@ -302,12 +302,12 @@ const PaywallScreen = () => {
         <Pressable
           onPress={handleRestore}
           disabled={purchasing || restoring}
-          className="py-2 items-center"
+          className="py-1 items-center"
         >
           {restoring ? (
             <ActivityIndicator color="#007AFF" size="small" />
           ) : (
-            <Text className="text-primary text-sm">
+            <Text className="text-primary text-xs font-semibold">
               {t('paywall.cta.restore')}
             </Text>
           )}

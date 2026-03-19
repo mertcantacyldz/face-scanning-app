@@ -1,10 +1,10 @@
-import React from 'react';
-import { Modal, View, Pressable, ScrollView, Platform } from 'react-native';
-import { Text } from './ui/text';
-import { Card } from './ui/card';
 import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
 import * as WebBrowser from 'expo-web-browser';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { Modal, Pressable, ScrollView, View } from 'react-native';
+import { Card } from './ui/card';
+import { Text } from './ui/text';
 
 interface AIConsentModalProps {
   visible: boolean;
@@ -76,18 +76,18 @@ export const AIConsentModal: React.FC<AIConsentModalProps> = ({ visible, onAccep
             </Pressable>
           </ScrollView>
 
-          <View className="flex-row space-x-3">
-            <Pressable 
-              onPress={onDecline} 
-              className="flex-1 p-4 rounded-xl bg-slate-100 dark:bg-slate-800 items-center active:opacity-70"
+          <View className="flex-row space-x-3 justify-between">
+            <Pressable
+              onPress={onDecline}
+              className=" p-4 rounded-xl bg-slate-100 dark:bg-slate-800 items-center active:opacity-70"
             >
               <Text className="font-semibold text-slate-600 dark:text-slate-300">
                 {t('aiConsent.decline')}
               </Text>
             </Pressable>
-            <Pressable 
-              onPress={onAccept} 
-              className="flex-[2] p-4 rounded-xl bg-violet-600 items-center active:opacity-90 shadow-lg shadow-violet-500/30"
+            <Pressable
+              onPress={onAccept}
+              className=" p-4 rounded-xl bg-violet-600 items-center active:opacity-90 shadow-lg shadow-violet-500/30"
             >
               <Text className="font-bold text-white">
                 {t('aiConsent.accept')}

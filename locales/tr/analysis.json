@@ -274,7 +274,7 @@
     "title": "Gizlilik Öncelikli AI Analizi",
     "description": "Gelişmiş yapay zeka analizleriyle yolculuğunu bir üst seviyeye taşı. FaceLoom'u güçlü ama gizli olacak şekilde tasarladık:",
     "bulletLocal": "**Lokal Kalır:** Fotoğrafların ve ham yüz verilerin asla telefonundan çıkmaz.",
-    "bulletProportions": "**Akıllı Oranlar:** Size tavsiye oluşturmak için yalnızca anonim, metin tabanlı oranları işliyoruz.",
+    "bulletProportions": "**Güvenli Oranlar:** Fotoğraflarınız değil, sadece anonim oranlar analiz için Google Gemini'a (OpenRouter) iletilir.",
     "bulletTraining": "**Eğitim Yok:** Verileriniz sizindir; asla yapay zeka eğitimi için kullanılmaz ve anında temizlenir.",
     "privacyLink": "Gizlilik Standartlarımız hakkında daha fazlasını öğrenin",
     "decline": "Şimdi Değil",
