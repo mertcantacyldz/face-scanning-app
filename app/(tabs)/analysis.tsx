@@ -3,13 +3,13 @@
  * Face region analysis with AI-powered insights
  */
 
+import { AIConsentModal } from '@/components/AIConsentModal';
 import {
   AnalysisResultModal,
   AttractivenessCard,
   FreeUserRightsCard,
   RegionButton,
 } from '@/components/analysis';
-import { AIConsentModal } from '@/components/AIConsentModal';
 import { PremiumModal } from '@/components/PremiumModal';
 
 import { SpinWheel } from '@/components/SpinWheel';
@@ -42,7 +42,6 @@ import {
   ScrollView,
   View,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 
@@ -411,10 +410,10 @@ const AnalysisScreen = () => {
           .update({ ai_consent_given: true })
           .eq('id', user.id);
       }
-      
+
       setAiConsentGiven(true);
       setShowAIConsentModal(false);
-      
+
       if (pendingRegion) {
         handleRegionAnalysis(pendingRegion);
         setPendingRegion(null);

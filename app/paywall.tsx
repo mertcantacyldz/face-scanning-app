@@ -273,9 +273,8 @@ const PaywallScreen = () => {
             </Text>
             {t('paywall.termsSuffix')}
           </Text>
-          <Text className="text-[10px] text-muted-foreground text-center mt-4">
-            Subscriptions will be charged to your iTunes account at confirmation of purchase.
-            Standard Apple Terms of Use (EULA) apply.
+          <Text className="text-[10px] text-muted-foreground text-center mt-4 leading-tight px-2">
+            Payment charged to Apple ID at confirmation. Subscription auto-renews unless canceled 24h before period ends. Account charged for renewal within 24h prior to end. Manage/cancel in App Store settings. Standard Apple Terms of Use (EULA) apply.
           </Text>
         </View>
       </ScrollView>
