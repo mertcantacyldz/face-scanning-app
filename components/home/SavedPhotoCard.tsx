@@ -2,10 +2,10 @@ import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  Dimensions,
   Image,
   View,
-  useColorScheme
+  useColorScheme,
+  useWindowDimensions
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
@@ -16,7 +16,7 @@ import { ConsistencyBadge } from './ConsistencyBadge';
 import { GlassCard } from './GlassCard';
 import { PhotoGrid } from './PhotoGrid';
 
-const { width: screenWidth } = Dimensions.get('window');
+// Moved inside component as useWindowDimensions()
 
 interface SavedPhotoCardProps {
   // Legacy single photo
@@ -72,6 +72,7 @@ export function SavedPhotoCard({
   const { t, i18n } = useTranslation('home');
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const { width: screenWidth } = useWindowDimensions();
 
   // Determine if multi-photo mode
   // Determine if multi-photo mode (1-3 photos supported)

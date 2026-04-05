@@ -32,8 +32,9 @@ import { checkRegionAccess, getRegionDisplayStatus } from '@/lib/premium/access-
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   ActivityIndicator,
   Alert,
@@ -108,9 +109,11 @@ const AnalysisScreen = () => {
   // EFFECTS
   // ============================================
 
-  useEffect(() => {
-    loadLatestFaceAnalysis(faceAnalysisId);
-  }, [faceAnalysisId]);
+  useFocusEffect(
+    useCallback(() => {
+      loadLatestFaceAnalysis(faceAnalysisId);
+    }, [faceAnalysisId])
+  );
 
   useEffect(() => {
     if (faceData) {
@@ -138,7 +141,7 @@ const AnalysisScreen = () => {
       const { data: profileData } = await supabase
         .from('profiles')
         .select('gender, ai_consent_given')
-        .eq('id', user.id)
+        .eq('user_id', user.id)
         .single();
 
       if (profileData) {
@@ -617,17 +620,8 @@ const AnalysisScreen = () => {
           })}
         </View>
 
-        {/* Info Card */}
-        <Card className="mt-6 p-4 bg-primary/5 border border-primary/20">
-          <View className="flex-row items-start">
-            <Ionicons name="bulb-outline" size={16} color="#8B5CF6" style={{ marginTop: 2 }} />
-            <Text className="text-sm text-muted-foreground ml-2 flex-1">
-              <Text className="font-semibold">{t('infoCard.tip')}</Text> {t('infoCard.description')}
-            </Text>
-          </View>
-        </Card>
 
-        <View className="h-8" />
+        <View className="h-20" />
       </ScrollView>
 
       {/* Spin Wheel Modal */}

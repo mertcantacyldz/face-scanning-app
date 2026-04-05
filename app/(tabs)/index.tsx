@@ -1,10 +1,12 @@
 // app/(tabs)/index.tsx - Home Screen
+
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 
+import { AIConsentModal } from '@/components/AIConsentModal';
 import {
   AnimatedBackground,
   HeroLayout,
@@ -27,6 +29,7 @@ interface Profile {
   id: string;
   full_name: string;
   is_premium: boolean;
+  ai_consent_given?: boolean;
 }
 
 // ============================================
@@ -76,11 +79,17 @@ export default function HomeScreen() {
   // Multi-photo modal state
   const [showMultiPhotoModal, setShowMultiPhotoModal] = useState(false);
 
+  // AI Consent state
+  const [showAIConsentModal, setShowAIConsentModal] = useState(false);
+  const [aiConsentGiven, setAiConsentGiven] = useState(false);
+
   // Mode selection dialog state
   const [showModeSelection, setShowModeSelection] = useState(false);
 
   // Fetch user profile when session is ready
   useEffect(() => {
+
+    // Bir kez çalıştırıp sonra bu satırı silebilirsin:
     const fetchProfile = async () => {
       if (!session?.user) {
         console.log('[HOME] No session yet, waiting...');
@@ -105,13 +114,14 @@ export default function HomeScreen() {
           }));
 
           // 🛡️ Fallback onboarding guard: if profile says onboarding not done, redirect
-          if (!profileData.onboarding_completed || !profileData.full_name || profileData.full_name === 'Kullanıcı') {
+          if (profileData.onboarding_completed === false) {
             console.log('🚨 [HOME] Onboarding not completed! Redirecting to onboarding...');
             router.replace('/(onboarding)/welcome');
             return;
           }
 
           setProfile(profileData);
+          setAiConsentGiven(!!profileData.ai_consent_given);
         } else {
           console.log('[HOME] Profile not found, error:', error);
           setProfile({
@@ -169,6 +179,15 @@ export default function HomeScreen() {
 
   const handleStartScan = () => {
     console.log('🎯 [SCAN] Tarama başlatılıyor');
+
+    // 🛡️ AI Consent Guard (Guideline 2.1)
+    // Check if user has given consent. If not, show modal first.
+    if (!aiConsentGiven) {
+      console.log('🛡️ [SCAN] AI Consent required before scan');
+      setShowAIConsentModal(true);
+      return;
+    }
+
     startNewAnalysis('multi');
     // Don't clear old analysis - user might cancel modal
     setShowMultiPhotoModal(true);
@@ -252,6 +271,42 @@ export default function HomeScreen() {
 
   const handleResetMultiPhotos = () => {
     resetMultiPhotoState();
+  };
+
+  const handleAcceptConsent = async () => {
+    try {
+      console.log('✅ [CONSENT] User accepted AI consent');
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        // Persist to database
+        const { error } = await supabase
+          .from('profiles')
+          .update({ ai_consent_given: true })
+          .eq('user_id', user.id);
+
+        if (error) {
+          console.error('❌ [CONSENT] Error updating database:', error);
+        }
+      }
+
+      setAiConsentGiven(true);
+      setShowAIConsentModal(false);
+
+      // Auto-start scan after consent if that was the intent
+      startNewAnalysis('multi');
+      setShowMultiPhotoModal(true);
+    } catch (error) {
+      console.error('❌ [CONSENT] Unexpected error:', error);
+      // Fallback: let user proceed if UI is open
+      setAiConsentGiven(true);
+      setShowAIConsentModal(false);
+    }
+  };
+
+  const handleDeclineConsent = () => {
+    console.log('❌ [CONSENT] User declined AI consent');
+    setShowAIConsentModal(false);
   };
 
   // Determine which layout to show
@@ -376,6 +431,13 @@ export default function HomeScreen() {
         onResetPhotos={handleResetMultiPhotos}
         onComplete={handleMultiPhotoComplete}
         onClose={handleCloseMultiPhotoModal}
+      />
+
+      {/* AI Consent Modal (Guideline 2.1) */}
+      <AIConsentModal
+        visible={showAIConsentModal}
+        onAccept={handleAcceptConsent}
+        onDecline={handleDeclineConsent}
       />
     </View>
   );

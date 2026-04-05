@@ -29,13 +29,20 @@ export default function NameScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      // Update profile with name
-      const { error } = await supabase
+      // Update profile with name using upsert to guarantee the record exists
+      const { data, error } = await supabase
         .from('profiles')
-        .update({ full_name: name.trim() })
-        .eq('user_id', user.id);
+        .upsert({ 
+          user_id: user.id,
+          full_name: name.trim() 
+        })
+        .select()
+        .single();
+
+      console.log('✅ [NAME] Update Result:', { data, error });
 
       if (error) throw error;
+      if (!data) throw new Error('Failed to update name');
 
       router.push('/(onboarding)/gender');
     } catch (error) {

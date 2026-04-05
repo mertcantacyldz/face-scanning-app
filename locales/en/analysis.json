@@ -268,7 +268,23 @@
     "description": "You will receive detailed AI-powered analysis for each region. Analysis results are prepared based on 468 facial landmark data detected by MediaPipe."
   },
   "closeButton": "Close",
-  "aiDisclaimer": "This analysis was created by artificial intelligence using MediaPipe Face Mesh data. Results are for informational purposes only.",
+  "aiDisclaimer": "This analysis was created by artificial intelligence using MediaPipe Face Mesh data. Results are for informational and entertainment purposes only and do not constitute medical advice.",
+  "medicalDisclaimer": "Facial symmetry and proportion assessments are based on general aesthetic research principles. Individual results and perceptions vary. Always consult a qualified professional for health or aesthetic decisions.",
+  "citationsTitle": "Sources & References",
+  "citations": [
+    {
+      "label": "MediaPipe Face Mesh — Google Research",
+      "url": "https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker"
+    },
+    {
+      "label": "Perrett DI, et al. \"Symmetry and Human Facial Attractiveness.\" Evolution and Human Behavior. 1999;20(5):295-307.",
+      "url": "https://doi.org/10.1016/S1090-5138(99)00014-8"
+    },
+    {
+      "label": "Rhodes G. \"The Evolutionary Psychology of Facial Beauty.\" Annual Review of Psychology. 2006;57:199-226.",
+      "url": "https://doi.org/10.1146/annurev.psych.57.102904.190208"
+    }
+  ],
   "thisFeature": "This feature",
   "aiConsent": {
     "title": "Privacy-First AI Analysis",

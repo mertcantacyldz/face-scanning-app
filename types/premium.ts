@@ -28,7 +28,7 @@ export interface PremiumContextValue {
 
   // Actions
   refreshPremiumStatus: () => Promise<boolean>;
-  purchase: (pkg: PurchasesPackage) => Promise<{ success: boolean; error?: string }>;
+  purchase: (pkg: PurchasesPackage) => Promise<{ success: boolean; error?: string; errorCode?: string }>;
   restore: () => Promise<{ success: boolean; isPremium: boolean; error?: string }>;
   incrementFreeAnalysisCount: (regionId: string) => Promise<void>;
   setFreeAnalysisRegion: (regionId: string) => Promise<void>;

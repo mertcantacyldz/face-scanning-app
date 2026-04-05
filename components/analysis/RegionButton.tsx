@@ -8,7 +8,7 @@ import { Text } from '@/components/ui/text';
 import type { FaceRegion } from '@/lib/face-prompts';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Image, Pressable, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, View, useWindowDimensions } from 'react-native';
 
 // ============================================
 // TYPES
@@ -43,17 +43,20 @@ export function RegionButton({
 }: RegionButtonProps) {
   const { t } = useTranslation(['analysis', 'common']);
   const isLocked = !isUnlocked;
+  const { width: screenWidth } = useWindowDimensions();
+  // 2-column grid: screen width - padding (16*2) - gap (16) / 2
+  const cardWidth = (screenWidth - 48) / 2;
 
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       className="active:opacity-70"
-      style={{ width: '48%', marginBottom: 16 }}
+      style={{ width: cardWidth, marginBottom: 16 }}
     >
       <Card
         className={`p-3 border bg-card ${isLocked ? 'border-border/50 opacity-80' : 'border-border'}`}
-        style={{ height: 205 }}
+        style={{ minHeight: 195 }}
       >
         {/* Icon */}
         <View

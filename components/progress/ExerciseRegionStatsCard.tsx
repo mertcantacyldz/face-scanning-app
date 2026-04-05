@@ -8,7 +8,7 @@ import { getExercisesByRegion, type RegionId } from '@/lib/exercises';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Dimensions, Modal, Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, View, useWindowDimensions } from 'react-native';
 import { ExerciseCompletionBadge } from './ExerciseCompletionBadge';
 
 interface ExerciseRegionStatsCardProps {
@@ -16,14 +16,15 @@ interface ExerciseRegionStatsCardProps {
   monthYear: string;
 }
 
-const screenWidth = Dimensions.get('window').width;
-const cardWidth = (screenWidth - 48) / 2.5; // 2.5 cards visible
+// Moved inside component as useWindowDimensions()
 
 export function ExerciseRegionStatsCard({
   regionId,
   monthYear,
 }: ExerciseRegionStatsCardProps) {
   const { t, i18n } = useTranslation('progress');
+  const { width: screenWidth } = useWindowDimensions();
+  const cardWidth = (screenWidth - 48) / 2.5; // 2.5 cards visible
   const [stats, setStats] = useState<RegionMonthlyStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);

@@ -5,6 +5,7 @@ import { calculateSavings } from '@/lib/revenuecat';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+import { useColorScheme } from 'nativewind';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -27,6 +28,8 @@ const FEATURE_KEYS = [
 
 const PaywallScreen = () => {
   const { t } = useTranslation('premium');
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === 'dark';
   const {
     monthlyPackage,
     yearlyPackage,
@@ -67,6 +70,24 @@ const PaywallScreen = () => {
       Alert.alert(t('paywall.alerts.successTitle'), t('paywall.alerts.successMessage'), [
         { text: t('paywall.alerts.successButton'), onPress: () => router.back() },
       ]);
+    } else if (result.errorCode === 'ALREADY_OWNED') {
+      // Logic for Apple Reviewer rejection fix:
+      // If product is already owned, trigger a silent restore and show success
+      console.log('ℹ️ Product already owned, triggering automatic restore...');
+      setRestoring(true);
+      const restoreResult = await restore();
+      setRestoring(false);
+
+      if (restoreResult.isPremium) {
+        Alert.alert(
+          t('paywall.alerts.restoreSuccessTitle'),
+          t('paywall.alerts.successMessage'), // Use "Activated" instead of "Restored" for better UX here
+          [{ text: t('paywall.alerts.successButton'), onPress: () => router.back() }]
+        );
+      } else {
+        // This shouldn't really happen if StoreKit said it's already owned
+        Alert.alert(t('paywall.alerts.noPackageTitle'), result.error);
+      }
     } else if (result.error && result.error !== 'cancelled') {
       Alert.alert(t('paywall.alerts.noPackageTitle'), result.error);
     }
@@ -122,18 +143,18 @@ const PaywallScreen = () => {
     <SafeAreaView className="flex-1 bg-background" edges={['top', 'bottom']}>
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
         {/* Header */}
-        <View className="bg-primary/10 pb-4 px-6">
+        <View className="bg-primary/10 pb-2 px-6">
           {/* Close button */}
           <Pressable
             onPress={() => router.back()}
-            className="absolute top-4 right-4 w-8 h-8 rounded-full bg-black/10 items-center justify-center z-10"
+            className="absolute top-3 right-4 w-7 h-7 rounded-full bg-black/10 items-center justify-center z-10"
           >
             <Text className="text-xl">×</Text>
           </Pressable>
 
           <View className="items-center">
-            <Ionicons name="diamond-outline" size={40} color="#8B5CF6" style={{ marginBottom: 8, marginTop: 12 }} />
-            <Text className="text-2xl font-bold text-center mb-1">
+            <Ionicons name="diamond-outline" size={32} color="#8B5CF6" style={{ marginBottom: 4, marginTop: 4 }} />
+            <Text className="text-xl font-bold text-center mb-0.5">
               {t('paywall.title')}
             </Text>
             <Text className="text-sm text-muted-foreground text-center">
@@ -143,14 +164,14 @@ const PaywallScreen = () => {
         </View>
 
         {/* Features */}
-        <View className="px-6 py-4">
-          <Card className="p-4 bg-card border border-border">
-            <Text className="text-base font-bold mb-2">{t('paywall.featuresTitle')}</Text>
-            <View className="gap-2">
+        <View className="px-6 py-2 mb-4 mt-1">
+          <Card className="p-3 bg-card border border-border">
+            <Text className="text-[15px] font-bold mt-1">{t('paywall.featuresTitle')}</Text>
+            <View className="gap-1.5">
               {FEATURE_KEYS.map((feature, index) => (
                 <View key={index} className="flex-row items-center">
                   <Ionicons name={feature.iconName as any} size={18} color="#8B5CF6" />
-                  <Text className="text-sm text-foreground flex-1 ml-2">{t(`paywall.features.${feature.key}`)}</Text>
+                  <Text className="text-[14px] text-foreground flex-1 ml-2">{t(`paywall.features.${feature.key}`)}</Text>
                   <Ionicons name="checkmark-circle" size={16} color="#10B981" />
                 </View>
               ))}
@@ -159,13 +180,13 @@ const PaywallScreen = () => {
         </View>
 
         {/* Packages */}
-        <View className="px-6 pb-4">
-          <Text className="text-base font-bold mb-2">{t('paywall.plans.selectPlan')}</Text>
+        <View className="px-6 pb-2">
+          <Text className="text-sm font-bold mb-3">{t('paywall.plans.selectPlan')}</Text>
 
           {/* Yearly Package */}
           <Pressable
             onPress={() => setSelectedPackage('yearly')}
-            className="mb-2"
+            className="mb-3"
           >
             <Card
               className={`p-3 border-2 ${selectedPackage === 'yearly'
@@ -255,8 +276,15 @@ const PaywallScreen = () => {
         </View>
 
         {/* Terms */}
-        <View className="px-6 pb-10">
-          <Text className="text-xs text-muted-foreground text-center">
+        <View className="px-6 pb-4">
+          <Text
+            style={{
+              fontSize: 12,
+              color: isDark ? '#94A3B8' : '#64748B',
+              textAlign: 'center',
+              lineHeight: 18,
+            }}
+          >
             {t('paywall.termsPrefix')}
             <Text
               className="text-primary underline font-semibold"
@@ -273,8 +301,24 @@ const PaywallScreen = () => {
             </Text>
             {t('paywall.termsSuffix')}
           </Text>
-          <Text className="text-[10px] text-muted-foreground text-center mt-4 leading-tight px-2">
-            Payment charged to Apple ID at confirmation. Subscription auto-renews unless canceled 24h before period ends. Account charged for renewal within 24h prior to end. Manage/cancel in App Store settings. Standard Apple Terms of Use (EULA) apply.
+          <Text
+            style={{
+              fontSize: 10,
+              color: isDark ? '#64748B' : '#94A3B8',
+              textAlign: 'center',
+              marginTop: 6,
+              lineHeight: 14,
+              paddingHorizontal: 8,
+            }}
+          >
+            Payment charged to Apple ID at confirmation. Subscription auto-renews unless canceled 24h before period ends. Account charged for renewal within 24h prior to end. Manage/cancel in App Store settings. Standard Apple{' '}
+            <Text
+              className="text-primary underline"
+              onPress={() => WebBrowser.openBrowserAsync('https://www.apple.com/legal/internet-services/itunes/dev/stdeula/')}
+            >
+              Terms of Use (EULA)
+            </Text>{' '}
+            apply.
           </Text>
         </View>
       </ScrollView>

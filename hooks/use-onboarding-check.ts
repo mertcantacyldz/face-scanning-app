@@ -65,29 +65,26 @@ export function useOnboardingCheck(): OnboardingStatus {
         return;
       }
 
-      console.log('📋 [ONBOARDING-CHECK] Profile data:', {
-        onboarding_completed: profile.onboarding_completed,
-        full_name: profile.full_name,
+      console.log('📋 [ONBOARDING-CHECK] Profile query result:', {
+        hasProfile: !!profile,
+        data: profile,
+        error: error ? (error as any).message : null
       });
 
-      // Need onboarding if:
-      // 1. Never completed onboarding, OR
-      // 2. Still has default name "Kullanıcı"
-      const needs =
-        !profile.onboarding_completed ||
-        profile.full_name === 'Kullanıcı' ||
-        !profile.full_name;
+      if (!profile) {
+        console.log('⚠️ [ONBOARDING-CHECK] No profile found in DB for user:', userId);
+        setNeedsOnboarding(true);
+        return;
+      }
 
-      console.log('🎯 [ONBOARDING-CHECK] needsOnboarding =', needs, {
+      // Need onboarding ONLY if onboarding_completed is false
+      const needs = profile.onboarding_completed === false;
+
+      console.log('🎯 [ONBOARDING-CHECK] Final Decision:', {
+        needsOnboarding: needs,
         onboarding_completed: profile.onboarding_completed,
         full_name: profile.full_name,
-        reason: !profile.onboarding_completed
-          ? 'onboarding_completed is false'
-          : profile.full_name === 'Kullanıcı'
-            ? 'full_name is default "Kullanıcı"'
-            : !profile.full_name
-              ? 'full_name is empty/null'
-              : 'all checks passed',
+        reason: needs ? 'onboarding_completed is explicitly false' : 'onboarding_completed is true, access granted'
       });
 
       setNeedsOnboarding(needs);

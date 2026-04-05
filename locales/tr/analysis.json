@@ -268,7 +268,23 @@
     "description": "Her bölge için yapay zeka destekli detaylı analiz alacaksınız. Analiz sonuçları MediaPipe tarafından tespit edilen 468 yüz noktası verisi üzerinden hazırlanmaktadır."
   },
   "closeButton": "Kapat",
-  "aiDisclaimer": "Bu analiz yapay zeka tarafından MediaPipe Face Mesh verisi kullanılarak oluşturulmuştur. Sonuçlar bilgilendirme amaçlıdır.",
+  "aiDisclaimer": "Bu analiz yapay zeka tarafından MediaPipe Face Mesh verisi kullanılarak oluşturulmuştur. Sonuçlar bilgilendirme ve eğlence amaçlıdır, tıbbi tavsiye niteliği taşımaz.",
+  "medicalDisclaimer": "Yüz simetrisi ve oran değerlendirmeleri genel estetik araştırma prensiplerine dayanmaktadır. Bireysel sonuçlar ve algılar değişkenlik gösterir. Sağlık veya estetik kararlar için nitelikli bir profesyonele danışın.",
+  "citationsTitle": "Kaynaklar & Referanslar",
+  "citations": [
+    {
+      "label": "MediaPipe Face Mesh — Google Research",
+      "url": "https://ai.google.dev/edge/mediapipe/solutions/vision/face_landmarker"
+    },
+    {
+      "label": "Perrett DI, ve ark. \"Symmetry and Human Facial Attractiveness.\" Evolution and Human Behavior. 1999;20(5):295-307.",
+      "url": "https://doi.org/10.1016/S1090-5138(99)00014-8"
+    },
+    {
+      "label": "Rhodes G. \"The Evolutionary Psychology of Facial Beauty.\" Annual Review of Psychology. 2006;57:199-226.",
+      "url": "https://doi.org/10.1146/annurev.psych.57.102904.190208"
+    }
+  ],
   "thisFeature": "Bu özellik",
   "aiConsent": {
     "title": "Gizlilik Öncelikli AI Analizi",

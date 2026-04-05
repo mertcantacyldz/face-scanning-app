@@ -18,8 +18,8 @@
       "text": " - Work all regional muscles"
     },
     "point2": {
-      "highlight": "Consistency is magic",
-      "text": " - 10 minutes daily, dramatic results in 3 months"
+      "highlight": "Consistency is key",
+      "text": " - 10 minutes daily, regular practice supports gradual improvement"
     },
     "point3": {
       "highlight": "Track your progress",
@@ -77,7 +77,9 @@
     "modalClose": "Close",
     "research": {
       "title": "Scientific Research",
-      "text": "In a study published in JAMA Dermatology in 2018, it was observed that facial exercises increased facial fullness. These exercises are based on similar principles of increasing muscle tone and skin fullness."
+      "text": "In a study published in JAMA Dermatology in 2018, it was observed that facial exercises increased facial fullness. These exercises are based on similar principles of increasing muscle tone and skin fullness.",
+      "source": "Source: Alam M, et al. \"Association of Facial Exercise With the Appearance of Aging.\" JAMA Dermatol. 2018;154(3):365-367.",
+      "sourceUrl": "https://doi.org/10.1001/jamadermatol.2017.5142"
     },
     "recommended": {
       "title": "Recommended Practice",
@@ -89,6 +91,20 @@
     "warning": {
       "title": "⚠️ Important Warning",
       "text": "These exercises and information do not replace medical advice or treatment. Research results do not guarantee individual experiences. Results vary from person to person. A doctor or specialist should be consulted for any health or aesthetic decisions. These exercises are for general muscle awareness and entertainment purposes."
+    },
+    "sources": {
+      "title": "Sources & References",
+      "disclaimer": "This app does not provide medical advice. All information is for educational and entertainment purposes only. Consult a qualified healthcare professional for any health-related decisions.",
+      "items": [
+        {
+          "label": "Alam M, et al. \"Association of Facial Exercise With the Appearance of Aging.\" JAMA Dermatol. 2018;154(3):365-367.",
+          "url": "https://doi.org/10.1001/jamadermatol.2017.5142"
+        },
+        {
+          "label": "Van Borsel J, et al. \"The effectiveness of facial exercises for facial rejuvenation: a systematic review.\" Aesthetic Surgery Journal. 2014;34(1):22-27.",
+          "url": "https://doi.org/10.1177/1090820X13514583"
+        }
+      ]
     }
   }
 }

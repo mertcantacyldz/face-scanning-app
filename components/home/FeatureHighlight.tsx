@@ -59,7 +59,7 @@ export function FeatureHighlight({
           borderColor: colorConfig.border,
           alignItems: 'center',
           justifyContent: 'center',
-          marginBottom: 8,
+          marginBottom: 4,
         }}
       >
         <Ionicons name={icon} size={24} color={colorConfig.icon} />
@@ -92,7 +92,7 @@ export function FeatureHighlightsRow({ children }: FeatureHighlightsRowProps) {
         flexDirection: 'row',
         justifyContent: 'space-around',
         paddingHorizontal: 16,
-        paddingVertical: 16,
+        paddingVertical: 8,
       }}
     >
       {children}

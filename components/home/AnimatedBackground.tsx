@@ -1,6 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useMemo } from 'react';
-import { Dimensions, StyleSheet, useColorScheme, View } from 'react-native';
+import { StyleSheet, useColorScheme, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -10,7 +10,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+// Moved inside component as useWindowDimensions()
 
 interface Particle {
   id: number;
@@ -22,11 +22,11 @@ interface Particle {
 }
 
 // Generate random particles
-const generateParticles = (count: number): Particle[] => {
+const generateParticles = (count: number, screenWidth: number, screenHeight: number): Particle[] => {
   return Array.from({ length: count }, (_, i) => ({
     id: i,
-    x: Math.random() * SCREEN_WIDTH,
-    y: Math.random() * SCREEN_HEIGHT * 0.6, // Keep in upper portion
+    x: Math.random() * screenWidth,
+    y: Math.random() * screenHeight * 0.6, // Keep in upper portion
     size: Math.random() * 3 + 2, // 2-5px
     duration: Math.random() * 2000 + 3000, // 3-5s
     delay: Math.random() * 2000, // 0-2s delay
@@ -94,9 +94,10 @@ function FloatingParticle({ particle, isDark }: ParticleProps) {
 export function AnimatedBackground() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
 
   // Memoize particles to prevent regeneration on re-renders
-  const particles = useMemo(() => generateParticles(12), []);
+  const particles = useMemo(() => generateParticles(12, SCREEN_WIDTH, SCREEN_HEIGHT), []);
 
   // Gradient colors based on theme
   const gradientColors = isDark

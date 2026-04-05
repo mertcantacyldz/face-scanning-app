@@ -1,4 +1,5 @@
 import { ExerciseRegionStatsCard } from '@/components/progress/ExerciseRegionStatsCard';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { MonthSelector } from '@/components/progress/MonthSelector';
 import { ProgressChart } from '@/components/progress/ProgressChart';
 import { RegionProgressCard } from '@/components/progress/RegionProgressCard';
@@ -20,6 +21,7 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -51,6 +53,10 @@ interface Profile {
 
 const ProgressScreen = () => {
   const { t } = useTranslation('progress');
+  const { width: screenWidth } = useWindowDimensions();
+  // 2-column grid calculation (similar to RegionButton)
+  const cardWidth = (screenWidth - 48) / 2;
+
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [regionSummaries, setRegionSummaries] = useState<RegionSummary[]>([]);
@@ -65,6 +71,7 @@ const ProgressScreen = () => {
 
   // Premium check from context (handles both RevenueCat and database)
   const { isPremium } = usePremium();
+  const tabBarHeight = useBottomTabBarHeight();
 
   // Load data when screen focuses
   useFocusEffect(
@@ -214,7 +221,11 @@ const ProgressScreen = () => {
   if (!isPremium) {
     return (
       <View className="flex-1 bg-background">
-        <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
+        <ScrollView 
+          className="flex-1" 
+          contentContainerStyle={{ padding: 16, paddingBottom: tabBarHeight + 20 }}
+          showsVerticalScrollIndicator={false}
+        >
           {/* Header */}
           <View className="mb-6">
             <Text className="text-3xl font-bold mb-2">{t('title')}</Text>
@@ -224,9 +235,9 @@ const ProgressScreen = () => {
           </View>
 
           {/* Premium Lock Card */}
-          <Card className="p-8 bg-primary/10 border-2 border-primary/20 items-center">
-            <View className="w-24 h-24 bg-primary/20 rounded-full items-center justify-center mb-6">
-              <Ionicons name="stats-chart-outline" size={56} color="#8B5CF6" />
+          <Card className="p-6 bg-primary/10 border-2 border-primary/20 items-center">
+            <View className="w-16 h-16 bg-primary/20 rounded-full items-center justify-center mb-4">
+              <Ionicons name="stats-chart-outline" size={40} color="#8B5CF6" />
             </View>
             <Text className="text-2xl font-bold text-center mb-2">
               {t('premiumFeature.title')}
@@ -265,7 +276,6 @@ const ProgressScreen = () => {
             </Text>
           </Card>
 
-          <View className="h-8" />
         </ScrollView>
       </View>
     );
@@ -339,7 +349,7 @@ const ProgressScreen = () => {
           <Text className="text-xl font-bold mb-3">{t('regionsTitle')}</Text>
           <View className="flex-row flex-wrap gap-2">
             {regionSummaries.map((summary) => (
-              <View key={summary.regionId} style={{ width: '48.5%' }}>
+              <View key={summary.regionId} style={{ width: cardWidth }}>
                 <RegionProgressCard
                   regionId={summary.regionId}
                   latestScore={summary.latestScore}

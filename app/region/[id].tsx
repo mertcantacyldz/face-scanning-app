@@ -14,6 +14,7 @@ import {
 import { FACE_REGIONS } from '@/lib/face-prompts';
 import { supabase } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
+import * as WebBrowser from 'expo-web-browser';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -363,6 +364,54 @@ const RegionDetailScreen = () => {
           </Card>
         )}
 
+        {/* Medical Disclaimer & Citations for the overall screen */}
+        <View className="mb-4">
+          <Card className="p-4 bg-muted border-0">
+            <Text className="text-xs text-muted-foreground text-center">
+              {t('aiDisclaimer', { ns: 'analysis' })}
+            </Text>
+            <Text className="text-xs text-muted-foreground text-center mt-2">
+              {t('medicalDisclaimer', { ns: 'analysis' })}
+            </Text>
+          </Card>
+
+          <Card className="mt-3 p-4 bg-muted/50 border border-border">
+            <View className="flex-row items-center mb-2">
+              <Ionicons name="library-outline" size={14} color="#8B5CF6" />
+              <Text className="text-xs font-semibold text-muted-foreground ml-1.5">
+                {t('citationsTitle', { ns: 'analysis' })}
+              </Text>
+            </View>
+            {(t('citations', { ns: 'analysis', returnObjects: true, defaultValue: [] }) as Array<{ label: string; url: string }>).map((item, index) => (
+              <Pressable
+                key={index}
+                onPress={() => WebBrowser.openBrowserAsync(item.url, {
+                  readerMode: false,
+                  dismissButtonStyle: 'done',
+                  toolbarColor: '#8B5CF6',
+                  controlsColor: '#FFFFFF',
+                }).catch(() => {})}
+                className="mb-2.5 active:opacity-70"
+              >
+                <View className="flex-row items-start">
+                  <Text className="text-muted-foreground mr-2 text-xs">📎</Text>
+                  <View 
+                    className="flex-1 flex-row items-center flex-wrap"
+                    style={{ borderBottomWidth: 1, borderBottomColor: '#8B5CF6', paddingBottom: 2, alignSelf: 'flex-start' }}
+                  >
+                    <View className="flex-1 flex-row items-center justify-between">
+                      <Text className="text-xs text-primary leading-relaxed font-medium flex-1">
+                        {item.label}
+                      </Text>
+                      <Ionicons name="open-outline" size={12} color="#8B5CF6" style={{ marginLeft: 6 }} />
+                    </View>
+                  </View>
+                </View>
+              </Pressable>
+            ))}
+          </Card>
+        </View>
+
         {/* Bottom spacing */}
         <View className="h-8" />
       </ScrollView>
@@ -425,6 +474,54 @@ const RegionDetailScreen = () => {
                     />
                   </Card>
                 )}
+
+                {/* Medical Disclaimer & Citations for high-res detail */}
+                <View className="mt-8 mb-4">
+                  <Card className="p-4 bg-muted border-0">
+                    <Text className="text-xs text-muted-foreground text-center">
+                      {t('aiDisclaimer', { ns: 'analysis' })}
+                    </Text>
+                    <Text className="text-xs text-muted-foreground text-center mt-2">
+                      {t('medicalDisclaimer', { ns: 'analysis' })}
+                    </Text>
+                  </Card>
+
+                  <Card className="mt-3 p-4 bg-muted/50 border border-border">
+                    <View className="flex-row items-center mb-2">
+                      <Ionicons name="library-outline" size={14} color="#8B5CF6" />
+                      <Text className="text-xs font-semibold text-muted-foreground ml-1.5">
+                        {t('citationsTitle', { ns: 'analysis' })}
+                      </Text>
+                    </View>
+                    {(t('citations', { ns: 'analysis', returnObjects: true, defaultValue: [] }) as Array<{ label: string; url: string }>).map((item, index) => (
+                      <Pressable
+                        key={index}
+                        onPress={() => WebBrowser.openBrowserAsync(item.url, {
+                          readerMode: false,
+                          dismissButtonStyle: 'done',
+                          toolbarColor: '#8B5CF6',
+                          controlsColor: '#FFFFFF',
+                        }).catch(() => {})}
+                        className="mb-2.5 active:opacity-70"
+                      >
+                        <View className="flex-row items-start">
+                          <Text className="text-muted-foreground mr-2 text-xs">📎</Text>
+                          <View 
+                            className="flex-1 flex-row items-center flex-wrap"
+                            style={{ borderBottomWidth: 1, borderBottomColor: '#8B5CF6', paddingBottom: 2, alignSelf: 'flex-start' }}
+                          >
+                            <View className="flex-1 flex-row items-center justify-between">
+                              <Text className="text-xs text-primary leading-relaxed font-medium flex-1">
+                                {item.label}
+                              </Text>
+                              <Ionicons name="open-outline" size={12} color="#8B5CF6" style={{ marginLeft: 6 }} />
+                            </View>
+                          </View>
+                        </View>
+                      </Pressable>
+                    ))}
+                  </Card>
+                </View>
 
                 <View className="h-8" />
               </ScrollView>

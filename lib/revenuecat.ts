@@ -189,7 +189,7 @@ export async function getOfferings(): Promise<PurchasesOffering | null> {
 // Purchase a package
 export async function purchasePackage(
   pkg: PurchasesPackage
-): Promise<{ success: boolean; customerInfo?: CustomerInfo; error?: string }> {
+): Promise<{ success: boolean; customerInfo?: CustomerInfo; error?: string; errorCode?: string }> {
   if (!(await ensureConfigured())) {
     return { success: false, error: 'RevenueCat is not configured' };
   }
@@ -208,9 +208,18 @@ export async function purchasePackage(
     }
 
     console.error('Purchase error:', error);
+    
+    // Check if product is already owned
+    const isAlreadyOwned = 
+      error.code === '7' || // RECEIPT_ALREADY_IN_USE_ERROR
+      error.code === 'RECEIPT_ALREADY_IN_USE_ERROR' ||
+      error.message?.toLowerCase().includes('already subscribed') ||
+      error.message?.toLowerCase().includes('already purchased');
+
     return {
       success: false,
       error: error.message || 'Purchase failed',
+      errorCode: isAlreadyOwned ? 'ALREADY_OWNED' : error.code?.toString(),
     };
   }
 }

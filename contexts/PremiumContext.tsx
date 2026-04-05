@@ -125,23 +125,6 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
         setIsRevenueCatPremium(premiumStatus.revenueCat);
         setIsDatabasePremium(premiumStatus.database);
 
-        // AUTO-RESTORE: If not premium, try to restore purchases silently
-        if (!premiumStatus.combined) {
-          console.log('🔄 Auto-restore: Premium not found, trying silent restore...');
-          try {
-            const restoreResult = await restorePurchases();
-            if (restoreResult.isPremium) {
-              console.log('✅ Auto-restore: Premium restored successfully!');
-              setIsRevenueCatPremium(true);
-            } else {
-              console.log('ℹ️ Auto-restore: No subscription found');
-            }
-          } catch (restoreError) {
-            // Silent failure - don't bother user
-            console.log('⚠️ Auto-restore failed (silent):', restoreError);
-          }
-        }
-
         // Load offerings
         const currentOfferings = await getOfferings();
         setOfferings(currentOfferings);
@@ -217,6 +200,7 @@ export function PremiumProvider({ children }: PremiumProviderProps) {
       return {
         success: result.success,
         error: result.error,
+        errorCode: result.errorCode,
       };
     } catch (error: any) {
       toast.show('Satın alma başarısız: ' + error.message, {

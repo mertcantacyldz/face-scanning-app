@@ -18,8 +18,8 @@
       "text": " - Tüm bölge kaslarını çalıştırmalısınız"
     },
     "point2": {
-      "highlight": "Düzen sihirdir",
-      "text": " - Günlük 10 dakika, 3 ayda dramatik sonuçlar"
+      "highlight": "Düzen önemlidir",
+      "text": " - Günlük 10 dakika, düzenli pratik kademeli gelişimi destekler"
     },
     "point3": {
       "highlight": "İlerlemeyi takip edin",
@@ -77,7 +77,9 @@
     "modalClose": "Kapat",
     "research": {
       "title": "Bilimsel Araştırma",
-      "text": "2018 yılında JAMA Dermatology dergisinde yayınlanan araştırmada, yüz egzersizlerinin yüz dolgunluğunu artırdığı gözlemlenmiştir. Bu egzersizler benzer kas tonusu ve cilt dolgunluğu artırma prensiplerine dayanır."
+      "text": "2018 yılında JAMA Dermatology dergisinde yayınlanan araştırmada, yüz egzersizlerinin yüz dolgunluğunu artırdığı gözlemlenmiştir. Bu egzersizler benzer kas tonusu ve cilt dolgunluğu artırma prensiplerine dayanır.",
+      "source": "Kaynak: Alam M, ve ark. \"Association of Facial Exercise With the Appearance of Aging.\" JAMA Dermatol. 2018;154(3):365-367.",
+      "sourceUrl": "https://doi.org/10.1001/jamadermatol.2017.5142"
     },
     "recommended": {
       "title": "Önerilen Uygulama",
@@ -89,6 +91,20 @@
     "warning": {
       "title": "⚠️ Önemli Uyarı",
       "text": "Bu egzersizler ve bilgiler, tıbbi tavsiye veya tedavi yerine geçmez. Araştırma sonuçları bireysel deneyimleri garanti etmez. Sonuçlar kişiden kişiye değişir. Herhangi bir sağlık veya estetik kararı için bir doktora veya uzmana danışılmalıdır. Bu egzersizler genel kas farkındalığı ve eğlence amaçlıdır."
+    },
+    "sources": {
+      "title": "Kaynaklar & Referanslar",
+      "disclaimer": "Bu uygulama tıbbi tavsiye sunmaz. Tüm bilgiler eğitim ve eğlence amaçlıdır. Sağlıkla ilgili kararlar için nitelikli bir sağlık uzmanına danışın.",
+      "items": [
+        {
+          "label": "Alam M, ve ark. \"Association of Facial Exercise With the Appearance of Aging.\" JAMA Dermatol. 2018;154(3):365-367.",
+          "url": "https://doi.org/10.1001/jamadermatol.2017.5142"
+        },
+        {
+          "label": "Van Borsel J, ve ark. \"Yüz gençleştirme için yüz egzersizlerinin etkinliği: sistematik bir inceleme.\" Aesthetic Surgery Journal. 2014;34(1):22-27.",
+          "url": "https://doi.org/10.1177/1090820X13514583"
+        }
+      ]
     }
   }
 }

@@ -73,52 +73,41 @@ export function PremiumModal({
               </View>
             </View>
 
-            {/* Info for Anonymous Users - Friendly & Non-Scary */}
-            {isAnonymous && (
-              <View className="px-6 py-3">
-                <Card className="bg-blue-50 border-blue-200 border p-4">
-                  <View className="flex-row items-start">
-                    <Ionicons name="bulb-outline" size={24} color="#3B82F6" style={{ marginRight: 8, marginTop: 2 }} />
-                    <View className="flex-1">
-                      <Text className="text-sm font-semibold text-blue-900 mb-1">
-                        İpucu: Verilerinizi Her Cihazda Kullanın
-                      </Text>
-                      <Text className="text-xs text-blue-800 mb-2">
-                        Premium özellikleriniz her zaman korunur ve tüm cihazlarınızda kullanılabilir.
-                      </Text>
-                      <View className="flex-row items-center mt-1">
-                        {/*
-                        <Text className="text-xs text-blue-800">
-                          Dilerseniz email veya Google ile hesap oluşturarak yüz analizi ve egzersiz verilerinize de her cihazdan erişebilirsiniz. Tamamen isteğe bağlı!
-                        </Text>
-                        */}
-                        <Ionicons name="happy-outline" size={14} color="#1e40af" style={{ marginLeft: 4 }} />
-                      </View>
-                    </View>
-                  </View>
-                </Card>
-              </View>
-            )}
 
             {/* Price Preview */}
-            <View className="px-6 py-3">
-              <Card className="bg-primary/5 border-primary/20 border p-3">
+            <View className="px-6 py-3 gap-3">
+              {/* Monthly Plan */}
+              <View className="flex-1 rounded-xl p-3 border bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800">
                 <View className="flex-row items-center justify-between">
                   <View>
-                    <Text className="text-xs text-muted-foreground">
+                    <Text className="text-xs font-semibold text-muted-foreground">
+                      {t('modal.price.monthly')}
+                    </Text>
+                    <Text className="font-bold text-foreground">
+                      {t('modal.price.monthlyAmount')}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Yearly Plan */}
+              <View className="flex-1 rounded-xl p-3 border bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800">
+                <View className="flex-row items-center justify-between">
+                  <View>
+                    <Text className="text-xs font-semibold text-muted-foreground">
                       {t('modal.price.yearly')}
                     </Text>
                     <Text className="font-bold text-foreground">
                       {t('modal.price.amount')}
                     </Text>
                   </View>
-                  <View className="bg-green-100 px-2 py-1 rounded-full">
-                    <Text className="text-green-800 text-xs font-semibold">
+                  <View className="bg-green-100 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
+                    <Text className="text-green-800 dark:text-green-400 text-[10px] font-bold">
                       {t('modal.price.save', { percent: 52 })}
                     </Text>
                   </View>
                 </View>
-              </Card>
+              </View>
             </View>
 
             {/* Actions */}

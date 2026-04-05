@@ -4,9 +4,9 @@
  * Falls back to AsyncStorage if SecureStore fails (e.g., in Expo Go)
  */
 
-import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Device from 'expo-device';
+import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
 const DEVICE_ID_KEY = 'face_scan_device_id';

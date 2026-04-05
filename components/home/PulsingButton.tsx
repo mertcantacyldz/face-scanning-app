@@ -107,8 +107,9 @@ export function PulsingButton({
             {
               position: 'absolute',
               width: '100%',
-              height: 64,
-              borderRadius: 32,
+              aspectRatio: 5,
+              minHeight: 56,
+              borderRadius: 999,
               backgroundColor: 'transparent',
               borderWidth: 2,
               borderColor: isDark ? '#818CF8' : '#6366F1',
@@ -125,8 +126,9 @@ export function PulsingButton({
             {
               position: 'absolute',
               width: '100%',
-              height: 64,
-              borderRadius: 32,
+              aspectRatio: 5,
+              minHeight: 56,
+              borderRadius: 999,
               backgroundColor: 'transparent',
               borderWidth: 1,
               borderColor: isDark ? '#A5B4FC' : '#818CF8',
@@ -145,7 +147,7 @@ export function PulsingButton({
         style={[
           {
             width: '100%',
-            borderRadius: 32,
+            borderRadius: 999,
             overflow: 'hidden',
             shadowColor: '#6366F1',
             shadowOffset: { width: 0, height: 4 },

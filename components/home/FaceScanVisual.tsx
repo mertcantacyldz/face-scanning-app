@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, useColorScheme } from 'react-native';
+import { View, useColorScheme, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
   FadeIn,
@@ -79,7 +79,8 @@ const FACE_DOTS = [
   { x: 124, y: 40, delay: 450 },
 ];
 
-const SVG_SIZE = 160;
+const SVG_SIZE = 160; // ViewBox size (dot coordinates are based on this)
+const SVG_VIEWBOX = `0 0 ${SVG_SIZE} ${SVG_SIZE}`;
 const SCAN_DURATION = 2500;
 
 interface FaceDotProps {
@@ -122,6 +123,9 @@ function FaceDot({ x, y, delay, scanProgress, isDark }: FaceDotProps) {
 export function FaceScanVisual() {
   const colorScheme = useColorScheme();
   const isDark = colorScheme === 'dark';
+  const { width: screenWidth } = useWindowDimensions();
+  // Scale container based on screen width, capped at 200
+  const containerSize = Math.min(screenWidth * 0.42, 200);
 
   const scanProgress = useSharedValue(0);
 
@@ -167,13 +171,13 @@ export function FaceScanVisual() {
     >
       <View
         style={{
-          width: SVG_SIZE,
-          height: SVG_SIZE,
+          width: containerSize,
+          height: containerSize,
           position: 'relative',
         }}
       >
         {/* SVG Face Constellation */}
-        <Svg width={SVG_SIZE} height={SVG_SIZE} viewBox={`0 0 ${SVG_SIZE} ${SVG_SIZE}`}>
+        <Svg width={containerSize} height={containerSize} viewBox={SVG_VIEWBOX}>
           <Defs>
             <LinearGradient id="scanGradient" x1="0%" y1="0%" x2="0%" y2="100%">
               <Stop offset="0%" stopColor="transparent" />

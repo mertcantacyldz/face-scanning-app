@@ -57,9 +57,11 @@
       "unlimitedHistory": "Unlimited analysis history"
     },
     "price": {
-      "yearly": "Annual Plan",
+      "yearly": "Yearly Plan",
       "amount": "$45.99/year",
-      "save": "{{percent}}% SAVE"
+      "monthly": "Monthly Plan",
+      "monthlyAmount": "$7.99/month",
+      "save": "SAVE {{percent}}%"
     },
     "buttons": {
       "upgrade": "Upgrade to Premium",

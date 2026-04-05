@@ -7,7 +7,7 @@ import { Text } from '@/components/ui/text';
 import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'nativewind';
 import { useTranslation } from 'react-i18next';
-import { Dimensions, View } from 'react-native';
+import { View, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { FaceScanVisual } from './FaceScanVisual';
 import { FeatureHighlight, FeatureHighlightsRow } from './FeatureHighlight';
@@ -32,8 +32,7 @@ export interface HeroLayoutProps {
 // CONSTANTS
 // ============================================
 
-const { height: screenHeight } = Dimensions.get('window');
-const isSmallScreen = screenHeight < 700;
+// Moved inside component as useWindowDimensions()
 
 // ============================================
 // COMPONENT
@@ -46,6 +45,8 @@ export function HeroLayout({
 }: HeroLayoutProps) {
   const { t } = useTranslation('home');
   const { colorScheme } = useColorScheme();
+  const { height: screenHeight } = useWindowDimensions();
+  const isSmallScreen = screenHeight < 700;
   const isDark = colorScheme === 'dark';
 
   return (
@@ -68,8 +69,8 @@ export function HeroLayout({
           entering={FadeInDown.duration(500).delay(200)}
           style={{
             alignItems: 'center',
-            marginTop: isSmallScreen ? 16 : 32,
-            marginBottom: isSmallScreen ? 8 : 12,
+            marginTop: isSmallScreen ? 12 : 24,
+            marginBottom: isSmallScreen ? 4 : 8,
           }}
         >
           <Text
@@ -151,21 +152,25 @@ export function HeroLayout({
           <View
             style={{
               flexDirection: 'row',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               justifyContent: 'center',
               marginTop: 16,
+              paddingHorizontal: 8,
             }}
           >
             <Ionicons
               name="lock-closed-outline"
               size={14}
               color={isDark ? '#64748B' : '#94A3B8'}
+              style={{ marginTop: 2 }} // Align icon with first line of text
             />
             <Text
               style={{
                 fontSize: 12,
                 color: isDark ? '#64748B' : '#94A3B8',
                 marginLeft: 6,
+                textAlign: 'center',
+                flexShrink: 1, // Allow text to wrap properly
               }}
             >
               {t('cta.disclaimer')}

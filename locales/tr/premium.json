@@ -59,6 +59,8 @@
     "price": {
       "yearly": "Yıllık Plan",
       "amount": "$45.99/yıl",
+      "monthly": "Aylık Plan",
+      "monthlyAmount": "$7.99/ay",
       "save": "%{{percent}} TASARRUF"
     },
     "buttons": {

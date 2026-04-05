@@ -5,12 +5,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useWindowDimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 export default function TabLayout() {
   const { t } = useTranslation('tabs');
   const colorScheme = useColorScheme();
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
+  const isWide = screenWidth > 500;
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={['top', ]}>
@@ -28,14 +31,20 @@ export default function TabLayout() {
             shadowOffset: { width: 0, height: -2 },
             shadowOpacity: 0.1,
             shadowRadius: 8,
-            borderRadius: 24,
-            marginHorizontal: 16,
-            marginBottom:  insets.bottom,
-            paddingBottom: 8,
-            height: 70,
+            borderRadius: 32,
+            marginHorizontal: isWide ? screenWidth * 0.15 : 16,
+            marginBottom: insets.bottom > 0 ? insets.bottom : 12,
+            paddingTop: 8,
+            paddingBottom: insets.bottom > 0 ? 24 : 12,
+            height: insets.bottom > 0 ? 84 : 72,
+          },
+          tabBarLabelStyle: {
+            fontSize: 10,
+            fontWeight: '500',
+            marginBottom: 4,
           },
           sceneStyle: {
-            backgroundColor: 'red',
+            backgroundColor: 'transparent',
             paddingBottom: 0,
           },
         }}>

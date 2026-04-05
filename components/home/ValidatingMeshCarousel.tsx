@@ -2,7 +2,7 @@ import { Text } from '@/components/ui/text';
 import { type MultiPhotoState } from '@/hooks/use-face-mesh';
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Dimensions, Image, View } from 'react-native';
+import { Image, View, useWindowDimensions } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 import { HorizontalValidationCard } from './HorizontalValidationCard';
 
@@ -10,13 +10,14 @@ interface ValidatingMeshCarouselProps {
     photos: MultiPhotoState[];
 }
 
-const { width: screenWidth } = Dimensions.get('window');
-const CAROUSEL_WIDTH = screenWidth - 140;
-const CAROUSEL_HEIGHT = CAROUSEL_WIDTH * 1.3;
+// Moved inside component as useWindowDimensions()
 
 
 export function ValidatingMeshCarousel({ photos }: ValidatingMeshCarouselProps) {
     const { t } = useTranslation('home');
+    const { width: screenWidth } = useWindowDimensions();
+    const CAROUSEL_WIDTH = screenWidth - 140;
+    const CAROUSEL_HEIGHT = CAROUSEL_WIDTH * 1.3;
     const processedPhotos = photos.filter((p) => p.meshImageUri !== null);
     const carouselRef = useRef<any>(null);
     const [activeIndex, setActiveIndex] = useState(0);

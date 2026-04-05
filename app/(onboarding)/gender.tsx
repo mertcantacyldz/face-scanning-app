@@ -22,16 +22,30 @@ export default function GenderScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      // Update profile with gender and mark onboarding as complete
-      const { error } = await supabase
+      // 1. First fetch existing profile to avoid overwriting name if it exists
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .update({
+        .select('full_name')
+        .eq('user_id', user.id)
+        .single();
+
+      // 2. Update profile with gender and mark onboarding as complete
+      // Use upsert to guarantee the row exists and was updated
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert({
+          user_id: user.id,
+          full_name: existingProfile?.full_name || 'Kullanıcı',
           gender: selectedGender,
           onboarding_completed: true,
         })
-        .eq('user_id', user.id);
+        .select()
+        .single();
+
+      console.log('✅ [GENDER] Finish Update Result:', { data, error });
 
       if (error) throw error;
+      if (!data) throw new Error('Failed to update profile');
 
       // Navigate to main app
       router.replace('/(tabs)');
@@ -53,12 +67,28 @@ export default function GenderScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user found');
 
-      const { error } = await supabase
+      // 1. First fetch existing profile to avoid overwriting name if it exists
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .update({ onboarding_completed: true })
-        .eq('user_id', user.id);
+        .select('full_name')
+        .eq('user_id', user.id)
+        .single();
+
+      // 2. Use upsert with either existing name or default 'Kullanıcı'
+      const { data, error } = await supabase
+        .from('profiles')
+        .upsert({ 
+          user_id: user.id,
+          full_name: existingProfile?.full_name || 'Kullanıcı',
+          onboarding_completed: true 
+        })
+        .select()
+        .single();
+
+      console.log('✅ [GENDER] Skip Update Result:', { data, error });
 
       if (error) throw error;
+      if (!data) throw new Error('Failed to update profile');
 
       router.replace('/(tabs)');
     } catch (error) {

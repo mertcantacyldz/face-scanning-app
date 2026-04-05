@@ -6,7 +6,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Dimensions, Image, Pressable, View } from 'react-native';
+import { Image, Pressable, View, useWindowDimensions } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -34,8 +34,7 @@ export interface MeshCarouselProps {
 // CONSTANTS
 // ============================================
 
-const { width: screenWidth } = Dimensions.get('window');
-const CAROUSEL_SIZE = screenWidth - 80;
+// Moved inside component as useWindowDimensions()
 
 // ============================================
 // COMPONENT
@@ -47,6 +46,8 @@ export function MeshCarousel({
   onIndexChange,
 }: MeshCarouselProps) {
   const { t } = useTranslation('home');
+  const { width: screenWidth } = useWindowDimensions();
+  const CAROUSEL_SIZE = screenWidth - 80;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [hasInteracted, setHasInteracted] = useState(false);
   const carouselRef = useRef<any>(null);
