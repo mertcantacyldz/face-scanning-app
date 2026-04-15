@@ -2,6 +2,8 @@
 
 FaceLoom is a cutting-edge mobile application built with **Expo** and **React Native**, designed to provide deep insights into facial aesthetics and health. Using **MediaPipe Face Mesh** technology, FaceLoom scans 468+ facial landmarks to analyze your features with scientific precision.
 
+**APPSTORE LİNK : https://apps.apple.com/us/app/faceloom/id6759269059**
+
 ---
 
 ## 📸 Screenshots
